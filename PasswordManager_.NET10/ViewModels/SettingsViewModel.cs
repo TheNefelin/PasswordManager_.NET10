@@ -177,40 +177,6 @@ public partial class SettingsViewModel : BaseViewModel
     public event EventHandler? SessionExpiredEvent;
 
     /// <summary>
-    /// Copiar token al portapapeles
-    /// </summary>
-    [RelayCommand]
-    public async Task CopyApiTokenAsync()
-    {
-        try
-        {
-            await Clipboard.Default.SetTextAsync(ApiToken);
-            _logger.LogInformation("[SettingsViewModel-CopyApiTokenAsync] API Token copied to clipboard");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[SettingsViewModel-CopyApiTokenAsync] Error copying token: {Message}", ex.Message);
-        }
-    }
-
-    /// <summary>
-    /// Copiar SQL Token al portapapeles
-    /// </summary>
-    [RelayCommand]
-    public async Task CopySqlTokenAsync()
-    {
-        try
-        {
-            await Clipboard.Default.SetTextAsync(SqlToken);
-            _logger.LogInformation("[SettingsViewModel-CopySqlTokenAsync] SQL Token copied to clipboard");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[SettingsViewModel-CopySqlTokenAsync] Error copying token: {Message}", ex.Message);
-        }
-    }
-
-    /// <summary>
     /// Limpiar recursos cuando se destruye el ViewModel
     /// </summary>
     //public void Cleanup()

@@ -8,7 +8,7 @@
     Title="Password Manager">
 
     <Shell.ToolbarItems>
-        <ToolbarItem x:Name="Logout" Text="Logout" Clicked="OnLogoutClicked" />
+        <ToolbarItem x:Name="Logout" Text="Logout" Clicked="OnLogoutClicked"/>
     </Shell.ToolbarItems>
     
     <TabBar>

@@ -5,40 +5,65 @@
              Title="Login"
              Padding="20">
 
-    <VerticalStackLayout Spacing="20" VerticalOptions="Center">
-
-        <!-- Header -->
-        <Label Text="🔐 Password Manager" 
+    <Grid RowDefinitions="*,*">
+        <VerticalStackLayout
+            Grid.Row="0"
+            Spacing="20" 
+            MinimumWidthRequest="300"
+            HorizontalOptions="Center"
+            VerticalOptions="Center">
+            
+            <!-- Header -->
+            <Label Text="🔐 Inicia Sesión" 
                FontSize="28" 
                FontAttributes="Bold" 
                HorizontalOptions="Center"/>
 
-        <!-- Email -->
-        <Entry Placeholder="Email" 
+            <!-- Email -->
+            <Entry Placeholder="Email" 
                Text="{Binding Email}" 
                Keyboard="Email"
                ClearButtonVisibility="WhileEditing"/>
 
-        <!-- Password -->
-        <Entry Placeholder="Password" 
+            <!-- Password -->
+            <Entry Placeholder="Password" 
                Text="{Binding Password}" 
                IsPassword="True"/>
 
-        <!-- Error/Message -->
-        <Label Text="{Binding Message}" 
-               HorizontalOptions="Center"
-               IsVisible="{Binding Message, Converter={StaticResource StringNotEmptyToBoolConverter}}"/>
+            <!-- Error/Message -->
+            <Label 
+                Text="{Binding Message}" 
+                HorizontalOptions="Center"
+                IsVisible="{Binding Message, Converter={StaticResource StringNotEmptyToBoolConverter}}"/>
 
-        <!-- Login Button -->
-        <Button Text="Login" 
+            <!-- Login Button -->
+            <Button Text="Inicia Sesión" 
                 Command="{Binding LoginCommand}"
                 IsEnabled="{Binding IsFormValid}"/>
 
-        <!-- Loading Indicator -->
-        <ActivityIndicator IsRunning="{Binding IsLoading}"
-                          IsVisible="{Binding IsLoading}"
-                          HorizontalOptions="Center"/>
+            <Button 
+                Text="Registrarse"
+                BackgroundColor="Gray"/>
 
-    </VerticalStackLayout>
+            <!-- Loading Indicator -->
+            <ActivityIndicator 
+                IsRunning="{Binding IsLoading}"
+                IsVisible="{Binding IsLoading}"
+                HorizontalOptions="Center"/>
+        </VerticalStackLayout>
+        <VerticalStackLayout
+            Grid.Row="1"
+            HorizontalOptions="Center"
+            VerticalOptions="Center">
+
+            <ImageButton
+                WidthRequest="100"
+                HeightRequest="100"
+                CornerRadius="50"
+                Padding="10"
+                BackgroundColor="{AppThemeBinding Light=Gray, Dark=Transparent}"
+                Source="icon_finger_print.png"/>
+        </VerticalStackLayout>
+    </Grid>
 
 </ContentPage>

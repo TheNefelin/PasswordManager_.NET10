@@ -1,5 +1,5 @@
 ﻿using PasswordManager_.NET10.Models;
-using PasswordManager_.NET10.ViewModels;
+using PasswordManager_.NET10.Services.Interfaces;
 using System.Security.Cryptography;
 using System.Text;
 

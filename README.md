@@ -1,15 +1,18 @@
 ﻿# Password Manager .NET 10
 
 ### Dependency
-- CommunityToolkit.Mvvm 8.4.0
 - CommunityToolkit.Maui 13.0.0
+- CommunityToolkit.Mvvm 8.4.0
+- Microsoft.Extensions.Logging.Debug 10.0.1
+- Microsoft.Maui.Controls 10.0.1
+- Microsoft.NET.ILLink.Tasks 10.0.1
+- Plugin.Maui.Biometric 0.1.0
 
 ### Structure
 ```
 PasswordManager_.NET10/
 │
 ├── 📁 Behaviors/
-│   ├── Common/
 │   └── PasswordDetails/
 │       └── MenuAnimationBehavior.cs
 │
@@ -46,6 +49,7 @@ PasswordManager_.NET10/
 │   │   ├── ApiService.cs
 │   │   ├── AuthService.cs
 │   │   ├── CoreDataService.cs
+│   │   ├── EncryptionService.cs
 │   │   ├── SecureStorageService.cs
 │   │   └── ThemeService.cs
 │   │
@@ -53,6 +57,7 @@ PasswordManager_.NET10/
 │       ├── IApiService.cs
 │       ├── IAuthService.cs
 │       ├── ICoreDataService.cs
+│       ├── IEncryptionService.cs
 │       ├── ISecureStorageService.cs
 │       └── IThemeService.cs
 │
@@ -60,6 +65,7 @@ PasswordManager_.NET10/
 │   ├── BaseViewModel.cs
 │   ├── LoginViewModel.cs
 │   ├── PasswordDetailsViewModel.cs
+│   ├── PasswordFormViewModel.cs
 │   ├── SettingsViewModel.cs
 │   └── TestingViewModel.cs
 │
@@ -72,6 +78,8 @@ PasswordManager_.NET10/
 │   │
 │   └── Main/
 │       ├── PasswordDetailsPage.xaml
+│       ├── PasswordFormPage.xaml
+│       ├── PasswordPromptPage.xaml
 │       └── SettingsPage.xaml
 │
 ├── 📁 Extensions/

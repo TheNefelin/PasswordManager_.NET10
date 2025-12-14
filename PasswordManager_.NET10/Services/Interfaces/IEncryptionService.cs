@@ -1,9 +1,7 @@
 ﻿using PasswordManager_.NET10.Models;
 
-namespace PasswordManager_.NET10.ViewModels;
+namespace PasswordManager_.NET10.Services.Interfaces;
 
-// ==================== INTERFAZ ====================
-// IEncryptionService.cs
 public interface IEncryptionService
 {
     /// <summary>

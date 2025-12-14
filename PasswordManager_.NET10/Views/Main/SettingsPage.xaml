@@ -5,10 +5,10 @@
              Title="Settings">
 
     <!-- Grid principal con overlay de loading -->
-    <Grid RowDefinitions="*" Padding="20">
+    <Grid RowDefinitions="*">
 
         <!-- Contenido principal (ScrollView) -->
-        <ScrollView Grid.Row="0">
+        <ScrollView Grid.Row="0" Padding="20">
             <VerticalStackLayout Spacing="20">
 
                 <!-- INFORMACIÓN DE SESIÓN -->
@@ -28,17 +28,10 @@
                     <!-- User ID -->
                     <VerticalStackLayout Spacing="5">
                         <Label Text="ID Usuario:" FontSize="12" Opacity="0.7"/>
-                        <Grid ColumnDefinitions="*,50" ColumnSpacing="10">
-                            <Entry Grid.Column="0"
-                                   Text="{Binding UserId}"
-                                   IsReadOnly="True"
-                                   FontSize="12"/>
-                            <Button Grid.Column="1"
-                                    Text="📋"
-                                    Command="{Binding CopyApiTokenCommand}"
-                                    FontSize="16"
-                                    Padding="5"/>
-                        </Grid>
+                        <Entry Grid.Column="0"
+                            Text="{Binding UserId}"
+                            IsReadOnly="True"
+                            FontSize="12"/>
                     </VerticalStackLayout>
 
                     <!-- Role -->
@@ -88,35 +81,21 @@
                     <!-- API Token -->
                     <VerticalStackLayout Spacing="5">
                         <Label Text="API Token:" FontSize="12" Opacity="0.7"/>
-                        <Grid ColumnDefinitions="*,50" ColumnSpacing="10">
-                            <Entry Grid.Column="0"
-                                   Text="{Binding ApiToken}"
-                                   IsReadOnly="True"
-                                   FontSize="10"
-                                   FontFamily="Courier"/>
-                            <Button Grid.Column="1"
-                                    Text="📋"
-                                    Command="{Binding CopyApiTokenCommand}"
-                                    FontSize="16"
-                                    Padding="5"/>
-                        </Grid>
+                        <Editor Grid.Column="0"
+                            Text="{Binding ApiToken}"
+                            IsReadOnly="True"
+                            FontSize="10"
+                            FontFamily="Courier"/>
                     </VerticalStackLayout>
 
                     <!-- SQL Token -->
                     <VerticalStackLayout Spacing="5">
                         <Label Text="SQL Token:" FontSize="12" Opacity="0.7"/>
-                        <Grid ColumnDefinitions="*,50" ColumnSpacing="10">
-                            <Entry Grid.Column="0"
-                                   Text="{Binding SqlToken}"
-                                   IsReadOnly="True"
-                                   FontSize="10"
-                                   FontFamily="Courier"/>
-                            <Button Grid.Column="1"
-                                    Text="📋"
-                                    Command="{Binding CopySqlTokenCommand}"
-                                    FontSize="16"
-                                    Padding="5"/>
-                        </Grid>
+                        <Entry
+                            Text="{Binding SqlToken}"
+                            IsReadOnly="True"
+                            FontSize="10"
+                            FontFamily="Courier"/>
                     </VerticalStackLayout>
 
                 </VerticalStackLayout>

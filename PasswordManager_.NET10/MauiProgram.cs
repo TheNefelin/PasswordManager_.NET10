@@ -6,6 +6,7 @@ using PasswordManager_.NET10.ViewModels;
 using PasswordManager_.NET10.Views.Authentication;
 using PasswordManager_.NET10.Views.Components;
 using PasswordManager_.NET10.Views.Main;
+using Plugin.Maui.Biometric;
 
 namespace PasswordManager_.NET10;
 
@@ -65,6 +66,9 @@ public static class MauiProgram
         builder.Services
             .AddSingleton<TestingViewModel>()
             .AddTransient<TestingPage>();
+
+        // Biometría del plugin
+        builder.Services.AddSingleton<IBiometric>(BiometricAuthenticationService.Default);
 
         return builder;
     }
