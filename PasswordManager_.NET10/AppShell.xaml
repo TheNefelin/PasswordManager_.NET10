@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Shell
+    x:Class="PasswordManager_.NET10.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:views="clr-namespace:PasswordManager_.NET10.Views.Main"
+    xmlns:components="clr-namespace:PasswordManager_.NET10.Views.Components"
+    Title="Password Manager">
+
+    <Shell.ToolbarItems>
+        <ToolbarItem x:Name="Logout" Text="Logout" Clicked="OnLogoutClicked" />
+    </Shell.ToolbarItems>
+    
+    <TabBar>
+        <ShellContent 
+            Title="Psssword"
+            Icon="icon_book_512.png"
+            ContentTemplate="{DataTemplate views:PasswordDetailsPage}"
+            Route="psssword" />
+
+        <ShellContent 
+            Title="Testing"
+            Icon="icon_dragon_512.png"
+            ContentTemplate="{DataTemplate components:TestingPage}"
+            Route="testing" />
+
+        <ShellContent 
+            Title="Settings"
+            Icon="icon_eye_shield_512.png"
+            ContentTemplate="{DataTemplate views:SettingsPage}"
+            Route="settings" />
+    </TabBar>
+
+</Shell>

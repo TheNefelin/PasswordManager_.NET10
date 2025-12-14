@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="PasswordManager_.NET10.Views.Main.SettingsPage"
+             Title="Settings">
+
+    <!-- Grid principal con overlay de loading -->
+    <Grid RowDefinitions="*" Padding="20">
+
+        <!-- Contenido principal (ScrollView) -->
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Spacing="20">
+
+                <!-- INFORMACIÓN DE SESIÓN -->
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="INFORMACIÓN DE SESIÓN" 
+                           FontAttributes="Bold" 
+                           FontSize="16"/>
+
+                    <!-- Session Time Remaining -->
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Tiempo de sesión:" FontSize="12" Opacity="0.7"/>
+                        <Label Text="{Binding SessionTimeRemaining}"
+                               FontSize="14"
+                               FontAttributes="Bold"/>
+                    </VerticalStackLayout>
+
+                    <!-- User ID -->
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="ID Usuario:" FontSize="12" Opacity="0.7"/>
+                        <Grid ColumnDefinitions="*,50" ColumnSpacing="10">
+                            <Entry Grid.Column="0"
+                                   Text="{Binding UserId}"
+                                   IsReadOnly="True"
+                                   FontSize="12"/>
+                            <Button Grid.Column="1"
+                                    Text="📋"
+                                    Command="{Binding CopyApiTokenCommand}"
+                                    FontSize="16"
+                                    Padding="5"/>
+                        </Grid>
+                    </VerticalStackLayout>
+
+                    <!-- Role -->
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Rol:" FontSize="12" Opacity="0.7"/>
+                        <Entry Text="{Binding Role}"
+                               IsReadOnly="True"
+                               FontSize="12"/>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+
+                <!-- TEMA -->
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="TEMA" 
+                           FontAttributes="Bold" 
+                           FontSize="16"/>
+
+                    <Grid ColumnDefinitions="*,*,*" 
+                          ColumnSpacing="10">
+                        <Button Grid.Column="0"
+                                Text="🔄 Auto"
+                                Command="{Binding ChangeThemeCommand}"
+                                CommandParameter="Auto"/>
+                        <Button Grid.Column="1"
+                                Text="☀️ Light"
+                                Command="{Binding ChangeThemeCommand}"
+                                CommandParameter="Light"/>
+                        <Button Grid.Column="2"
+                                Text="🌙 Dark"
+                                Command="{Binding ChangeThemeCommand}"
+                                CommandParameter="Dark"/>
+                    </Grid>
+
+                    <Label Text="{Binding SelectedTheme, StringFormat='Tema actual: {0}'}"
+                           FontSize="12"
+                           Opacity="0.7"
+                           HorizontalOptions="Center"/>
+
+                </VerticalStackLayout>
+
+                <!-- TOKENS -->
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="TOKENS" 
+                           FontAttributes="Bold" 
+                           FontSize="16"/>
+
+                    <!-- API Token -->
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="API Token:" FontSize="12" Opacity="0.7"/>
+                        <Grid ColumnDefinitions="*,50" ColumnSpacing="10">
+                            <Entry Grid.Column="0"
+                                   Text="{Binding ApiToken}"
+                                   IsReadOnly="True"
+                                   FontSize="10"
+                                   FontFamily="Courier"/>
+                            <Button Grid.Column="1"
+                                    Text="📋"
+                                    Command="{Binding CopyApiTokenCommand}"
+                                    FontSize="16"
+                                    Padding="5"/>
+                        </Grid>
+                    </VerticalStackLayout>
+
+                    <!-- SQL Token -->
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="SQL Token:" FontSize="12" Opacity="0.7"/>
+                        <Grid ColumnDefinitions="*,50" ColumnSpacing="10">
+                            <Entry Grid.Column="0"
+                                   Text="{Binding SqlToken}"
+                                   IsReadOnly="True"
+                                   FontSize="10"
+                                   FontFamily="Courier"/>
+                            <Button Grid.Column="1"
+                                    Text="📋"
+                                    Command="{Binding CopySqlTokenCommand}"
+                                    FontSize="16"
+                                    Padding="5"/>
+                        </Grid>
+                    </VerticalStackLayout>
+
+                </VerticalStackLayout>
+
+                <!-- INFORMACIÓN DE APP -->
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="INFORMACIÓN" 
+                           FontAttributes="Bold" 
+                           FontSize="16"/>
+
+                    <VerticalStackLayout Spacing="5">
+                        <Label Text="Versión:" FontSize="12" Opacity="0.7"/>
+                        <Label Text="{Binding AppVersion}" FontSize="12"/>
+                    </VerticalStackLayout>
+
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Loading Overlay (encima del contenido) -->
+        <VerticalStackLayout Grid.Row="0"
+                            IsVisible="{Binding IsLoading}"
+                            Spacing="20"
+                            VerticalOptions="Center"
+                            HorizontalOptions="Center"
+                            BackgroundColor="#80000000"
+                            Padding="20">
+            <ActivityIndicator IsRunning="{Binding IsLoading}"
+                              IsVisible="{Binding IsLoading}"
+                              Scale="1.5"/>
+            <Label Text="Cargando información..." 
+                   HorizontalOptions="Center"
+                   FontSize="14"/>
+        </VerticalStackLayout>
+
+    </Grid>
+
+</ContentPage>

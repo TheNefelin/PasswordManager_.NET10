@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="PasswordManager_.NET10.Views.Components.TestingPage"
+             Title="TestingPage">
+
+    <ScrollView Padding="20">
+        <VerticalStackLayout Spacing="20" VerticalOptions="Center">
+
+            <!-- Botón de prueba -->
+            <Button 
+                Text="🚀 Execute Fetch Test"  
+                FontSize="18"
+                HorizontalOptions="Center"
+                Command="{Binding ExecuteFetchCommand}"
+                IsEnabled="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}"/>
+
+            <!-- Loading indicator -->
+            <ActivityIndicator 
+                IsRunning="{Binding IsLoading}"
+                IsVisible="{Binding IsLoading}"
+                Scale="1.5"
+                HorizontalOptions="Center"/>
+
+            <!-- Resultado -->
+            <Border Padding="15"
+                   StrokeShape="RoundRectangle 10">
+                <Label 
+                    Text="{Binding ResultText}" 
+                    FontSize="14"
+                    LineBreakMode="WordWrap"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"/>
+            </Border>
+            
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
