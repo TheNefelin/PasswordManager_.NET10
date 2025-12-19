@@ -14,6 +14,7 @@ public partial class PasswordDetailsViewModel : BaseViewModel
     private readonly ILogger<PasswordDetailsViewModel> _logger;
     private readonly ICoreDataService _coreDataService;
     private readonly IEncryptionService _encryptionService;
+    private readonly IServiceProvider _serviceProvider;
     private CancellationTokenSource? _searchCancellationTokenSource;
     private const int SEARCH_DEBOUNCE_MS = 300;
 
@@ -41,11 +42,13 @@ public partial class PasswordDetailsViewModel : BaseViewModel
     public PasswordDetailsViewModel(
         ILogger<PasswordDetailsViewModel> logger,
         ICoreDataService coreDataService,
-        IEncryptionService encryptionService)
+        IEncryptionService encryptionService,
+        IServiceProvider serviceProvider)
     {
         _logger = logger;
         _coreDataService = coreDataService;
         _encryptionService = encryptionService;
+        _serviceProvider = serviceProvider;
 
         Title = "Password Details";
 
@@ -230,6 +233,27 @@ public partial class PasswordDetailsViewModel : BaseViewModel
         return await tcs.Task;
     }
 
+    [RelayCommand]
+    public async Task PromptNewEncryptionKey()
+    {
+        try
+        {
+            var page = _serviceProvider.GetRequiredService<PasswordPromptCreatePage>();
+            _ = Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(page);
+
+            IsLoading = true;
+        }
+        catch (Exception ex)
+        {
+            await Application.Current!.Windows[0].Page!.DisplayAlertAsync("Error", ex.Message, "OK");
+        }
+        finally
+        {
+            ToggleMenu();
+            IsLoading = false;
+        }
+    }
+
     public override void Cleanup()
     {
         _searchCancellationTokenSource?.Cancel();
@@ -238,7 +262,7 @@ public partial class PasswordDetailsViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    public async Task CreatePassword()
+    public async Task CreateSecret()
     {
         var viewModel = new PasswordFormViewModel(_logger, _coreDataService, _encryptionService);
         viewModel.InitializeCreate(Guid.Empty);
