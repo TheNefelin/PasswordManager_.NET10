@@ -9,4 +9,18 @@ public partial class LoginPage : ContentPage
 		InitializeComponent();
         BindingContext = viewModel;
     }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+
+        // Ejecutar validación de biometría cuando la página aparece
+        if (BindingContext is LoginViewModel vm)
+        {
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                await vm.ValidateBiometricAsync();
+            });
+        }
+    }
 }

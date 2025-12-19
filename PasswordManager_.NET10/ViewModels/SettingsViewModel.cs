@@ -10,6 +10,7 @@ public partial class SettingsViewModel : BaseViewModel
     private readonly ILogger<SettingsViewModel> _logger;
     private readonly IAuthService _authService;
     private readonly IThemeService _themeService;
+    private readonly IBiometricService _biometricService;
     private System.Timers.Timer _sessionTimer;
     private int _secondsRemaining;
 
@@ -35,6 +36,12 @@ public partial class SettingsViewModel : BaseViewModel
     private bool isSessionExpired = false;
 
     [ObservableProperty]
+    private bool isBiometricEnabled = false;
+
+    [ObservableProperty]
+    private bool isBiometricAvailable;
+
+    [ObservableProperty]
     private string appVersion = "1.0.0";
 
     [ObservableProperty]
@@ -45,17 +52,19 @@ public partial class SettingsViewModel : BaseViewModel
     public SettingsViewModel(
         ILogger<SettingsViewModel> logger,
         IAuthService authService,
-        IThemeService themeService)
+        IThemeService themeService,
+        IBiometricService biometricService  )
     {
         _logger = logger;
         _authService = authService;
         _themeService = themeService;
 
         Title = "Settings";
+        _biometricService = biometricService;
     }
 
     /// <summary>
-    /// Cargar datos de la sesión actual
+    /// Cargar datos de la sesión actual y estado de biometría
     /// </summary>
     public async Task LoadSessionDataAsync()
     {
@@ -90,6 +99,9 @@ public partial class SettingsViewModel : BaseViewModel
                 _logger.LogInformation("[SettingsViewModel-LoadSessionDataAsync] Session data loaded successfully");
 
                 SelectedTheme = await _themeService.GetThemeAsync();
+
+                // Cargar estado de biometría
+                await LoadBiometricStatusAsync();
             }
         }
         catch (Exception ex)
@@ -198,6 +210,49 @@ public partial class SettingsViewModel : BaseViewModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "[SettingsViewModel-ChangeThemeAsync] Error changing theme: {Message}", ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Cargar estado de biometría disponible y habilitado
+    /// </summary>
+    private async Task LoadBiometricStatusAsync()
+    {
+        try
+        {
+            _logger.LogInformation("[SettingsViewModel-LoadBiometricStatusAsync] Loading biometric status");
+
+            IsBiometricAvailable = await _biometricService.IsBiometricAvailableAsync();
+            IsBiometricEnabled = await _biometricService.IsBiometricEnabledAsync();
+
+            _logger.LogInformation("[SettingsViewModel-LoadBiometricStatusAsync] Biometric - Available: {Available}, Enabled: {Enabled}",
+                IsBiometricAvailable, IsBiometricEnabled);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[SettingsViewModel-LoadBiometricStatusAsync] Error loading biometric status");
+            IsBiometricAvailable = false;
+            IsBiometricEnabled = false;
+        }
+    }
+
+    /// <summary>
+    /// Toggle de biometría
+    /// </summary>
+    [RelayCommand]
+    public async Task ToggleBiometricAsync()
+    {
+        try
+        {
+            _logger.LogInformation("[SettingsViewModel-ToggleBiometricAsync] Toggling biometric. Current state: {CurrentState}", IsBiometricEnabled);
+
+            await _biometricService.EnableBiometricAsync(IsBiometricEnabled);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[SettingsViewModel-ToggleBiometricAsync] Error toggling biometric: {Message}", ex.Message);
+            IsBiometricAvailable = false;
+            IsBiometricEnabled = false;
         }
     }
 }

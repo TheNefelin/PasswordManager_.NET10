@@ -13,11 +13,13 @@ public class SecureStorageService : ISecureStorageService
     private readonly ILogger<SecureStorageService> _logger;
 
     private const string KEY_USER_ID = "UserId";
+    private const string KEY_EMAIL = "Email";
     private const string KEY_SQL_TOKEN = "SqlToken";
     private const string KEY_ROLE = "Role";
     private const string KEY_EXPIRE_MIN = "ExpireMin";
     private const string KEY_API_TOKEN = "ApiToken";
     private const string KEY_EXPIRATION_TIME = "ExpirationTime";
+    private const string KEY_BIOMETRICS_ENABLED = "BiometricsEnabled";
 
     public SecureStorageService(ILogger<SecureStorageService> logger)
     {
@@ -37,6 +39,7 @@ public class SecureStorageService : ISecureStorageService
             }
 
             await SecureStorage.SetAsync(KEY_USER_ID, sessionData.UserId ?? string.Empty);
+            await SecureStorage.SetAsync(KEY_EMAIL, sessionData.Email ?? string.Empty);
             await SecureStorage.SetAsync(KEY_SQL_TOKEN, sessionData.SqlToken ?? string.Empty);
             await SecureStorage.SetAsync(KEY_ROLE, sessionData.Role ?? string.Empty);
             await SecureStorage.SetAsync(KEY_EXPIRE_MIN, sessionData.ExpireMin ?? string.Empty);
@@ -100,6 +103,21 @@ public class SecureStorageService : ISecureStorageService
         catch (Exception ex)
         {
             _logger.LogError(ex, "[SecureStorageService-GetUserIdAsync] Error retrieving user ID: {ExceptionType} - {Message}", ex.GetType().Name, ex.Message);
+            return null;
+        }
+    }
+
+    public async Task<string?> GetEmailAsync()
+    {
+        try
+        {
+            var email = await SecureStorage.GetAsync(KEY_EMAIL);
+            _logger.LogDebug("[SecureStorageService-GetEmailAsync] Email retrieved successfully");
+            return email;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[SecureStorageService-GetEmailAsync] Error retrieving email: {ExceptionType} - {Message}", ex.GetType().Name, ex.Message);
             return null;
         }
     }
@@ -257,5 +275,16 @@ public class SecureStorageService : ISecureStorageService
             _logger.LogError(ex, "[SecureStorageService-IsAuthenticatedAsync] Error checking authentication: {ExceptionType} - {Message}", ex.GetType().Name, ex.Message);
             return false;
         }
+    }
+
+    public async Task SetBiometricsEnabledAsync(bool isEnabled)
+    {
+       await SecureStorage.SetAsync(KEY_BIOMETRICS_ENABLED, isEnabled.ToString());
+    }
+
+    public async Task<bool> IsBiometricsEnabledAsync()
+    {
+        var enabledStr = await SecureStorage.GetAsync(KEY_BIOMETRICS_ENABLED);
+        return bool.TryParse(enabledStr, out var isEnabled) && isEnabled;
     }
 }

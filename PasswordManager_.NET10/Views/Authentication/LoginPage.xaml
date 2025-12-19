@@ -5,12 +5,10 @@
              Title="Login"
              Padding="20">
 
-    <Grid RowDefinitions="*,*">
+    <Grid RowDefinitions="*,auto,*" Padding="20">
         <VerticalStackLayout
             Grid.Row="0"
-            Spacing="20" 
-            MinimumWidthRequest="300"
-            HorizontalOptions="Center"
+            Spacing="20"
             VerticalOptions="Center">
             
             <!-- Header -->
@@ -42,21 +40,27 @@
                 IsEnabled="{Binding IsFormValid}"/>
 
             <Button 
+                Command="{Binding GoToRegisterCommand}"
                 Text="Registrarse"
                 BackgroundColor="Gray"/>
-
-            <!-- Loading Indicator -->
-            <ActivityIndicator 
-                IsRunning="{Binding IsLoading}"
-                IsVisible="{Binding IsLoading}"
-                HorizontalOptions="Center"/>
         </VerticalStackLayout>
-        <VerticalStackLayout
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator
             Grid.Row="1"
+            IsRunning="{Binding IsLoading}"
+            IsVisible="{Binding IsLoading}"
+            HorizontalOptions="Center"/>
+
+        <VerticalStackLayout
+            Grid.Row="2"
             HorizontalOptions="Center"
             VerticalOptions="Center">
 
+            <!-- Biometric button -->
             <ImageButton
+                IsVisible="{Binding IsBiometricEnabled}"
+                Command="{Binding LoginByBiometricCommand}"
                 WidthRequest="100"
                 HeightRequest="100"
                 CornerRadius="50"

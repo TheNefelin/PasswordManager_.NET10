@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using FreakyKit.Utils;
+using Microsoft.Extensions.Logging;
 using PasswordManager_.NET10.Services.Interfaces;
 using PasswordManager_.NET10.ViewModels;
 using PasswordManager_.NET10.Views.Authentication;
@@ -89,13 +90,18 @@ public partial class AppShell : Shell
             // Cleanup de SettingsViewModel
             _settingsViewModel.Cleanup();
 
+            var loginPage = _serviceProvider.GetRequiredService<LoginPage>();
+
+            // En MAUI, Application.Current.MainPage es la clave
+            Application.Current!.MainPage = loginPage;
+
             // Navegar a LoginPage
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                var loginPage = _serviceProvider.GetRequiredService<LoginPage>();
-                Application.Current!.Windows[0].Page = new NavigationPage(loginPage);
-                _logger.LogInformation("[AppShell-PerformLogout] Navigated to LoginPage");
-            });
+            //MainThread.BeginInvokeOnMainThread(() =>
+            //{
+            //    var loginPage = _serviceProvider.GetRequiredService<LoginPage>();
+            //    Application.Current!.Windows[0].Page = new NavigationPage(loginPage);
+            //    _logger.LogInformation("[AppShell-PerformLogout] Navigated to LoginPage");
+            //});
         }
         catch (Exception ex)
         {

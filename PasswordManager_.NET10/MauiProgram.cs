@@ -40,6 +40,7 @@ public static class MauiProgram
         // Servicios
         builder.Services
             .AddSingleton<HttpClient>()
+            .AddSingleton<IBiometricService, BiometricService>()
             .AddSingleton<ISecureStorageService, SecureStorageService>()
             .AddSingleton<IThemeService, ThemeService>()
             .AddSingleton<IEncryptionService, EncryptionService>()
@@ -49,6 +50,7 @@ public static class MauiProgram
 
         // ViewModels (Singleton para screens principales)
         builder.Services
+            .AddSingleton<RegisterViewModel>()
             .AddSingleton<LoginViewModel>()
             .AddSingleton<SettingsViewModel>()
             .AddSingleton<PasswordDetailsViewModel>()
@@ -57,6 +59,7 @@ public static class MauiProgram
         // Views/Pages
         builder.Services
             .AddSingleton<AppShell>()
+            .AddSingleton<RegisterPage>()
             .AddSingleton<LoginPage>()
             .AddSingleton<SettingsPage>()
             .AddSingleton<PasswordDetailsPage>()

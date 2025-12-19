@@ -1,7 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
+using PasswordManager_.NET10.Messages;
 using PasswordManager_.NET10.Services.Interfaces;
+using PasswordManager_.NET10.Views.Authentication;
 using System.ComponentModel.DataAnnotations;
 
 namespace PasswordManager_.NET10.ViewModels;
@@ -11,6 +14,7 @@ public partial class LoginViewModel : BaseViewModel
     private readonly ILogger<LoginViewModel> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly IAuthService _authService;
+    private readonly IBiometricService _biometricService;
 
     [ObservableProperty]
     private string email = string.Empty;
@@ -27,16 +31,29 @@ public partial class LoginViewModel : BaseViewModel
     [ObservableProperty]
     private bool isFormValid = false;
 
+    [ObservableProperty]
+    private bool isBiometricEnabled = false;
+
     public LoginViewModel(
         ILogger<LoginViewModel> logger,
         IServiceProvider serviceProvider,
-        IAuthService authService)
+        IAuthService authService,
+        IBiometricService biometricService)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
         _authService = authService;
+        _biometricService = biometricService;
 
         Title = "Login";
+
+        WeakReferenceMessenger.Default.Register<RegistrationCompletedMessage>(this,
+        (recipient, message) =>
+        {
+            _logger.LogInformation("[LoginViewModel] Received registration email: {Email}", message.Email);
+            Email = message.Email;
+            Message = "Registro exitoso. Ingresa tu contraseña para continuar.";
+        });
     }
 
     /// <summary>
@@ -150,5 +167,54 @@ public partial class LoginViewModel : BaseViewModel
         }
 
         return true;
+    }
+    
+    public async Task ValidateBiometricAsync()
+    {
+        try
+        {
+            IsBiometricEnabled = await _biometricService.IsBiometricEnabledAsync();
+            _logger.LogInformation("[LoginViewModel-ValidateBiometricAsync] Biometric enabled: {Enabled}", IsBiometricEnabled);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[LoginViewModel-ValidateBiometricAsync] Error validating biometric");
+            IsBiometricEnabled = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task LoginByBiometric()
+    {
+        var email = await _biometricService.AuthenticateWithBiometricAsync();
+        if (!string.IsNullOrEmpty(email))
+        {
+            Email = email;
+            Password = string.Empty; // Clear password for security
+            //await LoginAsync();
+        }
+    }
+
+    /// <summary>
+    /// Comando para navegar a RegisterPage
+    /// </summary>
+    [RelayCommand]
+    public async Task GoToRegisterAsync()
+    {
+        try
+        {
+            _logger.LogInformation("[LoginViewModel-GoToRegisterAsync] Navigating to RegisterPage");
+
+            var registerPage = _serviceProvider.GetRequiredService<RegisterPage>();
+            await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(registerPage);
+
+            
+
+            _logger.LogInformation("[LoginViewModel-GoToRegisterAsync] RegisterPage opened");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[LoginViewModel-GoToRegisterAsync] Error navigating to RegisterPage: {Message}", ex.Message);
+        }
     }
 }

@@ -1,6 +1,4 @@
-﻿using PasswordManager_.NET10.DTOs.Request;
-using PasswordManager_.NET10.DTOs.Response;
-using PasswordManager_.NET10.Exceptions;
+﻿using PasswordManager_.NET10.Exceptions;
 using PasswordManager_.NET10.Helpers;
 using PasswordManager_.NET10.Models;
 using PasswordManager_.NET10.Services.Interfaces;
@@ -68,45 +66,6 @@ public class ApiService : IApiService
         var json = await content.ReadAsStringAsync();
         return JsonSerializer.Deserialize<ApiResponse<T>>(json, _jsonOptions)
             ?? throw new ApiException("No se pudo deserializar la respuesta");
-    }
-
-    /// <summary>
-    /// Login del usuario
-    /// </summary>
-    public async Task<ApiResponse<LoginResponse>> LoginAsync(LoginRequest request)
-    {
-        try
-        {
-            var response = await _httpClient.PostAsJsonAsync(
-                Constants.LOGIN_ENDPOINT,
-                request
-            );
-
-            var content = await DeserializeResponseAsync<LoginResponse>(response.Content);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new ApiException(
-                    content?.Message ?? "Error en login",
-                    (int)response.StatusCode,
-                    content?.Message
-                );
-            }
-
-            return content;
-        }
-        catch (HttpRequestException ex)
-        {
-            throw new ApiException($"Error de conexión: {ex.Message}", 0, ex.Message);
-        }
-        catch (ApiException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            throw new ApiException($"Error inesperado: {ex.Message}", 0, ex.Message);
-        }
     }
 
     /// <summary>

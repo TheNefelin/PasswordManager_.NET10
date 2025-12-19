@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using PasswordManager_.NET10.DTOs.Request;
+using PasswordManager_.NET10.DTOs.Response;
+using PasswordManager_.NET10.Helpers;
 using PasswordManager_.NET10.Models;
 using PasswordManager_.NET10.Services.Interfaces;
 
@@ -22,6 +24,38 @@ public class AuthService : IAuthService
         _secureStorageService = secureStorageService;
     }
 
+    public async Task<bool> RegisterAsync(string email, string password, string confirmPassword)
+    {
+        try
+        {
+            _logger.LogInformation("[AuthService-RegisterAsync] Attempting registration for email: {Email}", email);
+
+            var registerRequest = new RegisterRequest
+            {
+                Email = email,
+                Password1 = password,
+                Password2 = confirmPassword
+            };
+
+            var response = await _apiService.PostAsync<RegisterResponse>(Constants.REGISTER_ENDPOINT, registerRequest);
+
+            if (!response.IsSuccess)
+            {
+                _logger.LogWarning("[AuthService-RegisterAsync] Registration failed: {Message}", response.Message);
+                throw new Exception($"Failed to register user. StatusCode: {response.StatusCode}, Message: {response.Message}");
+            }
+
+            _logger.LogInformation("[AuthService-RegisterAsync] Registration successful for email: {Email}", email);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[AuthService-LoginAsync] Login error: {ExceptionType} - {Message}",
+                ex.GetType().Name, ex.Message);
+            throw;
+        }
+    }
+
     /// <summary>
     /// Login del usuario
     /// </summary>
@@ -37,12 +71,12 @@ public class AuthService : IAuthService
                 Password = password
             };
 
-            var response = await _apiService.LoginAsync(loginRequest);
+            var response = await _apiService.PostAsync<LoginResponse>(Constants.LOGIN_ENDPOINT, loginRequest);
 
             if (!response.IsSuccess || response.Data == null)
             {
                 _logger.LogWarning("[AuthService-LoginAsync] Login failed: {Message}", response.Message);
-                throw new Exception(response.Message ?? "Error en login");
+                throw new Exception($"Failed to register core password. StatusCode: {response.StatusCode}, Message: {response.Message}");
             }
 
             var expirationTime = DateTime.UtcNow.AddMinutes(int.Parse(response.Data.ExpireMin));
@@ -63,6 +97,7 @@ public class AuthService : IAuthService
             var sessionData = new SessionData
             {
                 UserId = user.UserId.ToString(),
+                Email = email,
                 SqlToken = user.SqlToken,
                 Role = user.Role,
                 ExpireMin = response.Data.ExpireMin,
