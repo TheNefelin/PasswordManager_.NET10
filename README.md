@@ -17,9 +17,9 @@ Bienvenido a **Password Manager**, tu aplicación segura para guardar y gestiona
 3. Haz clic en "Registrarse"
 4. Tu email se cargará automáticamente en LoginPage
 
-<div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-  <img src="img/doc01.jpg" alt="doc01" width="300"/>
-  <img src="img/doc02.jpg" alt="doc02" width="300"/>
+<div align="center">
+  <img src="img/doc01.jpg" alt="doc01" width="250"/>
+  <img src="img/doc02.jpg" alt="doc02" width="250"/>
 </div>
 
 ### Iniciar Sesión
@@ -29,7 +29,9 @@ Bienvenido a **Password Manager**, tu aplicación segura para guardar y gestiona
 3. Haz clic en "Inicia Sesión"
 4. Si tienes biometría, puedes usar la huella
 
-**[Ver imagen: doc03.jpg]**
+<div align="center">
+  <img src="img/doc03.jpg" alt="doc03" width="250"/>
+</div>
 
 ---
 
@@ -46,7 +48,11 @@ Bienvenido a **Password Manager**, tu aplicación segura para guardar y gestiona
 **❌ Sin esta contraseña, NO podrás acceder a tus secretos**
 **❌ No la olvides, es tu clave maestra**
 
-**[Ver imágenes: doc04.jpg, doc05.jpg, doc06.jpg]**
+<div align="center">
+  <img src="img/doc05.jpg" alt="doc04" width="250"/>
+  <img src="img/doc05.jpg" alt="doc05" width="250"/>
+  <img src="img/doc06.jpg" alt="doc06" width="250"/>
+</div>
 
 ---
 
