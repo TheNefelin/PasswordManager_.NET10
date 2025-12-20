@@ -73,6 +73,14 @@ public partial class PasswordDetailsViewModel : BaseViewModel
 
     // ==================== BUSINESS LOGIC COMMANDS ====================
     // Comandos que cargan/modifican datos
+
+    [RelayCommand]
+    public void ClearPasswords()
+    {
+        DisplayedPasswordItems.Clear();
+        passwordItems.Clear();
+    }
+
     [RelayCommand]
     public async Task DownloadPasswords()
     {

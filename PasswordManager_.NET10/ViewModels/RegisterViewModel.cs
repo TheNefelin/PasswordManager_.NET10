@@ -28,6 +28,9 @@ public partial class RegisterViewModel : BaseViewModel
     [ObservableProperty]
     string message = string.Empty;
 
+    [ObservableProperty]
+    bool isPassword = true;
+
     public RegisterViewModel(
         ILogger<RegisterViewModel> logger,
         IAuthService authService)
@@ -135,6 +138,12 @@ public partial class RegisterViewModel : BaseViewModel
         }
 
         return true;
+    }
+
+    [RelayCommand]
+    public void ToggleIsPassword()
+    {
+        IsPassword = !IsPassword;
     }
 
     private void ClearField()

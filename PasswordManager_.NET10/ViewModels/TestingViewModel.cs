@@ -57,7 +57,7 @@ public partial class TestingViewModel : BaseViewModel
             ResultText = "";
             foreach (CoreSecretData item in result)
             {
-                ResultText = ResultText + $"Id: {item.Data_Id.ToString()} - Data01: {item.Data01.ToString()}\n";
+                ResultText = ResultText + $"Id: {item.Data_Id} - Data01: {item.Data01}\n";
             }
 
             _logger.LogInformation("[TestingViewModel-ExecuteFetchAsync] Fetch completed successfully");

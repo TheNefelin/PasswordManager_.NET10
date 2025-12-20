@@ -34,6 +34,9 @@ public partial class LoginViewModel : BaseViewModel
     [ObservableProperty]
     private bool isBiometricEnabled = false;
 
+    [ObservableProperty]
+    bool isPassword = true;
+
     public LoginViewModel(
         ILogger<LoginViewModel> logger,
         IServiceProvider serviceProvider,
@@ -211,6 +214,25 @@ public partial class LoginViewModel : BaseViewModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "[LoginViewModel-GoToRegisterAsync] Error navigating to RegisterPage: {Message}", ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    public void ToggleIsPassword()
+    {
+        IsPassword = !IsPassword;
+    }
+
+    [RelayCommand]
+    public async Task OpenUrl(string url)
+    {
+        try
+        {
+            await Launcher.Default.OpenAsync(new Uri(url));
+        }
+        catch (Exception ex)
+        {
+
         }
     }
 }

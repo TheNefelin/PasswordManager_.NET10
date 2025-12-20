@@ -19,9 +19,20 @@
                ClearButtonVisibility="WhileEditing"/>
 
         <!-- Password -->
-        <Entry Placeholder="Contraseña" 
-               Text="{Binding Password}" 
-               IsPassword="True"/>
+        <Grid ColumnDefinitions="*,auto" ColumnSpacing="10">
+            <Entry 
+                Grid.Column="0"
+                Placeholder="Contraseña" 
+                Text="{Binding Password}" 
+                IsPassword="{Binding IsPassword}"/>
+
+            <Button 
+                Grid.Column="1"
+                Text="Ver"
+                ImageSource="icon_eye_lock_open_512.png"
+                HeightRequest="50"
+                Command="{Binding ToggleIsPasswordCommand}"/>
+        </Grid>
 
         <!-- Confirm Password -->
         <Entry Placeholder="Confirmar Contraseña" 

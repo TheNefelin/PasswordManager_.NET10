@@ -85,7 +85,7 @@
 
                 <!-- 2. Contraseña de Encriptación -->
                 <VerticalStackLayout Spacing="5">
-                    <Label Text="2️⃣ Configurar Contraseña de Encriptación (VITAL)" 
+                    <Label Text="2️⃣ Configurar Clave de Encriptación (VITAL)" 
                            FontSize="16" 
                            FontAttributes="Bold"
                            TextColor="Red"/>
@@ -96,10 +96,10 @@
 
                     <Label FontSize="12" Opacity="0.8" Text="1. Ve a Password Details"/>
                     <Label FontSize="12" Opacity="0.8" Text="2. Abre el menú (icono hamburguesa)"/>
-                    <Label FontSize="12" Opacity="0.8" Text="3. Selecciona 'Nueva clave encriptación'"/>
-                    <Label FontSize="12" Opacity="0.8" Text="4. Ingresa y confirma tu contraseña (mínimo 6 caracteres)"/>
+                    <Label FontSize="12" Opacity="0.8" Text="3. Selecciona 'Clave encriptación'"/>
+                    <Label FontSize="12" Opacity="0.8" Text="4. Ingresa y confirma tu clave (mínimo 6 caracteres)"/>
                     <Label FontSize="12" Opacity="0.8" Text="5. Haz clic en 'Aceptar'"/>
-                    <Label FontSize="12" Opacity="0.8" Text="❌ Sin esta contraseña, NO podrás acceder a tus secretos"/>
+                    <Label FontSize="12" Opacity="0.8" Text="❌ Sin esta clave, NO podrás acceder a tus secretos"/>
                     <Label FontSize="12" Opacity="0.8" Text="❌ No la olvides, es tu clave maestra"/>
 
                     <Border BackgroundColor="LightGray" Padding="10">
@@ -115,7 +115,7 @@
 
                 <!-- 3. Agregar Contraseña -->
                 <VerticalStackLayout Spacing="5">
-                    <Label Text="3️⃣ Agregar una Nueva Contraseña (Secreto)" 
+                    <Label Text="3️⃣ Agregar un Nuevo Secreto" 
                            FontSize="16" 
                            FontAttributes="Bold"/>
 
@@ -124,7 +124,7 @@
                     <Label FontSize="12" Opacity="0.8" Text="   • Nombre/Título (ej: Google, Gmail)"/>
                     <Label FontSize="12" Opacity="0.8" Text="   • Contraseña"/>
                     <Label FontSize="12" Opacity="0.8" Text="   • Usuario/Email"/>
-                    <Label FontSize="12" Opacity="0.8" Text="   • Contraseña de Encriptación"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Clave de Encriptación"/>
                     <Label FontSize="12" Opacity="0.8" Text="3. Puedes usar 'Generar' para crear una segura"/>
                     <Label FontSize="12" Opacity="0.8" Text="4. Haz clic en 'Guardar"/>
 
@@ -244,10 +244,10 @@
                     <Label FontSize="12" Opacity="0.8" Text="   • Cambiar contraseña regularmente"/>
                     <Label FontSize="12" Opacity="0.8" Text="   • Usar diferentes contraseñas por cuenta"/>
                     <Label FontSize="12" Opacity="0.8" Text="❌ NO HACER:"/>
-                    <Label FontSize="12" Opacity="0.8" Text="   • Compartir tu contraseña de encriptación"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Compartir tu clave de encriptación"/>
                     <Label FontSize="12" Opacity="0.8" Text="   • Usar la misma contraseña en múltiples cuentas"/>
                     <Label FontSize="12" Opacity="0.8" Text="   • Guardar contraseña en lugar visible"/>
-                    <Label FontSize="12" Opacity="0.8" Text="   • Olvidar tu contraseña de encriptación"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Olvidar tu clave de encriptación"/>
                     <Label FontSize="12" Opacity="0.8" Text="   • Usar passwords débiles"/>
                 </VerticalStackLayout>
 
@@ -257,13 +257,13 @@
                            FontSize="16" 
                            FontAttributes="Bold"/>
 
-                    <Label FontSize="12" Opacity="0.8" Text="1. ¿Qué paso si olvido mi contraseña de encriptación?"/>
+                    <Label FontSize="12" Opacity="0.8" Text="1. ¿Qué pasa si olvido mi contraseña de encriptación?"/>
                     <Label FontSize="12" Opacity="0.8" Text="   • Pierde la capacidad de descifrar sus secretos, se recomienda eliminarlos todos. No podemos descifrar la información, ya que desconocemos la contraseña. En el futuro: (Tendrás que crear una nueva desde el menú)"/>
                     <Label FontSize="12" Opacity="0.8" Text="2. ¿Dónde se guardan mis secretos?"/>
                     <Label FontSize="12" Opacity="0.8" Text="   • Encriptados en servidores seguros."/>
                     <Label FontSize="12" Opacity="0.8" Text="3. ¿Puedo usar sin biometría?"/>
                     <Label FontSize="12" Opacity="0.8" Text="   • Sí, ingresa tu contraseña normalmente."/>
-                    <Label FontSize="12" Opacity="0.8" Text="4. ¿Qué si pierdo mi dispositivo?"/>
+                    <Label FontSize="12" Opacity="0.8" Text="4. ¿Qué pasa si pierdo mi dispositivo?"/>
                     <Label FontSize="12" Opacity="0.8" Text="   • Inicia sesión desde otro dispositivo y descarga tus secretos."/>
                 </VerticalStackLayout>
 

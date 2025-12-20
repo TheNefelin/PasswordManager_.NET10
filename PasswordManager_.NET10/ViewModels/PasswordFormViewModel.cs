@@ -2,7 +2,6 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using PasswordManager_.NET10.Models;
-using PasswordManager_.NET10.Services.Implementation;
 using PasswordManager_.NET10.Services.Interfaces;
 
 namespace PasswordManager_.NET10.ViewModels;
@@ -28,6 +27,9 @@ public partial class PasswordFormViewModel : BaseViewModel
 
     [ObservableProperty]
     bool isPassword = true;
+
+    [ObservableProperty]
+    bool isPasswordEncrypt = true;
 
     [ObservableProperty]
     bool isLoading = false;
@@ -178,5 +180,11 @@ public partial class PasswordFormViewModel : BaseViewModel
     public void ToggleIsPassword()
     {
         IsPassword = !IsPassword;
+    }
+
+    [RelayCommand]
+    public void ToggleIsPasswordEncrypt()
+    {
+        IsPasswordEncrypt = !IsPasswordEncrypt;
     }
 }

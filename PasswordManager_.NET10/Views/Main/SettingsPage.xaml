@@ -15,7 +15,7 @@
 
                 <VerticalStackLayout Spacing="10">
                     <Label Text="GENERAL" FontAttributes="Bold" FontSize="16"/>
-                    <Button Text="❓ Ayuda" 
+                    <Button Text="❓ Manual de Usuario" 
                         Command="{Binding GoToHelpCommand}"/>
                 </VerticalStackLayout>
 
