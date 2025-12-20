@@ -145,7 +145,9 @@ En Settings, busca "TEMA" y selecciona:
 2. Confirma que deseas cerrar sesión
 3. Volverás a LoginPage
 
-**[Ver imagen: doc04.jpg]**
+<div align="center">
+  <img src="img/doc04.jpg" alt="doc04" width="250"/>
+</div>
 
 ---
 
