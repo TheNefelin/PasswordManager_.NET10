@@ -207,10 +207,6 @@ public partial class LoginViewModel : BaseViewModel
 
             var registerPage = _serviceProvider.GetRequiredService<RegisterPage>();
             await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(registerPage);
-
-            
-
-            _logger.LogInformation("[LoginViewModel-GoToRegisterAsync] RegisterPage opened");
         }
         catch (Exception ex)
         {

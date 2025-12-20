@@ -2,6 +2,8 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using PasswordManager_.NET10.Services.Interfaces;
+using PasswordManager_.NET10.Views.Authentication;
+using PasswordManager_.NET10.Views.Main;
 
 namespace PasswordManager_.NET10.ViewModels;
 
@@ -11,6 +13,7 @@ public partial class SettingsViewModel : BaseViewModel
     private readonly IAuthService _authService;
     private readonly IThemeService _themeService;
     private readonly IBiometricService _biometricService;
+    private readonly IServiceProvider _serviceProvider;
     private System.Timers.Timer _sessionTimer;
     private int _secondsRemaining;
 
@@ -53,14 +56,16 @@ public partial class SettingsViewModel : BaseViewModel
         ILogger<SettingsViewModel> logger,
         IAuthService authService,
         IThemeService themeService,
-        IBiometricService biometricService  )
+        IBiometricService biometricService,
+        IServiceProvider serviceProvider)
     {
         _logger = logger;
         _authService = authService;
         _themeService = themeService;
+        _biometricService = biometricService;
+        _serviceProvider = serviceProvider;
 
         Title = "Settings";
-        _biometricService = biometricService;
     }
 
     /// <summary>
@@ -254,5 +259,12 @@ public partial class SettingsViewModel : BaseViewModel
             IsBiometricAvailable = false;
             IsBiometricEnabled = false;
         }
+    }
+
+    [RelayCommand]
+    public async Task GoToHelpAsync()
+    {
+        var helpPage = _serviceProvider.GetRequiredService<HelpPage>();
+        await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(helpPage);
     }
 }

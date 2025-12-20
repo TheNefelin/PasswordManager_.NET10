@@ -55,7 +55,8 @@ public static class MauiProgram
             .AddSingleton<SettingsViewModel>()
             .AddSingleton<PasswordDetailsViewModel>()
             .AddSingleton<PasswordFormViewModel>()
-            .AddSingleton<PasswordPromptCreateViewModel>();
+            .AddSingleton<PasswordPromptCreateViewModel>()
+            .AddSingleton<HelpViewModel>();
 
         // Views/Pages
         builder.Services
@@ -65,7 +66,8 @@ public static class MauiProgram
             .AddSingleton<SettingsPage>()
             .AddSingleton<PasswordDetailsPage>()
             .AddSingleton<PasswordFormPage>()
-            .AddSingleton<PasswordPromptCreatePage>();
+            .AddSingleton<PasswordPromptCreatePage>()
+            .AddSingleton<HelpPage>();
 
         // Test
         builder.Services

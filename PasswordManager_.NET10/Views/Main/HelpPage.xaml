@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="PasswordManager_.NET10.Views.Main.HelpPage"
+             Title="HelpPage">
+
+    <Grid RowDefinitions="Auto,*" Padding="0">
+
+        <!-- Header -->
+        <Grid Grid.Row="0" 
+              Padding="20,15" 
+              ColumnDefinitions="*,Auto"
+              BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2F2F2F}">
+            <Label Grid.Column="0"
+                   Text="📖 Manual de Usuario"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   VerticalOptions="Center"/>
+            <Button Grid.Column="1"
+                    Text="✕"
+                    FontSize="20"
+                    Padding="10"
+                    BackgroundColor="Transparent"
+                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                    Command="{Binding CloseCommand}"/>
+        </Grid>
+
+        <!-- ScrollView con contenido -->
+        <ScrollView Grid.Row="1" Padding="20">
+            <VerticalStackLayout Spacing="15">
+
+                <!-- Introducción -->
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="Introducción" 
+                           FontSize="18" 
+                           FontAttributes="Bold"/>
+                    <Label Text="Bienvenido a Password Manager, tu aplicación segura para guardar y gestionar contraseñas con encriptación avanzada y autenticación biométrica."
+                           FontSize="14"
+                           LineBreakMode="WordWrap"
+                           Opacity="0.8"/>
+                </VerticalStackLayout>
+
+                <!-- 1. Registro e Inicio de Sesión -->
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="1️⃣ Registro e Inicio de Sesión" 
+                           FontSize="16" 
+                           FontAttributes="Bold"/>
+                    <Label Text="Crear una Cuenta"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           Margin="0,5,0,0"/>
+
+                    <Label FontSize="12" Opacity="0.8" Text="1. Abre la aplicación y haz clic en 'Registrarse'"/>
+                    <Label FontSize="12" Opacity="0.8" Text="2. Completa: Email, Contraseña, Confirmar Contraseña"/>
+                    <Label FontSize="12" Opacity="0.8" Text="3. Haz clic en 'Registrarse'"/>
+                    <Label FontSize="12" Opacity="0.8" Text="4. Tu email se cargará automáticamente en LoginPage"/>
+
+                    <Border BackgroundColor="LightGray" Padding="10">
+                        <ScrollView Orientation="Horizontal">
+                            <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
+                                <Image Source="doc01.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                                <Image Source="doc02.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                            </HorizontalStackLayout>
+                        </ScrollView>
+                    </Border>
+
+                    <Label Text="Iniciar Sesión"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           Margin="0,10,0,0"/>
+
+                    <Label FontSize="12" Opacity="0.8" Text="1. Ingresa tu email registrado"/>
+                    <Label FontSize="12" Opacity="0.8" Text="2. Ingresa tu contraseña"/>
+                    <Label FontSize="12" Opacity="0.8" Text="3. Haz clic en 'Inicia Sesión'"/>
+                    <Label FontSize="12" Opacity="0.8" Text="4. Si tienes biometría, puedes usar la huella"/>
+
+                    <Border BackgroundColor="LightGray" Padding="10">
+                        <ScrollView Orientation="Horizontal">
+                            <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
+                                <Image Source="doc03.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                            </HorizontalStackLayout>
+                        </ScrollView>
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- 2. Contraseña de Encriptación -->
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="2️⃣ Configurar Contraseña de Encriptación (VITAL)" 
+                           FontSize="16" 
+                           FontAttributes="Bold"
+                           TextColor="Red"/>
+                    <Label Text="⚠️ IMPORTANTE: Este es el primer paso que DEBES hacer"
+                           FontSize="12"
+                           FontAttributes="Bold"
+                           TextColor="Red"/>
+
+                    <Label FontSize="12" Opacity="0.8" Text="1. Ve a Password Details"/>
+                    <Label FontSize="12" Opacity="0.8" Text="2. Abre el menú (icono hamburguesa)"/>
+                    <Label FontSize="12" Opacity="0.8" Text="3. Selecciona 'Nueva clave encriptación'"/>
+                    <Label FontSize="12" Opacity="0.8" Text="4. Ingresa y confirma tu contraseña (mínimo 6 caracteres)"/>
+                    <Label FontSize="12" Opacity="0.8" Text="5. Haz clic en 'Aceptar'"/>
+                    <Label FontSize="12" Opacity="0.8" Text="❌ Sin esta contraseña, NO podrás acceder a tus secretos"/>
+                    <Label FontSize="12" Opacity="0.8" Text="❌ No la olvides, es tu clave maestra"/>
+
+                    <Border BackgroundColor="LightGray" Padding="10">
+                        <ScrollView Orientation="Horizontal">
+                            <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
+                                <Image Source="doc04.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                                <Image Source="doc05.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                                <Image Source="doc06.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                            </HorizontalStackLayout>
+                        </ScrollView>
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- 3. Agregar Contraseña -->
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="3️⃣ Agregar una Nueva Contraseña (Secreto)" 
+                           FontSize="16" 
+                           FontAttributes="Bold"/>
+
+                    <Label FontSize="12" Opacity="0.8" Text="1. En Password Details, haz clic en el botón azul (+)"/>
+                    <Label FontSize="12" Opacity="0.8" Text="2. Completa:"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Nombre/Título (ej: Google, Gmail)"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Contraseña"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Usuario/Email"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Contraseña de Encriptación"/>
+                    <Label FontSize="12" Opacity="0.8" Text="3. Puedes usar 'Generar' para crear una segura"/>
+                    <Label FontSize="12" Opacity="0.8" Text="4. Haz clic en 'Guardar"/>
+
+                    <Border BackgroundColor="LightGray" Padding="10">
+                        <ScrollView Orientation="Horizontal">
+                            <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
+                                <Image Source="doc04.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                                <Image Source="doc07.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                                <Image Source="doc08.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                            </HorizontalStackLayout>
+                        </ScrollView>
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- 4. Ver y Gestionar -->
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="4️⃣ Ver y Gestionar Secretos" 
+                           FontSize="16" 
+                           FontAttributes="Bold"/>
+
+                    <Label FontSize="12" Opacity="0.8" Text="1. Descargar secretos"/>
+                    <Label FontSize="12" Opacity="0.8" Text="2. Desencriptar secretos"/>
+                    <Label FontSize="12" Opacity="0.8" Text="3. Buscar secretos, usa la barra de búsqueda y los resultados se filtran en tiempo real"/>
+                    <Label FontSize="12" Opacity="0.8" Text="4. Ver detalles, Haz clic en cualquier secreto"/>
+                    <Label FontSize="12" Opacity="0.8" Text="5. Ver contraseña, Haz clic en el ojo (Ver)"/>
+                    <Label FontSize="12" Opacity="0.8" Text="6. Editar, abre el secreto y haz clic en 'Editar'"/>
+                    <Label FontSize="12" Opacity="0.8" Text="7. Eliminar, abre el secreto y haz clic en 'Eliminar'"/>
+
+                    <Border BackgroundColor="LightGray" Padding="10">
+                        <ScrollView Orientation="Horizontal">
+                            <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
+                                <Image Source="doc05.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                                <Image Source="doc09.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                                <Image Source="doc10.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                                <Image Source="doc11.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                                <Image Source="doc12.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                                <Image Source="doc13.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                                <Image Source="doc14.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                            </HorizontalStackLayout>
+                        </ScrollView>
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- 5. Biometría -->
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="5️⃣ Usar Biometría (Huella Dactilar)" 
+                           FontSize="16" 
+                           FontAttributes="Bold"/>
+     
+                    <Label FontSize="12" Opacity="0.8" Text="1. Ve a Settings"/>
+                    <Label FontSize="12" Opacity="0.8" Text="2. Busca 'BIOMETRÍA"/>
+                    <Label FontSize="12" Opacity="0.8" Text="3. Activa el toggle 'Huella dactilar'"/>
+                    <Label FontSize="12" Opacity="0.8" Text="4. Esta opción solo recordará tu nombre de usuario, por razones de seguridad, tu contraseña no se guarda, por lo que deberás ingresarla manualmente."/>
+
+                    <Border BackgroundColor="LightGray" Padding="10">
+                        <ScrollView Orientation="Horizontal">
+                            <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
+                                <Image Source="doc15.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                            </HorizontalStackLayout>
+                        </ScrollView>
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- 6. Tema -->
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="6️⃣ Configurar Tema" 
+                           FontSize="16" 
+                           FontAttributes="Bold"/>
+                    <Label Text="En Settings, busca 'TEMA' y selecciona:\n\n\n"
+                           FontSize="12"
+                           LineBreakMode="WordWrap"
+                           Opacity="0.8"/>
+
+                    <Label FontSize="12" Opacity="0.8" Text="1. 🔄 Auto: Se ajusta al tema del dispositivo"/>
+                    <Label FontSize="12" Opacity="0.8" Text="2. ☀️ Light: Modo claro"/>
+                    <Label FontSize="12" Opacity="0.8" Text="3. 🌙 Dark: Modo oscuro"/>
+                    
+                    <Border BackgroundColor="LightGray" Padding="10">
+                        <ScrollView Orientation="Horizontal">
+                            <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
+                                <Image Source="doc15.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                            </HorizontalStackLayout>
+                        </ScrollView>
+                    </Border>
+                </VerticalStackLayout>
+ 
+                <!-- 9. Logout -->
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="7️⃣ Cerrar Sesión" 
+                           FontSize="16" 
+                           FontAttributes="Bold"/>
+                    <Label Text="Haz clic en 'Logout' (arriba a la derecha)\nConfirma que deseas cerrar sesión\nVolverás a LoginPage"
+                           FontSize="12"
+                           LineBreakMode="WordWrap"
+                           Opacity="0.8"/>
+
+                    <Border BackgroundColor="LightGray" Padding="10">
+                        <ScrollView Orientation="Horizontal">
+                            <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
+                                <Image Source="doc04.jpg" Aspect="AspectFit" HeightRequest="300"/>
+                            </HorizontalStackLayout>
+                        </ScrollView>
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- Consejos de Seguridad -->
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="🔒 Consejos de Seguridad" 
+                           FontSize="16" 
+                           FontAttributes="Bold"
+                           TextColor="Green"/>
+
+                    <Label FontSize="12" Opacity="0.8" Text="✅ HACER:"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Usar contraseña fuerte (mínimo 8 caracteres)"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Usar números, mayúsculas y símbolos"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Activar biometría"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Cambiar contraseña regularmente"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Usar diferentes contraseñas por cuenta"/>
+                    <Label FontSize="12" Opacity="0.8" Text="❌ NO HACER:"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Compartir tu contraseña de encriptación"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Usar la misma contraseña en múltiples cuentas"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Guardar contraseña en lugar visible"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Olvidar tu contraseña de encriptación"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Usar passwords débiles"/>
+                </VerticalStackLayout>
+
+                <!-- FAQ -->
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="❓ Preguntas Frecuentes" 
+                           FontSize="16" 
+                           FontAttributes="Bold"/>
+
+                    <Label FontSize="12" Opacity="0.8" Text="1. ¿Qué paso si olvido mi contraseña de encriptación?"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Pierde la capacidad de descifrar sus secretos, se recomienda eliminarlos todos. No podemos descifrar la información, ya que desconocemos la contraseña. En el futuro: (Tendrás que crear una nueva desde el menú)"/>
+                    <Label FontSize="12" Opacity="0.8" Text="2. ¿Dónde se guardan mis secretos?"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Encriptados en servidores seguros."/>
+                    <Label FontSize="12" Opacity="0.8" Text="3. ¿Puedo usar sin biometría?"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Sí, ingresa tu contraseña normalmente."/>
+                    <Label FontSize="12" Opacity="0.8" Text="4. ¿Qué si pierdo mi dispositivo?"/>
+                    <Label FontSize="12" Opacity="0.8" Text="   • Inicia sesión desde otro dispositivo y descarga tus secretos."/>
+                </VerticalStackLayout>
+
+                <!-- Cierre -->
+                <VerticalStackLayout Spacing="5" Margin="0,10,0,20">
+                    <Label Text="¡Gracias por usar Password Manager! 🔐"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           Opacity="0.8"/>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+
+</ContentPage>

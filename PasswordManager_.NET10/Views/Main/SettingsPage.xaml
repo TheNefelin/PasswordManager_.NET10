@@ -13,6 +13,12 @@
         <ScrollView Grid.Row="0" Padding="20">
             <VerticalStackLayout Spacing="20">
 
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="GENERAL" FontAttributes="Bold" FontSize="16"/>
+                    <Button Text="❓ Ayuda" 
+                        Command="{Binding GoToHelpCommand}"/>
+                </VerticalStackLayout>
+
                 <!-- BIOMETRÍA -->
                 <VerticalStackLayout Spacing="10">
                     <Label Text="BIOMETRÍA" 

@@ -40,25 +40,25 @@ public partial class TestingViewModel : BaseViewModel
             IsLoading = true;
             ResultText = "Cargando datos...";
 
-            var coreData = new CoreSecretData
-            {
-                Data_Id = Guid.Parse("4AA6D6AB-1EFE-4C86-BB29-7216B2762BAE"),
-                Data01 = "Prueba2",
-                Data02 = "Prueba2",
-                Data03 = "Prueba2",
-                User_Id = new Guid()
-            };
+            //var coreData = new CoreSecretData
+            //{
+            //    Data_Id = Guid.Parse("4AA6D6AB-1EFE-4C86-BB29-7216B2762BAE"),
+            //    Data01 = "Prueba2",
+            //    Data02 = "Prueba2",
+            //    Data03 = "Prueba2",
+            //    User_Id = new Guid()
+            //};
 
             // Ejecutar fetch
-            var result = await _coreDataService.DeleteCoreDataAsync(coreData.Data_Id);
+            var result = await _coreDataService.GetAllCoreDataAsync();
 
-            ResultText = $"✅ Fetch completed: {result}";
+            //ResultText = $"✅ Fetch completed: {result}";
             //ResultText = $"✅ Fetch completed:\nIV: {result.Data01}";
-            //ResultText = "";
-            //foreach (CoreSecretData item in result)
-            //{
-            //    ResultText = ResultText + $"Id: {item.Data_Id.ToString()} - Data01: {item.Data01.ToString()}\n";
-            //}
+            ResultText = "";
+            foreach (CoreSecretData item in result)
+            {
+                ResultText = ResultText + $"Id: {item.Data_Id.ToString()} - Data01: {item.Data01.ToString()}\n";
+            }
 
             _logger.LogInformation("[TestingViewModel-ExecuteFetchAsync] Fetch completed successfully");
         }
