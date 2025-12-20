@@ -19,6 +19,7 @@ Bienvenido a **Password Manager**, tu aplicación segura para guardar y gestiona
 
 <div align="center">
   <img src="img/doc01.jpg" alt="doc01" width="250"/>
+    &nbsp;
   <img src="img/doc02.jpg" alt="doc02" width="250"/>
 </div>
 
@@ -49,8 +50,10 @@ Bienvenido a **Password Manager**, tu aplicación segura para guardar y gestiona
 **❌ No la olvides, es tu clave maestra**
 
 <div align="center">
-  <img src="img/doc05.jpg" alt="doc04" width="250"/>
+  <img src="img/doc04.jpg" alt="doc04" width="250"/>
+    &nbsp;
   <img src="img/doc05.jpg" alt="doc05" width="250"/>
+    &nbsp;
   <img src="img/doc06.jpg" alt="doc06" width="250"/>
 </div>
 
@@ -67,7 +70,13 @@ Bienvenido a **Password Manager**, tu aplicación segura para guardar y gestiona
 3. Puedes usar "Generar" para crear una segura
 4. Haz clic en "Guardar"
 
-**[Ver imágenes: doc04.jpg, doc07.jpg, doc08.jpg]**
+<div align="center">
+  <img src="img/doc04.jpg" alt="doc04" width="250"/>
+    &nbsp;
+  <img src="img/doc07.jpg" alt="doc07" width="250"/>
+    &nbsp;
+  <img src="img/doc08.jpg" alt="doc08" width="250"/>
+</div>
 
 ---
 
@@ -83,6 +92,22 @@ Bienvenido a **Password Manager**, tu aplicación segura para guardar y gestiona
 
 **[Ver imágenes: doc05.jpg, doc09.jpg, doc10.jpg, doc11.jpg, doc12.jpg, doc13.jpg, doc14.jpg]**
 
+<div align="center">
+  <img src="img/doc05.jpg" alt="doc05" width="250"/>
+    &nbsp;
+  <img src="img/doc09.jpg" alt="doc09" width="250"/>
+    &nbsp;
+  <img src="img/doc10.jpg" alt="doc10" width="250"/>
+    &nbsp;
+  <img src="img/doc11.jpg" alt="doc11" width="250"/>
+    &nbsp;
+  <img src="img/doc12.jpg" alt="doc12" width="250"/>
+    &nbsp;
+  <img src="img/doc13.jpg" alt="doc13" width="250"/>
+    &nbsp;
+  <img src="img/doc14.jpg" alt="doc14" width="250"/>
+</div>
+
 ---
 
 ## 5️⃣ Usar Biometría (Huella Dactilar)
@@ -94,7 +119,9 @@ Bienvenido a **Password Manager**, tu aplicación segura para guardar y gestiona
 3. Activa el toggle "Huella dactilar"
 4. Esta opción solo recordará tu nombre de usuario, por razones de seguridad, tu contraseña no se guarda, por lo que deberás ingresarla manualmente.
 
-**[Ver imagen: doc15.jpg]**
+<div align="center">
+  <img src="img/doc15.jpg" alt="doc15" width="250"/>
+</div>
 
 ---
 
@@ -106,7 +133,9 @@ En Settings, busca "TEMA" y selecciona:
 2. ☀️ **Light:** Modo claro
 3. 🌙 **Dark:** Modo oscuro
 
-**[Ver imagen: doc15.jpg]**
+<div align="center">
+  <img src="img/doc15.jpg" alt="doc15" width="250"/>
+</div>
 
 ---
 
