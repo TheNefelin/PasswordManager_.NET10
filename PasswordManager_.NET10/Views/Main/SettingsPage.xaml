@@ -64,13 +64,9 @@
                              VerticalOptions="Center"/>
 
                         <Switch Grid.Column="1"
-                           IsEnabled="{Binding IsBiometricEnabled}"
-                           IsToggled="False">
-                            <Switch.Behaviors>
-                                <toolkit:EventToCommandBehavior
-                                   EventName="Toggled"
-                                   Command="{Binding Source={x:Reference thisPage}, Path=BindingContext.ToggleBiometricCommand}" />
-                            </Switch.Behaviors>
+                            IsEnabled="{Binding IsBiometricEnabled}"
+                            IsToggled="{Binding IsSavePasswordEnabled}">
+               
                         </Switch>
                     </Grid>
                 </VerticalStackLayout>

@@ -52,7 +52,7 @@ public static class MauiProgram
         builder.Services
             .AddTransient<RegisterViewModel>()
             .AddTransient<LoginViewModel>()
-            .AddSingleton<SettingsViewModel>()
+            .AddTransient<SettingsViewModel>()
             .AddTransient<PasswordDetailsViewModel>()
             .AddTransient<PasswordFormViewModel>()
             .AddTransient<PasswordPromptCreateViewModel>()
@@ -63,7 +63,7 @@ public static class MauiProgram
             .AddTransient<AppShell>()
             .AddTransient<RegisterPage>()
             .AddTransient<LoginPage>()
-            .AddSingleton<SettingsPage>()
+            .AddTransient<SettingsPage>()
             .AddTransient<PasswordDetailsPage>()
             .AddTransient<PasswordFormPage>()
             .AddTransient<PasswordPromptCreatePage>()

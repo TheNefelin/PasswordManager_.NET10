@@ -12,16 +12,19 @@ public class AuthService : IAuthService
     private readonly ILogger<AuthService> _logger;
     private readonly IApiService _apiService;
     private readonly ISecureStorageService _secureStorageService;
+    private readonly IEncryptionService _encryptionService;
     private User? _currentUser;
 
     public AuthService(
         ILogger<AuthService> logger,
         IApiService apiService,
-        ISecureStorageService secureStorageService)
+        ISecureStorageService secureStorageService,
+        IEncryptionService encryptionService)
     {
         _logger = logger;
         _apiService = apiService;
         _secureStorageService = secureStorageService;
+        _encryptionService = encryptionService;
     }
 
     public async Task<bool> RegisterAsync(string email, string password, string confirmPassword)
@@ -216,6 +219,114 @@ public class AuthService : IAuthService
         {
             _logger.LogError(ex, "[AuthService-IsAuthenticatedAsync] Error checking authentication: {ExceptionType} - {Message}",
                 ex.GetType().Name, ex.Message);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Establece el flag para guardar contraseña en el próximo login
+    /// </summary>
+    public async Task SetSavePasswordOnNextLoginAsync(bool value)
+    {
+        try
+        {
+            await _secureStorageService.SetSavePasswordOnNextLoginAsync(value);
+            _logger.LogInformation("[AuthService-SetSavePasswordOnNextLoginAsync] Flag set to: {Value}", value);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[AuthService-SetSavePasswordOnNextLoginAsync] Error setting flag: {Message}", ex.Message);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Obtiene el flag de guardar contraseña en próximo login
+    /// </summary>
+    public async Task<bool> GetSavePasswordOnNextLoginAsync()
+    {
+        try
+        {
+            var result = await _secureStorageService.GetSavePasswordOnNextLoginAsync();
+            _logger.LogDebug("[AuthService-GetSavePasswordOnNextLoginAsync] Flag value: {Value}", result);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[AuthService-GetSavePasswordOnNextLoginAsync] Error getting flag: {Message}", ex.Message);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Guarda la contraseña encriptada
+    /// </summary>
+    public async Task SavePasswordAsync(string password)
+    {
+        try
+        {
+            string encryptedPassword = _encryptionService.Encrypt(password);
+            await _secureStorageService.SetSavedPasswordAsync(encryptedPassword);
+            _logger.LogInformation("[AuthService-SavePasswordAsync] Password saved securely");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[AuthService-SavePasswordAsync] Error: {Message}", ex.Message);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Borra la contraseña guardada
+    /// </summary>
+    public async Task ClearSavedPasswordAsync()
+    {
+        try
+        {
+            await _secureStorageService.ClearSavedPasswordAsync();
+            _logger.LogInformation("[AuthService-ClearSavedPasswordAsync] Saved password cleared");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[AuthService-ClearSavedPasswordAsync] Error clearing password: {Message}", ex.Message);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Obtiene la contraseña encriptada guardada
+    /// </summary>
+    public async Task<string?> GetSavedPasswordAsync()
+    {
+        try
+        {
+            var encryptedPassword = await _secureStorageService.GetSavedPasswordAsync();
+            if (string.IsNullOrEmpty(encryptedPassword))
+                return null;
+
+            return _encryptionService.Decrypt(encryptedPassword);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[AuthService-GetSavedPasswordAsync] Error: {Message}", ex.Message);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Verifica si hay una contraseña guardada
+    /// </summary>
+    public async Task<bool> HasSavedPasswordAsync()
+    {
+        try
+        {
+            var result = await _secureStorageService.HasSavedPasswordAsync();
+            _logger.LogDebug("[AuthService-HasSavedPasswordAsync] Has saved password: {HasPassword}", result);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[AuthService-HasSavedPasswordAsync] Error checking saved password: {Message}", ex.Message);
             return false;
         }
     }

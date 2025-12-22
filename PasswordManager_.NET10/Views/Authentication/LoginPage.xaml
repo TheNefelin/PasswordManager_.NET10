@@ -74,8 +74,8 @@
             <ImageButton
                 IsVisible="{Binding IsBiometricEnabled}"
                 Command="{Binding LoginByBiometricCommand}"
-                WidthRequest="90"
-                HeightRequest="90"
+                WidthRequest="80"
+                HeightRequest="80"
                 CornerRadius="50"
                 Padding="6"
                 BackgroundColor="{AppThemeBinding Light=Gray, Dark=Transparent}"

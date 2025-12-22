@@ -16,4 +16,15 @@ public interface ISecureStorageService
     Task<bool> IsAuthenticatedAsync();
     Task SetBiometricsEnabledAsync(bool isEnabled);
     Task<bool> IsBiometricsEnabledAsync();
+
+    // NUEVOS MÉTODOS PARA GUARDAR CONTRASEÑA
+    Task SetSavedPasswordAsync(string encryptedPassword);
+    Task<string?> GetSavedPasswordAsync();
+    Task ClearSavedPasswordAsync();
+    Task<bool> HasSavedPasswordAsync();
+
+    // NUEVOS MÉTODOS PARA FLAG
+    Task SetSavePasswordOnNextLoginAsync(bool value);
+    Task<bool> GetSavePasswordOnNextLoginAsync();
+    Task ClearSavePasswordOnNextLoginAsync();
 }

@@ -2,6 +2,10 @@
 
 public static class Constants_demo
 {
+    // Biometric Encryption Configuration
+    public const string BIOMETRIC_KEY = "YourFixedKeyHere1234567890123456";
+    public const string BIOMETRIC_IV = "YoutIVKeyHere123";
+
     // API Configuration
     public const string API_BASE_URL = "https://api.yourapp.com";
     public const string API_KEY = "your-api-key-here";

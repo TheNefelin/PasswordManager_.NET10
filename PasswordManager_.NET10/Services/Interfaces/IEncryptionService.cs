@@ -28,4 +28,7 @@ public interface IEncryptionService
     /// Verifica si un texto está encriptado (Base64)
     /// </summary>
     bool IsEncrypted(string text);
+
+    string Encrypt(string plainText);
+    string Decrypt(string encryptedText);
 }

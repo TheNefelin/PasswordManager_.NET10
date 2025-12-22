@@ -109,6 +109,30 @@ public partial class LoginViewModel : BaseViewModel
 
             _logger.LogInformation("[LoginViewModel-LoginAsync] Login successful for user: {UserId}", user.UserId);
 
+
+            // ============================================
+            // NUEVO: Verificar si debe guardar contraseña
+            bool shouldSavePassword = await _authService.GetSavePasswordOnNextLoginAsync();
+            if (shouldSavePassword)
+            {
+                try
+                {
+                    // Guardar contraseña (el servicio se encarga de encriptar)
+                    await _authService.SavePasswordAsync(Password);
+
+                    // Limpiar el flag
+                    await _authService.SetSavePasswordOnNextLoginAsync(false);
+
+                    _logger.LogInformation("[LoginViewModel-LoginAsync] Password saved successfully for next biometric login");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "[LoginViewModel-LoginAsync] Error saving password: {Message}", ex.Message);
+                    // No fallar el login si hay error al guardar contraseña
+                }
+            }
+             // ============================================
+
             // Limpiar campos
             Email = string.Empty;
             Password = string.Empty;
@@ -189,13 +213,34 @@ public partial class LoginViewModel : BaseViewModel
     [RelayCommand]
     public async Task LoginByBiometric()
     {
-        var email = await _biometricService.AuthenticateWithBiometricAsync();
+        IsLoading = true;
+        Message = string.Empty;
+
+        // 1. Autenticar con biometría
+        string? email = await _biometricService.AuthenticateWithBiometricAsync();
+        _logger.LogInformation("[LoginViewModel-LoginByBiometric] Biometric authentication successful, email: {Email}", email);
+
+        // 2. Obtener contraseña guardada (encriptada)
+        string? password = await _authService.GetSavedPasswordAsync();
+        if (!string.IsNullOrEmpty(password) && !string.IsNullOrEmpty(email))
+        {
+            var user = await _authService.LoginAsync(email, password);
+
+            var appShell = _serviceProvider.GetRequiredService<AppShell>();
+            Application.Current!.Windows[0].Page = appShell;
+            _logger.LogInformation("[LoginViewModel-LoginByBiometric] Navigated to AppShell");
+
+            IsLoading = false;
+            return;
+        }
+
         if (!string.IsNullOrEmpty(email))
         {
             Email = email;
-            Password = string.Empty; // Clear password for security
-            //await LoginAsync();
+            Password = string.Empty;
         }
+
+        IsLoading = false;
     }
 
     /// <summary>
