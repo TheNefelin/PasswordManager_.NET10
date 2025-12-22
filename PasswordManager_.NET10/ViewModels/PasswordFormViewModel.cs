@@ -37,8 +37,8 @@ public partial class PasswordFormViewModel : BaseViewModel
     [ObservableProperty]
     bool isEditing = false; // true si estamos editando, false si creando
 
+    public TaskCompletionSource<CoreSecretData?>? CompletionSource { get; set; }
     private CoreSecretData? _currentItem;
-    private Guid _currentUserId;
 
     public PasswordFormViewModel(
         ILogger<PasswordDetailsViewModel> logger,
@@ -108,7 +108,19 @@ public partial class PasswordFormViewModel : BaseViewModel
                 _currentItem.Data02 = Data02;
                 _currentItem.Data03 = Data03;
 
-                var result = await _coreDataService.UpdateCoreDataAsync(_currentItem);
+                var returnItem = new CoreSecretData() { 
+                    Data_Id = _currentItem.Data_Id,
+                    Data01 = _currentItem.Data01,
+                    Data02 = _currentItem.Data02,
+                    Data03 = _currentItem.Data03,
+                    User_Id = _currentItem.User_Id
+                };
+
+                var coreUserIV = await _coreDataService.GetCoreUserIVAsync(EncryptingPassword);
+                var newItemEncrypted = _encryptionService.EncryptData(_currentItem, EncryptingPassword, coreUserIV.IV);
+                var result = await _coreDataService.UpdateCoreDataAsync(newItemEncrypted);
+
+                CompletionSource?.SetResult(returnItem);
 
                 await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
                     "Éxito",
@@ -128,11 +140,23 @@ public partial class PasswordFormViewModel : BaseViewModel
                     User_Id = Guid.Empty
                 };
 
+                var returnItem = new CoreSecretData()
+                {
+                    Data_Id = newItem.Data_Id,
+                    Data01 = newItem!.Data01,
+                    Data02 = newItem.Data02,
+                    Data03 = newItem.Data03,
+                    User_Id = newItem.User_Id
+                };
+
                 var coreUserIV = await _coreDataService.GetCoreUserIVAsync(EncryptingPassword);
-
                 var newItemEncrypted = _encryptionService.EncryptData(newItem, EncryptingPassword, coreUserIV.IV);
-
                 var result = await _coreDataService.CreateCoreDataAsync(newItemEncrypted);
+
+                returnItem.User_Id = result.User_Id;
+                returnItem.Data_Id = result.Data_Id;
+
+                CompletionSource?.SetResult(returnItem);
 
                 await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
                     "Éxito",
@@ -142,7 +166,8 @@ public partial class PasswordFormViewModel : BaseViewModel
             }
 
             // Volver a la página anterior
-            await Shell.Current.GoToAsync("..");
+            //await Shell.Current.GoToAsync("..");
+            await Application.Current!.Windows[0].Page!.Navigation.PopModalAsync();
         }
         catch (Exception ex)
         {
@@ -163,6 +188,8 @@ public partial class PasswordFormViewModel : BaseViewModel
     public async Task Cancel()
     {
         await Shell.Current.GoToAsync("..");
+        CompletionSource?.SetResult(null);
+        //await Application.Current!.Windows[0].Page!.Navigation.PopModalAsync();
     }
 
     [RelayCommand]

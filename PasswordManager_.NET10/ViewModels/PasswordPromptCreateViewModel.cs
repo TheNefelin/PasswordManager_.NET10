@@ -17,6 +17,12 @@ public partial class PasswordPromptCreateViewModel : BaseViewModel
     [ObservableProperty]
     string message = string.Empty;
 
+    [ObservableProperty]
+    bool isPassword1 = true;
+
+    [ObservableProperty]
+    bool isPassword2 = true;
+
     private readonly ILogger<PasswordPromptCreateViewModel> _logger;
     private readonly ICoreDataService _coreDataService;
 
@@ -76,5 +82,17 @@ public partial class PasswordPromptCreateViewModel : BaseViewModel
         NewPassword = "";
         ConfirmPassword = "";
         Message = "";
+    }
+
+    [RelayCommand]
+    public void ToggleIsPassword1()
+    {
+        IsPassword1 = !IsPassword1;
+    }
+
+    [RelayCommand]
+    public void ToggleIsPassword2()
+    {
+        IsPassword2 = !IsPassword2;
     }
 }

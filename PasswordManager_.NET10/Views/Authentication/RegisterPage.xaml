@@ -26,11 +26,14 @@
                 Text="{Binding Password}" 
                 IsPassword="{Binding IsPassword}"/>
 
-            <Button 
+            <ImageButton 
                 Grid.Column="1"
-                Text="Ver"
-                ImageSource="icon_eye_lock_open_512.png"
+                Source="icon_eye_lock_open_512.png"
                 HeightRequest="50"
+                WidthRequest="50"
+                CornerRadius="8"
+                Padding="8"
+                BackgroundColor="{AppThemeBinding Light=DarkGray}"
                 Command="{Binding ToggleIsPasswordCommand}"/>
         </Grid>
 

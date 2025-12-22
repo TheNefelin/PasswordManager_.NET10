@@ -8,7 +8,7 @@
     <Color x:Key="Primary">#FCA120</Color>
     <Color x:Key="PrimaryDark">#FF990A</Color>
     <Color x:Key="PrimaryDarkText">#F2F2F2</Color>
-    <Color x:Key="Secondary">#D600AA</Color>
+    <Color x:Key="Secondary">#EDF7FC</Color>
     <Color x:Key="SecondaryDarkText">#FF990A</Color>
     
     <!--<Color x:Key="Primary">#512BD4</Color>

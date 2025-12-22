@@ -2,7 +2,6 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using PasswordManager_.NET10.Services.Interfaces;
-using PasswordManager_.NET10.Views.Authentication;
 using PasswordManager_.NET10.Views.Main;
 
 namespace PasswordManager_.NET10.ViewModels;
@@ -196,12 +195,21 @@ public partial class SettingsViewModel : BaseViewModel
     /// <summary>
     /// Limpiar recursos cuando se destruye el ViewModel
     /// </summary>
-    //public void Cleanup()
-    //{
-    //    _sessionTimer?.Stop();
-    //    _sessionTimer?.Dispose();
-    //    _logger.LogInformation("[SettingsViewModel-Cleanup] Resources cleaned up");
-    //}
+    public void Cleanup()
+    {
+        _sessionTimer?.Stop();
+        _sessionTimer?.Dispose();
+
+        // Limpiar datos para que la próxima sesión cargue nuevos
+        UserId = string.Empty;
+        Role = string.Empty;
+        SqlToken = string.Empty;
+        ApiToken = string.Empty;
+        SessionTimeRemaining = string.Empty;
+        IsSessionExpired = false;
+
+        _logger.LogInformation("[SettingsViewModel-Cleanup] Resources cleaned up");
+    }
 
     [RelayCommand]
     public async Task ChangeThemeAsync(string theme)

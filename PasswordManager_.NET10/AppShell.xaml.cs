@@ -27,29 +27,26 @@ public partial class AppShell : Shell
 
         _logger.LogInformation("[AppShell-Constructor] AppShell initialized");
 
-        // Precargar datos de SettingsViewModel
+        // ✅ Precargar datos de SettingsViewModel
         PreloadSettingsData();
     }
 
     /// <summary>
     /// Precarga datos de SettingsViewModel en background
     /// </summary>
-    private void PreloadSettingsData()
+    private async void PreloadSettingsData()
     {
-        MainThread.BeginInvokeOnMainThread(async () =>
+        try
         {
-            try
-            {
-                _logger.LogInformation("[AppShell-PreloadSettingsData] Starting preload of settings data");
-                await _settingsViewModel.LoadSessionDataAsync();
-                _logger.LogInformation("[AppShell-PreloadSettingsData] Settings data preloaded successfully");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[AppShell-PreloadSettingsData] Error preloading settings data: {ExceptionType} - {Message}",
-                    ex.GetType().Name, ex.Message);
-            }
-        });
+            _logger.LogInformation("[AppShell-PreloadSettingsData] Starting preload of settings data");
+            await _settingsViewModel.LoadSessionDataAsync();
+            _logger.LogInformation("[AppShell-PreloadSettingsData] Settings data preloaded successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[AppShell-PreloadSettingsData] Error preloading settings data: {ExceptionType} - {Message}",
+                ex.GetType().Name, ex.Message);
+        }
     }
 
     /// <summary>
@@ -57,25 +54,38 @@ public partial class AppShell : Shell
     /// </summary>
     private async void OnLogoutClicked(object sender, EventArgs e)
     {
-        await PerformLogout();
+        await PerformLogout(false);
     }
 
     /// <summary>
     /// Realiza el logout con confirmación
     /// </summary>
-    public async Task PerformLogout()
+    public async Task PerformLogout(bool hasExpired)
     {
         try
         {
             _logger.LogInformation("[AppShell-PerformLogout] Logout initiated");
+            bool confirmed;
 
-            // Pedir confirmación
-            bool confirmed = await Shell.Current.DisplayAlertAsync(
-                "Cerrar sesión",
-                "¿Estás seguro de que deseas cerrar sesión?",
-                "Sí",
-                "No"
-            );
+            if (hasExpired)
+            {
+                await Shell.Current.DisplayAlertAsync(
+                    "Cerrar sesión",
+                    "La Session ha Expirado",
+                    "Sí"
+                );
+                confirmed = true;
+            }
+            else
+            {
+                // Pedir confirmación
+                confirmed = await Shell.Current.DisplayAlertAsync(
+                    "Cerrar sesión",
+                    "¿Estás seguro de que deseas cerrar sesión?",
+                    "Sí",
+                    "No"
+                );
+            }
 
             if (!confirmed)
             {
@@ -91,17 +101,13 @@ public partial class AppShell : Shell
             _settingsViewModel.Cleanup();
 
             var loginPage = _serviceProvider.GetRequiredService<LoginPage>();
+            Window.Page = loginPage;
+
+            //Application.Current!.MainPage = new NavigationPage(loginPage);
 
             // En MAUI, Application.Current.MainPage es la clave
-            Application.Current!.MainPage = loginPage;
-
-            // Navegar a LoginPage
-            //MainThread.BeginInvokeOnMainThread(() =>
-            //{
-            //    var loginPage = _serviceProvider.GetRequiredService<LoginPage>();
-            //    Application.Current!.Windows[0].Page = new NavigationPage(loginPage);
-            //    _logger.LogInformation("[AppShell-PerformLogout] Navigated to LoginPage");
-            //});
+            //Application.Current!.MainPage = loginPage;
+            //Application.Current!.Windows[0].Page = loginPage;
         }
         catch (Exception ex)
         {
@@ -128,7 +134,7 @@ public partial class AppShell : Shell
             _settingsViewModel.SessionExpiredEvent += async (s, e) =>
             {
                 _logger.LogInformation("[AppShell-OnAppearing] Session expired event triggered");
-                await PerformLogout();
+                await PerformLogout(true);
             };
 
             _logger.LogInformation("[AppShell-OnAppearing] Subscribed to SessionExpiredEvent");

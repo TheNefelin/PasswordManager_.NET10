@@ -14,6 +14,7 @@ public class SecureStorageService : ISecureStorageService
 
     private const string KEY_USER_ID = "UserId";
     private const string KEY_EMAIL = "Email";
+    private const string KEY_PASS = "Idiot";
     private const string KEY_SQL_TOKEN = "SqlToken";
     private const string KEY_ROLE = "Role";
     private const string KEY_EXPIRE_MIN = "ExpireMin";

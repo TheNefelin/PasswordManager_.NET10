@@ -50,24 +50,24 @@ public static class MauiProgram
 
         // ViewModels (Singleton para screens principales)
         builder.Services
-            .AddSingleton<RegisterViewModel>()
-            .AddSingleton<LoginViewModel>()
+            .AddTransient<RegisterViewModel>()
+            .AddTransient<LoginViewModel>()
             .AddSingleton<SettingsViewModel>()
-            .AddSingleton<PasswordDetailsViewModel>()
-            .AddSingleton<PasswordFormViewModel>()
-            .AddSingleton<PasswordPromptCreateViewModel>()
-            .AddSingleton<HelpViewModel>();
+            .AddTransient<PasswordDetailsViewModel>()
+            .AddTransient<PasswordFormViewModel>()
+            .AddTransient<PasswordPromptCreateViewModel>()
+            .AddTransient<HelpViewModel>();
 
         // Views/Pages
         builder.Services
-            .AddSingleton<AppShell>()
-            .AddSingleton<RegisterPage>()
-            .AddSingleton<LoginPage>()
+            .AddTransient<AppShell>()
+            .AddTransient<RegisterPage>()
+            .AddTransient<LoginPage>()
             .AddSingleton<SettingsPage>()
-            .AddSingleton<PasswordDetailsPage>()
-            .AddSingleton<PasswordFormPage>()
-            .AddSingleton<PasswordPromptCreatePage>()
-            .AddSingleton<HelpPage>();
+            .AddTransient<PasswordDetailsPage>()
+            .AddTransient<PasswordFormPage>()
+            .AddTransient<PasswordPromptCreatePage>()
+            .AddTransient<HelpPage>();
 
         // Test
         builder.Services

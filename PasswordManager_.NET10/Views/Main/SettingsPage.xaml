@@ -20,23 +20,29 @@
                 </VerticalStackLayout>
 
                 <!-- BIOMETRÍA -->
-                <VerticalStackLayout Spacing="10">
-                    <Label Text="BIOMETRÍA" 
-                           FontAttributes="Bold" 
-                           FontSize="16"/>
+                <VerticalStackLayout>
+                    <Label 
+                        Text="BIOMETRÍA" 
+                        FontAttributes="Bold" 
+                        FontSize="16"/>
 
-                    <Grid ColumnDefinitions="*,Auto" 
-                          ColumnSpacing="10"
-                          RowSpacing="5">
-                        
-                        <Label Grid.Column="0"
-                               Text="Huella dactilar"
-                               FontSize="14"
-                               VerticalOptions="Center"/>
+                    <!-- Mensaje de error si no está disponible -->
+                    <Label 
+                        Text="Este dispositivo no cuenta con biometría"
+                        FontSize="12"
+                        TextColor="Red"
+                        IsVisible="{Binding IsBiometricAvailable, Converter={StaticResource InvertedBoolConverter}}"/>
 
-                        <Switch Grid.Column="1"
-                            IsToggled="{Binding IsBiometricEnabled}"
-                            IsEnabled="{Binding IsBiometricAvailable}">
+                    <Grid ColumnDefinitions="*,Auto" Margin="0">
+                        <Label 
+                            Grid.Column="0"
+                            Text="Activar huella dactilar"
+                            FontSize="14"
+                            VerticalOptions="Center"/>
+
+                        <Switch Grid.Column="1"                            
+                            IsEnabled="{Binding IsBiometricAvailable}"
+                            IsToggled="{Binding IsBiometricEnabled}">
                             <Switch.Behaviors>
                                 <toolkit:EventToCommandBehavior
                                     EventName="Toggled"
@@ -45,12 +51,28 @@
                         </Switch>
                     </Grid>
 
-                    <!-- Mensaje de error si no está disponible -->
-                    <Label Text="Este dispositivo no cuenta con biometría"
-                           FontSize="12"
-                           TextColor="Red"
-                           IsVisible="{Binding IsBiometricAvailable, Converter={StaticResource InvertedBoolConverter}}"
-                           Margin="0,5,0,0"/>
+                    <Label 
+                         Text="Esta opción no es recomendable, permite el inicio de sesión automático mediante datos biométricos."
+                         FontSize="12"
+                         TextColor="Red"/>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label 
+                             Grid.Column="0"
+                             Text="Guardar contraseña"
+                             FontSize="14"
+                             VerticalOptions="Center"/>
+
+                        <Switch Grid.Column="1"
+                           IsEnabled="{Binding IsBiometricEnabled}"
+                           IsToggled="False">
+                            <Switch.Behaviors>
+                                <toolkit:EventToCommandBehavior
+                                   EventName="Toggled"
+                                   Command="{Binding Source={x:Reference thisPage}, Path=BindingContext.ToggleBiometricCommand}" />
+                            </Switch.Behaviors>
+                        </Switch>
+                    </Grid>
                 </VerticalStackLayout>
 
                 <!-- INFORMACIÓN DE SESIÓN -->

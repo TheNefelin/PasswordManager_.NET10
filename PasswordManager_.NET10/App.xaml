@@ -12,6 +12,7 @@
             </ResourceDictionary.MergedDictionaries>
 
             <!-- Converters -->
+            <converters:ExpandedToArrowConverter x:Key="ExpandedToArrowConverter"/>
             <converters:InvertedBoolConverter x:Key="InvertedBoolConverter"/>
             <converters:StringNotEmptyToBoolConverter x:Key="StringNotEmptyToBoolConverter"/>
         </ResourceDictionary>

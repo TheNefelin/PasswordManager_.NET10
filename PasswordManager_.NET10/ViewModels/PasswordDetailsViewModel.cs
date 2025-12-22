@@ -28,9 +28,6 @@ public partial class PasswordDetailsViewModel : BaseViewModel
     bool isLoading = false;
 
     [ObservableProperty]
-    bool isPassword = true;
-
-    [ObservableProperty]
     string searchText = string.Empty;
 
     [ObservableProperty]
@@ -272,11 +269,19 @@ public partial class PasswordDetailsViewModel : BaseViewModel
     [RelayCommand]
     public async Task CreateSecret()
     {
-        var viewModel = new PasswordFormViewModel(_logger, _coreDataService, _encryptionService);
+        var tcs = new TaskCompletionSource<CoreSecretData?>();
+        var viewModel = _serviceProvider.GetRequiredService<PasswordFormViewModel>();
+        viewModel.CompletionSource = tcs;
         viewModel.InitializeCreate(Guid.Empty);
 
         var page = new PasswordFormPage(viewModel);
         await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(page);
+        var newItem = await tcs.Task;
+
+        SearchText = string.Empty;
+        if (newItem == null) return;
+
+        passwordItems.Add(newItem);
     }
 
     [RelayCommand]
@@ -292,11 +297,21 @@ public partial class PasswordDetailsViewModel : BaseViewModel
             return;
         };
 
-        var viewModel = new PasswordFormViewModel(_logger, _coreDataService, _encryptionService);
+        var tcs = new TaskCompletionSource<CoreSecretData?>();
+        var viewModel = _serviceProvider.GetRequiredService<PasswordFormViewModel>();
+        viewModel.CompletionSource = tcs;
         viewModel.InitializeEdit(item);
 
         var page = new PasswordFormPage(viewModel);
         await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(page);
+        var updatedItem = await tcs.Task;
+
+        SearchText = string.Empty;
+        if (updatedItem == null) return;
+
+        item.Data01 = updatedItem!.Data01;
+        item.Data02 = updatedItem.Data02;
+        item.Data03 = updatedItem.Data03;
     }
 
     [RelayCommand]
@@ -339,8 +354,14 @@ public partial class PasswordDetailsViewModel : BaseViewModel
     }
 
     [RelayCommand]
-    public void ToggleIsPassword()
+    public void TogglePasswordVisibility(CoreSecretData item)
     {
-        IsPassword = !IsPassword;
+        item.IsPasswordVisible = !item.IsPasswordVisible;
+    }
+
+    [RelayCommand]
+    public async Task CopyToClipboard(string text)
+    {
+        await Clipboard.Default.SetTextAsync(text);
     }
 }

@@ -138,7 +138,13 @@ public class EncryptionService : IEncryptionService
 
         try
         {
-            Convert.FromBase64String(text);
+            byte[] decoded = Convert.FromBase64String(text);
+
+            // El resultado de AES cifrado siempre tiene múltiplo de 16 bytes (tamaño de bloque)
+            // Y un mínimo de 16 bytes (IV implícito o datos)
+            if (decoded.Length < 16 || decoded.Length % 16 != 0)
+                return false;
+
             return true;
         }
         catch

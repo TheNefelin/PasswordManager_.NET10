@@ -193,7 +193,7 @@
                     <Label Text="6️⃣ Configurar Tema" 
                            FontSize="16" 
                            FontAttributes="Bold"/>
-                    <Label Text="En Settings, busca 'TEMA' y selecciona:\n\n\n"
+                    <Label Text="En Settings, busca 'TEMA' y selecciona:"
                            FontSize="12"
                            LineBreakMode="WordWrap"
                            Opacity="0.8"/>
@@ -216,10 +216,10 @@
                     <Label Text="7️⃣ Cerrar Sesión" 
                            FontSize="16" 
                            FontAttributes="Bold"/>
-                    <Label Text="Haz clic en 'Logout' (arriba a la derecha)\nConfirma que deseas cerrar sesión\nVolverás a LoginPage"
-                           FontSize="12"
-                           LineBreakMode="WordWrap"
-                           Opacity="0.8"/>
+
+                    <Label FontSize="12" Opacity="0.8" Text="Haz clic en 'Logout' (arriba a la derecha)"/>
+                    <Label FontSize="12" Opacity="0.8" Text="Confirma que deseas cerrar sesión"/>
+                    <Label FontSize="12" Opacity="0.8" Text="Volverás a LoginPage"/>
 
                     <Border BackgroundColor="LightGray" Padding="10">
                         <ScrollView Orientation="Horizontal">
