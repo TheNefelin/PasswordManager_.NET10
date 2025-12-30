@@ -25,14 +25,6 @@
                         Text="BIOMETRÍA" 
                         FontAttributes="Bold" 
                         FontSize="16"/>
-
-                    <!-- Mensaje de error si no está disponible -->
-                    <Label 
-                        Text="Este dispositivo no cuenta con biometría"
-                        FontSize="12"
-                        TextColor="Red"
-                        IsVisible="{Binding IsBiometricAvailable, Converter={StaticResource InvertedBoolConverter}}"/>
-
                     <Grid ColumnDefinitions="*,Auto" Margin="0">
                         <Label 
                             Grid.Column="0"
@@ -51,10 +43,12 @@
                         </Switch>
                     </Grid>
 
+                    <!-- Mensaje de error si no está disponible -->
                     <Label 
-                         Text="Esta opción no es recomendable, permite el inicio de sesión automático mediante datos biométricos."
-                         FontSize="12"
-                         TextColor="Red"/>
+                        Text="Este dispositivo no cuenta con biometría"
+                        FontSize="12"
+                        TextColor="Red"
+                        IsVisible="{Binding IsBiometricAvailable, Converter={StaticResource InvertedBoolConverter}}"/>
 
                     <Grid ColumnDefinitions="*,Auto">
                         <Label 
@@ -69,6 +63,11 @@
                
                         </Switch>
                     </Grid>
+
+                    <Label 
+                         Text="Esta opción no es recomendable, permite el inicio de sesión automático mediante datos biométricos."
+                         FontSize="12"
+                         TextColor="Red"/>
                 </VerticalStackLayout>
 
                 <!-- INFORMACIÓN DE SESIÓN -->

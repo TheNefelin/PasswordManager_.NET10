@@ -16,6 +16,7 @@ public partial class SettingsViewModel : BaseViewModel
     private readonly IServiceProvider _serviceProvider;
     private System.Timers.Timer _sessionTimer;
     private int _secondsRemaining;
+    private CancellationTokenSource _timerCts; // Para cancelar el timer
 
     [ObservableProperty]
     private bool isLoading = false;
@@ -45,7 +46,7 @@ public partial class SettingsViewModel : BaseViewModel
     private bool isBiometricAvailable;
 
     [ObservableProperty]
-    private string appVersion = "Beta 1.0.0";
+    private string appVersion = "Beta 1.0.1";
 
     [ObservableProperty]
     private string selectedTheme = "Auto";
@@ -54,7 +55,6 @@ public partial class SettingsViewModel : BaseViewModel
     private bool isSavePasswordEnabled = false;
 
     private bool _isInitializing = false;
-
     private readonly string[] _themes = { "Auto", "Light", "Dark" };
 
     public SettingsViewModel(
@@ -69,18 +69,32 @@ public partial class SettingsViewModel : BaseViewModel
         _themeService = themeService;
         _biometricService = biometricService;
         _serviceProvider = serviceProvider;
+        _timerCts = new CancellationTokenSource();
 
         Title = "Settings";
     }
 
-    partial void OnIsSavePasswordEnabledChanged(bool oldValue, bool newValue)
+    partial void OnIsBiometricEnabledChanged(bool oldValue, bool newValue)
     {
-        // Si estamos inicializando, ignorar el cambio
         if (_isInitializing)
             return;
 
-        // Solo ejecutar si el usuario cambió el valor manualmente
-        // (no cuando se carga desde storage)
+        // Si se desactiva biometría, desactivar automáticamente "Guardar contraseña"
+        if (!newValue && IsSavePasswordEnabled)
+        {
+            _isInitializing = true;
+            IsSavePasswordEnabled = false;
+            _isInitializing = false;
+
+            _logger.LogInformation("[SettingsViewModel-OnIsBiometricEnabledChanged] Biometric disabled, auto-disabling save password");
+        }
+    }
+
+    partial void OnIsSavePasswordEnabledChanged(bool oldValue, bool newValue)
+    {
+        if (_isInitializing)
+            return;
+
         if (oldValue != newValue)
         {
             _ = ToggleSavePasswordAsync();
@@ -111,6 +125,13 @@ public partial class SettingsViewModel : BaseViewModel
                 if (timeRemaining.TotalSeconds > 0)
                 {
                     _secondsRemaining = (int)timeRemaining.TotalSeconds;
+
+                    // IMPORTANTE: Detener timer anterior si existe
+                    StopSessionTimer();
+
+                    // Crear nuevo CancellationTokenSource
+                    _timerCts = new CancellationTokenSource();
+
                     StartSessionTimer();
                 }
                 else
@@ -122,7 +143,7 @@ public partial class SettingsViewModel : BaseViewModel
 
                 _logger.LogInformation("[SettingsViewModel-LoadSessionDataAsync] Session data loaded successfully");
 
-                // Cargar tema y biometría en paralelo (no secuencial)
+                // Cargar tema y biometría en paralelo
                 var themeTask = _themeService.GetThemeAsync();
                 var biometricTask = LoadBiometricStatusAsync();
 
@@ -143,16 +164,42 @@ public partial class SettingsViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// Iniciar timer de cuenta regresiva
+    /// Iniciar timer de cuenta regresiva - Versión corregida con mejor manejo de threading
     /// </summary>
     private void StartSessionTimer()
     {
         _sessionTimer = new System.Timers.Timer(1000); // Cada segundo
-        _sessionTimer.Elapsed += (s, e) => UpdateSessionTime();
+        _sessionTimer.Elapsed += SessionTimer_Elapsed;
         _sessionTimer.AutoReset = true;
         _sessionTimer.Start();
 
         UpdateSessionTime(); // Actualizar inmediatamente
+    }
+
+    /// <summary>
+    /// Handler del timer - evita múltiples callbacks simultáneos
+    /// </summary>
+    private void SessionTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+    {
+        if (_timerCts.Token.IsCancellationRequested)
+            return;
+
+        UpdateSessionTime();
+    }
+
+    /// <summary>
+    /// Detener el timer de manera segura
+    /// </summary>
+    private void StopSessionTimer()
+    {
+        if (_sessionTimer != null)
+        {
+            _sessionTimer.Stop();
+            _sessionTimer.Dispose();
+            _sessionTimer = null;
+        }
+
+        _timerCts?.Cancel();
     }
 
     /// <summary>
@@ -164,15 +211,14 @@ public partial class SettingsViewModel : BaseViewModel
 
         if (_secondsRemaining <= 0)
         {
-            _sessionTimer?.Stop();
-            _sessionTimer?.Dispose();
+            StopSessionTimer();
 
             IsSessionExpired = true;
             SessionTimeRemaining = "Sesión expirada";
 
             _logger.LogWarning("[SettingsViewModel-UpdateSessionTime] Session expired");
 
-            // Ejecutar logout automático
+            // Ejecutar logout automático en el main thread
             MainThread.BeginInvokeOnMainThread(async () =>
             {
                 await PerformAutoLogout();
@@ -181,7 +227,16 @@ public partial class SettingsViewModel : BaseViewModel
         else
         {
             var timeSpan = TimeSpan.FromSeconds(_secondsRemaining);
-            SessionTimeRemaining = $"{timeSpan.Hours:D2}h {timeSpan.Minutes:D2}m {timeSpan.Seconds:D2}s";
+            string newTimeRemaining = $"{timeSpan.Hours:D2}h {timeSpan.Minutes:D2}m {timeSpan.Seconds:D2}s";
+
+            // Actualizar solo si cambió para evitar flickering
+            if (SessionTimeRemaining != newTimeRemaining)
+            {
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    SessionTimeRemaining = newTimeRemaining;
+                });
+            }
         }
     }
 
@@ -193,7 +248,7 @@ public partial class SettingsViewModel : BaseViewModel
         try
         {
             _logger.LogInformation("[SettingsViewModel-PerformAutoLogout] Auto logout triggered");
-
+            StopSessionTimer();
             await _authService.LogoutAsync();
         }
         catch (Exception ex)
@@ -218,23 +273,19 @@ public partial class SettingsViewModel : BaseViewModel
         }
     }
 
-    /// <summary>
-    /// Cargar estado de biometría disponible y habilitado
-    /// </summary>
     private async Task LoadBiometricStatusAsync()
     {
         try
         {
             _logger.LogInformation("[SettingsViewModel-LoadBiometricStatusAsync] Loading biometric status");
 
-            _isInitializing = true; // Indicar que estamos cargando
+            _isInitializing = true;
 
-            //IsBiometricAvailable = await _biometricService.IsBiometricAvailableAsync();
-            IsBiometricAvailable = true;
+            IsBiometricAvailable = await _biometricService.IsBiometricAvailableAsync();
             IsBiometricEnabled = await _biometricService.IsBiometricEnabledAsync();
             IsSavePasswordEnabled = await _authService.HasSavedPasswordAsync();
 
-            _isInitializing = false; // Fin de carga
+            _isInitializing = false;
 
             _logger.LogInformation("[SettingsViewModel-LoadBiometricStatusAsync] Biometric - Available: {Available}, Enabled: {Enabled}", IsBiometricAvailable, IsBiometricEnabled);
         }
@@ -247,15 +298,30 @@ public partial class SettingsViewModel : BaseViewModel
         }
     }
 
-    /// <summary>
-    /// Toggle de biometría
-    /// </summary>
     [RelayCommand]
     public async Task ToggleBiometricAsync()
     {
         try
         {
             _logger.LogInformation("[SettingsViewModel-ToggleBiometricAsync] Toggling biometric. Current state: {CurrentState}", IsBiometricEnabled);
+
+            // Si se desactiva biometría
+            if (!IsBiometricEnabled)
+            {
+                // Desactivar automáticamente "Guardar contraseña"
+                if (IsSavePasswordEnabled)
+                {
+                    _isInitializing = true;
+                    IsSavePasswordEnabled = false;
+                    _isInitializing = false;
+
+                    // Limpiar contraseña guardada
+                    await _authService.ClearSavedPasswordAsync();
+                    await _authService.SetSavePasswordOnNextLoginAsync(false);
+
+                    _logger.LogInformation("[SettingsViewModel-ToggleBiometricAsync] Biometric disabled, auto-disabling and clearing save password");
+                }
+            }
 
             await _biometricService.EnableBiometricAsync(IsBiometricEnabled);
         }
@@ -274,9 +340,6 @@ public partial class SettingsViewModel : BaseViewModel
         await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(helpPage);
     }
 
-    /// <summary>
-    /// Toggle para guardar contraseña - requiere reinicio de sesión
-    /// </summary>
     [RelayCommand]
     public async Task ToggleSavePasswordAsync()
     {
@@ -286,8 +349,6 @@ public partial class SettingsViewModel : BaseViewModel
 
             if (IsSavePasswordEnabled)
             {
-                // Usuario intenta ACTIVAR el switch
-                // Mostrar alerta informativa
                 bool confirmed = await Application.Current!.MainPage!.DisplayAlertAsync(
                     "Guardar Contraseña",
                     "Para completar este proceso debes iniciar sesión nuevamente.\n\nLuego de esto, la autenticación por biometría estará habilitada para tu próximo login.",
@@ -302,16 +363,13 @@ public partial class SettingsViewModel : BaseViewModel
                     return;
                 }
 
-                // Establecer flag antes de logout
                 await _authService.SetSavePasswordOnNextLoginAsync(true);
                 _logger.LogInformation("[SettingsViewModel-ToggleSavePasswordAsync] Flag set to save password on next login");
 
-                // Ejecutar logout
                 await PerformLogoutForPasswordSave();
             }
             else
             {
-                // Usuario intenta DESACTIVAR - simplemente borra la contraseña guardada
                 await _authService.ClearSavedPasswordAsync();
                 await _authService.SetSavePasswordOnNextLoginAsync(false);
                 _logger.LogInformation("[SettingsViewModel-ToggleSavePasswordAsync] Saved password cleared");
@@ -324,19 +382,15 @@ public partial class SettingsViewModel : BaseViewModel
         }
     }
 
-    /// <summary>
-    /// Realizar logout para guardar contraseña
-    /// </summary>
     private async Task PerformLogoutForPasswordSave()
     {
         try
         {
             _logger.LogInformation("[SettingsViewModel-PerformLogoutForPasswordSave] Performing logout for password save");
 
-            // Limpiar sesión actual
+            StopSessionTimer();
             await _authService.LogoutAsync();
 
-            // Navegar a LoginPage
             var loginPage = _serviceProvider.GetRequiredService<LoginPage>();
             Application.Current!.MainPage = loginPage;
 

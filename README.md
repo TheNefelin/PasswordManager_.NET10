@@ -284,3 +284,13 @@ PasswordManager_.NET10/
 │
 └── PasswordManager.Maui.csproj
 ```
+
+## Compatility
+- Dispositivos nuevos (64-bit) → Usan arm64-v8a (más eficiente)
+- Dispositivos viejos (32-bit) → Usan armeabi-v7a (compatible)
+
+```xaml
+<!--Compatibilidad con otras arquitecturas de android-->
+<RuntimeIdentifiers Condition="'$(TargetFramework)' == 'net10.0-android'">android-arm;android-arm64</RuntimeIdentifiers>
+<AndroidSupportedAbis Condition="'$(TargetFramework)' == 'net10.0-android'">armeabi-v7a;arm64-v8a</AndroidSupportedAbis>
+```
