@@ -15,6 +15,7 @@ public partial class LoginViewModel : BaseViewModel
     private readonly IServiceProvider _serviceProvider;
     private readonly IAuthService _authService;
     private readonly IBiometricService _biometricService;
+    private readonly ISessionManager _sessionManager;
 
     [ObservableProperty]
     private string email = string.Empty;
@@ -41,12 +42,14 @@ public partial class LoginViewModel : BaseViewModel
         ILogger<LoginViewModel> logger,
         IServiceProvider serviceProvider,
         IAuthService authService,
-        IBiometricService biometricService)
+        IBiometricService biometricService,
+        ISessionManager sessionManager)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
         _authService = authService;
         _biometricService = biometricService;
+        _sessionManager = sessionManager;
 
         Title = "Login";
 
@@ -82,80 +85,6 @@ public partial class LoginViewModel : BaseViewModel
         bool isPasswordValid = !string.IsNullOrWhiteSpace(Password) && Password.Length >= 6;
 
         IsFormValid = isEmailValid && isPasswordValid;
-    }
-
-    /// <summary>
-    /// Comando para ejecutar el login
-    /// </summary>
-    [RelayCommand]
-    public async Task LoginAsync()
-    {
-        try
-        {
-            _logger.LogInformation("[LoginViewModel-LoginAsync] Login attempt for email: {Email}", Email);
-
-            // Doble validación (por seguridad)
-            if (!ValidateFieldsDetailed())
-            {
-                _logger.LogWarning("[LoginViewModel-LoginAsync] Validation failed: {Message}", Message);
-                return;
-            }
-
-            IsLoading = true;
-            Message = string.Empty;
-
-            // Intentar login
-            var user = await _authService.LoginAsync(Email, Password);
-
-            _logger.LogInformation("[LoginViewModel-LoginAsync] Login successful for user: {UserId}", user.UserId);
-
-
-            // ============================================
-            // NUEVO: Verificar si debe guardar contraseña
-            bool shouldSavePassword = await _authService.GetSavePasswordOnNextLoginAsync();
-            if (shouldSavePassword)
-            {
-                try
-                {
-                    // Guardar contraseña (el servicio se encarga de encriptar)
-                    await _authService.SavePasswordAsync(Password);
-
-                    // Limpiar el flag
-                    await _authService.SetSavePasswordOnNextLoginAsync(false);
-
-                    _logger.LogInformation("[LoginViewModel-LoginAsync] Password saved successfully for next biometric login");
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "[LoginViewModel-LoginAsync] Error saving password: {Message}", ex.Message);
-                    // No fallar el login si hay error al guardar contraseña
-                }
-            }
-             // ============================================
-
-            // Limpiar campos
-            Email = string.Empty;
-            Password = string.Empty;
-            Message = string.Empty; //Message = "Login exitoso";
-
-            // Reemplazar la ventana actual con AppShell
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                var appShell = _serviceProvider.GetRequiredService<AppShell>();
-                Application.Current!.Windows[0].Page = appShell;
-                _logger.LogInformation("[LoginViewModel-LoginAsync] Navigated to AppShell");
-            });
-        }
-        catch (Exception ex)
-        {
-            Message = ex.Message ?? "Error en el login. Intenta de nuevo.";
-            _logger.LogError(ex, "[LoginViewModel-LoginAsync] Login error: {ExceptionType} - {Message}",
-                ex.GetType().Name, ex.Message);
-        }
-        finally
-        {
-            IsLoading = false;
-        }
     }
 
     /// <summary>
@@ -195,7 +124,7 @@ public partial class LoginViewModel : BaseViewModel
 
         return true;
     }
-    
+
     public async Task ValidateBiometricAsync()
     {
         try
@@ -207,6 +136,49 @@ public partial class LoginViewModel : BaseViewModel
         {
             _logger.LogError(ex, "[LoginViewModel-ValidateBiometricAsync] Error validating biometric");
             IsBiometricEnabled = false;
+        }
+    }
+
+    /// <summary>
+    /// Comando para ejecutar el login
+    /// </summary>
+    [RelayCommand]
+    public async Task LoginAsync()
+    {
+        try
+        {
+            _logger.LogInformation("[LoginViewModel-LoginAsync] Login attempt for email: {Email}", Email);
+
+            // Doble validación (por seguridad)
+            if (!ValidateFieldsDetailed())
+            {
+                _logger.LogWarning("[LoginViewModel-LoginAsync] Validation failed: {Message}", Message);
+                return;
+            }
+
+            IsLoading = true;
+            Message = string.Empty;
+
+            _logger.LogInformation("[LoginViewModel-LoginAsync] Calling AuthService.LoginAsync");
+            await _sessionManager.LoginAsync(Email, Password);
+
+            // Limpiar campos
+            Email = string.Empty;
+            Password = string.Empty;
+            Message = string.Empty; //Message = "Login exitoso";
+
+            var appShell = _serviceProvider.GetRequiredService<AppShell>();
+            Application.Current!.Windows[0].Page = appShell;
+            _logger.LogInformation("[LoginViewModel-LoginAsync] Navigated to AppShell");
+        }
+        catch (Exception ex)
+        {
+            Message = ex.Message ?? "Error en el login. Intenta de nuevo.";
+            _logger.LogError(ex, "[LoginViewModel-LoginAsync] Login error: {ExceptionType} - {Message}", ex.GetType().Name, ex.Message);
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
 

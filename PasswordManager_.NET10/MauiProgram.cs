@@ -40,6 +40,7 @@ public static class MauiProgram
         // Servicios
         builder.Services
             .AddSingleton<HttpClient>()
+            .AddSingleton<ISessionManager, SessionManager>()
             .AddSingleton<IBiometricService, BiometricService>()
             .AddSingleton<ISecureStorageService, SecureStorageService>()
             .AddSingleton<IThemeService, ThemeService>()
