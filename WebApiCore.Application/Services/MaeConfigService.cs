@@ -1,4 +1,6 @@
-﻿using WebApiCore.Application.Interfaces;
+﻿using System.Security.Cryptography;
+using System.Text;
+using WebApiCore.Application.Interfaces;
 using WebApiCore.Domain.Interfaces;
 
 namespace WebApiCore.Application.Services;
@@ -15,6 +17,11 @@ public class MaeConfigService : IMaeConfigService
     public async Task<bool> ValidateApiKey(string apiKey)
     {
         var sqlApiKey = await _maeConfigRepository.GetApiKeyAsync();
-        return !string.IsNullOrEmpty(sqlApiKey) && apiKey.Equals(sqlApiKey);
+        if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(sqlApiKey))
+            return false;
+
+        return CryptographicOperations.FixedTimeEquals(
+            Encoding.UTF8.GetBytes(apiKey),
+            Encoding.UTF8.GetBytes(sqlApiKey));
     }
 }
