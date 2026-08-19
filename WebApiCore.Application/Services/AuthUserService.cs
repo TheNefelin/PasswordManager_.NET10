@@ -8,18 +8,23 @@ namespace WebApiCore.Application.Services;
 
 public class AuthUserService : IAuthUserService
 {
+    private const string TooManyLoginAttempts = "Demasiados intentos fallidos de inicio de sesión. Intenta nuevamente más tarde.";
+
     private readonly IAuthUserRepository _authUserRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IAuthTokenService _authTokenService;
+    private readonly IIpLockoutService _loginLockoutService;
 
     public AuthUserService(
         IAuthUserRepository authUserRepository,
         IPasswordHasher passwordHasher,
-        IAuthTokenService authTokenService)
+        IAuthTokenService authTokenService,
+        IIpLockoutService loginLockoutService)
     {
         _authUserRepository = authUserRepository;
         _passwordHasher = passwordHasher;
         _authTokenService = authTokenService;
+        _loginLockoutService = loginLockoutService;
     }
 
     public async Task<ApiResponse<AuthUserResponse>> RegisterAsync(AuthUserRegister authUserRegister, CancellationToken cancellationToken)
@@ -53,15 +58,26 @@ public class AuthUserService : IAuthUserService
             result.StatusCode);
     }
 
-    public async Task<ApiResponse<AuthUserLogged>> LoginAsync(AuthUserLogin authUserLogin, CancellationToken cancellationToken)
+    public async Task<ApiResponse<AuthUserLogged>> LoginAsync(AuthUserLogin authUserLogin, string ipAddress, CancellationToken cancellationToken)
     {
+        if (_loginLockoutService.IsBlocked(ipAddress))
+            return ApiResponse.Failure<AuthUserLogged>(429, TooManyLoginAttempts);
+
         var authUser = await _authUserRepository.GetUserByEmailAsync(authUserLogin.Email, cancellationToken);
 
         if (authUser == null)
+        {
+            _loginLockoutService.RegisterFailure(ipAddress);
             return ApiResponse.Failure<AuthUserLogged>(401, "Usuario o contraseña incorrecta.");
+        }
 
         if (!_passwordHasher.VerifyPassword(authUserLogin.Password, authUser.HashLogin, authUser.SaltLogin))
+        {
+            _loginLockoutService.RegisterFailure(ipAddress);
             return ApiResponse.Failure<AuthUserLogged>(401, "Usuario o contraseña incorrecta.");
+        }
+
+        _loginLockoutService.Reset(ipAddress);
 
         var sqlToken = await _authUserRepository.NewSqlToken(authUser.Email, cancellationToken);
         var token = _authTokenService.GenerateToken(authUser);

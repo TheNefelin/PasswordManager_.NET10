@@ -1,6 +1,6 @@
 namespace WebApiCore.Application.Interfaces;
 
-public interface IApiKeyLockoutService
+public interface IIpLockoutService
 {
     bool IsBlocked(string ipAddress);
     void RegisterFailure(string ipAddress);

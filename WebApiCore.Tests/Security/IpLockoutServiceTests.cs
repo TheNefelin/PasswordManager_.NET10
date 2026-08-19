@@ -2,15 +2,22 @@ using WebApiCore.Infrastructure.Security;
 
 namespace WebApiCore.Tests.Security;
 
-public class ApiKeyLockoutServiceTests
+public class IpLockoutServiceTests
 {
     private static readonly DateTimeOffset BaseTime = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+
+    private static IpLockoutOptions DefaultOptions() => new()
+    {
+        MaxFailures = 5,
+        FailureWindow = TimeSpan.FromMinutes(10),
+        BlockDuration = TimeSpan.FromHours(1)
+    };
 
     [Fact]
     public void IsBlocked_WithNoFailures_ReturnsFalse()
     {
         var clock = new FakeTimeProvider(BaseTime);
-        var service = new ApiKeyLockoutService(clock);
+        var service = new IpLockoutService(DefaultOptions(), clock);
 
         var isBlocked = service.IsBlocked("10.0.0.1");
 
@@ -21,7 +28,7 @@ public class ApiKeyLockoutServiceTests
     public void IsBlocked_WithFewerThanMaxFailures_ReturnsFalse()
     {
         var clock = new FakeTimeProvider(BaseTime);
-        var service = new ApiKeyLockoutService(clock);
+        var service = new IpLockoutService(DefaultOptions(), clock);
 
         for (var i = 0; i < 4; i++)
             service.RegisterFailure("10.0.0.1");
@@ -34,7 +41,7 @@ public class ApiKeyLockoutServiceTests
     public void RegisterFailure_ReachingMaxFailures_BlocksForOneHour()
     {
         var clock = new FakeTimeProvider(BaseTime);
-        var service = new ApiKeyLockoutService(clock);
+        var service = new IpLockoutService(DefaultOptions(), clock);
 
         for (var i = 0; i < 5; i++)
             service.RegisterFailure("10.0.0.1");
@@ -50,7 +57,7 @@ public class ApiKeyLockoutServiceTests
     public void GetRemainingBlockTime_WhenNotBlocked_ReturnsNull()
     {
         var clock = new FakeTimeProvider(BaseTime);
-        var service = new ApiKeyLockoutService(clock);
+        var service = new IpLockoutService(DefaultOptions(), clock);
 
         var remaining = service.GetRemainingBlockTime("10.0.0.1");
 
@@ -61,7 +68,7 @@ public class ApiKeyLockoutServiceTests
     public void IsBlocked_AfterBlockDuration_ReturnsFalse()
     {
         var clock = new FakeTimeProvider(BaseTime);
-        var service = new ApiKeyLockoutService(clock);
+        var service = new IpLockoutService(DefaultOptions(), clock);
 
         for (var i = 0; i < 5; i++)
             service.RegisterFailure("10.0.0.1");
@@ -77,7 +84,7 @@ public class ApiKeyLockoutServiceTests
     public void RegisterFailure_OutsideFailureWindow_ResetsCounter()
     {
         var clock = new FakeTimeProvider(BaseTime);
-        var service = new ApiKeyLockoutService(clock);
+        var service = new IpLockoutService(DefaultOptions(), clock);
 
         for (var i = 0; i < 4; i++)
             service.RegisterFailure("10.0.0.1");
@@ -92,7 +99,7 @@ public class ApiKeyLockoutServiceTests
     public void RegisterFailure_AcrossFailuresInsideWindow_Accumulate()
     {
         var clock = new FakeTimeProvider(BaseTime);
-        var service = new ApiKeyLockoutService(clock);
+        var service = new IpLockoutService(DefaultOptions(), clock);
 
         for (var i = 0; i < 3; i++)
             service.RegisterFailure("10.0.0.1");
@@ -108,7 +115,7 @@ public class ApiKeyLockoutServiceTests
     public void Reset_ClearsFailuresAndBlock()
     {
         var clock = new FakeTimeProvider(BaseTime);
-        var service = new ApiKeyLockoutService(clock);
+        var service = new IpLockoutService(DefaultOptions(), clock);
 
         for (var i = 0; i < 5; i++)
             service.RegisterFailure("10.0.0.1");
@@ -124,7 +131,7 @@ public class ApiKeyLockoutServiceTests
     public void Failures_TrackedPerIpAddress()
     {
         var clock = new FakeTimeProvider(BaseTime);
-        var service = new ApiKeyLockoutService(clock);
+        var service = new IpLockoutService(DefaultOptions(), clock);
 
         for (var i = 0; i < 5; i++)
             service.RegisterFailure("10.0.0.1");

@@ -4,6 +4,7 @@ using WebApiCore.Application.Common;
 using WebApiCore.Application.DTOs;
 using WebApiCore.Application.Interfaces;
 using WebApiCore.Filters;
+using WebApiCore.Helpers;
 
 namespace WebApiCore.Controllers;
 
@@ -30,7 +31,8 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<ActionResult<ApiResponse<AuthUserLogged>>> Login(AuthUserLogin authUserLogin, CancellationToken cancellationToken)
     {
-        var apiResult = await _authUserService.LoginAsync(authUserLogin, cancellationToken);
+        var clientIp = ClientIpResolver.Resolve(HttpContext);
+        var apiResult = await _authUserService.LoginAsync(authUserLogin, clientIp, cancellationToken);
         return StatusCode(apiResult.StatusCode, apiResult);
     }
 }

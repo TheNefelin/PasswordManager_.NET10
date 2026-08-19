@@ -11,12 +11,12 @@ public class ApiKeyFilter : IAsyncActionFilter
     private const string ApiKeyHeaderName = "ApiKey";
 
     private readonly IMaeConfigService _maeConfigService;
-    private readonly IApiKeyLockoutService _lockoutService;
+    private readonly IIpLockoutService _lockoutService;
     private readonly ILogger<ApiKeyFilter> _logger;
 
     public ApiKeyFilter(
         IMaeConfigService maeConfigService,
-        IApiKeyLockoutService lockoutService,
+        [FromKeyedServices("api-key")] IIpLockoutService lockoutService,
         ILogger<ApiKeyFilter> logger)
     {
         _maeConfigService = maeConfigService;

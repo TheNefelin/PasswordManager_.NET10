@@ -9,10 +9,20 @@ namespace WebApiCore.Tests.Auth;
 
 public class AuthUserServiceTests : IntegrationTestBase
 {
+    private const string TestIp = "127.0.0.1";
+
     private static AuthUserService CreateService() => new(
         new AuthUserRepository(TestDb.CreateContext()),
         new PasswordHasher(),
-        new JwtTokenUtil(TestJwtOptions.Create()));
+        new JwtTokenUtil(TestJwtOptions.Create()),
+        new IpLockoutService(LoginLockoutOptions()));
+
+    private static IpLockoutOptions LoginLockoutOptions() => new()
+    {
+        MaxFailures = 5,
+        FailureWindow = TimeSpan.FromMinutes(15),
+        BlockDuration = TimeSpan.FromMinutes(15)
+    };
 
     [Fact]
     public async Task RegisterAsync_WithMatchingPasswords_ReturnsSuccess()
@@ -77,7 +87,7 @@ public class AuthUserServiceTests : IntegrationTestBase
         {
             Email = email,
             Password = "Password123"
-        }, CancellationToken.None);
+        }, TestIp, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(200, result.StatusCode);
@@ -97,7 +107,7 @@ public class AuthUserServiceTests : IntegrationTestBase
         {
             Email = email,
             Password = "WrongPassword"
-        }, CancellationToken.None);
+        }, TestIp, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(401, result.StatusCode);
@@ -112,7 +122,7 @@ public class AuthUserServiceTests : IntegrationTestBase
         {
             Email = NewEmail(),
             Password = "Password123"
-        }, CancellationToken.None);
+        }, TestIp, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(401, result.StatusCode);
@@ -142,5 +152,90 @@ public class AuthUserServiceTests : IntegrationTestBase
         {
             await connection.ExecuteAsync("UPDATE Mae_Config SET IsEnableRegister = 1 WHERE Config_Id = 1");
         }
+    }
+
+    [Fact]
+    public async Task LoginAsync_ReachingFailureLimit_BlocksTheIp()
+    {
+        var email = NewEmail();
+        await CreateUserDirectAsync(email);
+        var service = CreateService();
+
+        for (var i = 0; i < 5; i++)
+        {
+            var failed = await service.LoginAsync(new AuthUserLogin
+            {
+                Email = email,
+                Password = "WrongPassword"
+            }, TestIp, CancellationToken.None);
+
+            Assert.Equal(401, failed.StatusCode);
+        }
+
+        var blocked = await service.LoginAsync(new AuthUserLogin
+        {
+            Email = email,
+            Password = "Password123"
+        }, TestIp, CancellationToken.None);
+
+        Assert.False(blocked.IsSuccess);
+        Assert.Equal(429, blocked.StatusCode);
+    }
+
+    [Fact]
+    public async Task LoginAsync_WhenIpBlocked_ReturnsTooManyRequests()
+    {
+        var email = NewEmail();
+        await CreateUserDirectAsync(email);
+        var service = CreateService();
+
+        for (var i = 0; i < 5; i++)
+        {
+            await service.LoginAsync(new AuthUserLogin
+            {
+                Email = email,
+                Password = "WrongPassword"
+            }, TestIp, CancellationToken.None);
+        }
+
+        var result = await service.LoginAsync(new AuthUserLogin
+        {
+            Email = email,
+            Password = "Password123"
+        }, TestIp, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(429, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task LoginAsync_Success_ResetsFailureCountForTheIp()
+    {
+        var email = NewEmail();
+        await CreateUserDirectAsync(email);
+        var service = CreateService();
+
+        for (var i = 0; i < 4; i++)
+        {
+            await service.LoginAsync(new AuthUserLogin
+            {
+                Email = email,
+                Password = "WrongPassword"
+            }, TestIp, CancellationToken.None);
+        }
+
+        var success = await service.LoginAsync(new AuthUserLogin
+        {
+            Email = email,
+            Password = "Password123"
+        }, TestIp, CancellationToken.None);
+        Assert.True(success.IsSuccess);
+
+        var afterReset = await service.LoginAsync(new AuthUserLogin
+        {
+            Email = email,
+            Password = "WrongPassword"
+        }, TestIp, CancellationToken.None);
+        Assert.Equal(401, afterReset.StatusCode);
     }
 }

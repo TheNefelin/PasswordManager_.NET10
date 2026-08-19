@@ -45,7 +45,20 @@ builder.Services.AddSingleton(jwtOptions);
 // ======================================================================
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddSingleton<IAuthTokenService, JwtTokenUtil>();
-builder.Services.AddSingleton<IApiKeyLockoutService, ApiKeyLockoutService>();
+builder.Services.AddSingleton<IIpLockoutService>(_ =>
+    new IpLockoutService(new IpLockoutOptions
+    {
+        MaxFailures = 5,
+        FailureWindow = TimeSpan.FromMinutes(15),
+        BlockDuration = TimeSpan.FromMinutes(15)
+    }));
+builder.Services.AddKeyedSingleton<IIpLockoutService>("api-key", (_, _) =>
+    new IpLockoutService(new IpLockoutOptions
+    {
+        MaxFailures = 5,
+        FailureWindow = TimeSpan.FromMinutes(10),
+        BlockDuration = TimeSpan.FromHours(1)
+    }));
 builder.Services.AddScoped<ApiKeyFilter>();
 
 // ======================================================================

@@ -6,5 +6,5 @@ namespace WebApiCore.Application.Interfaces;
 public interface IAuthUserService
 {
     Task<ApiResponse<AuthUserResponse>> RegisterAsync(AuthUserRegister authUserRegister, CancellationToken cancellationToken);
-    Task<ApiResponse<AuthUserLogged>> LoginAsync(AuthUserLogin authUserLogin, CancellationToken cancellationToken);
+    Task<ApiResponse<AuthUserLogged>> LoginAsync(AuthUserLogin authUserLogin, string ipAddress, CancellationToken cancellationToken);
 }

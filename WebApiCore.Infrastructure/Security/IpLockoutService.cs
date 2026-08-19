@@ -3,17 +3,15 @@ using WebApiCore.Application.Interfaces;
 
 namespace WebApiCore.Infrastructure.Security;
 
-public class ApiKeyLockoutService : IApiKeyLockoutService
+public class IpLockoutService : IIpLockoutService
 {
-    private const int MaxFailures = 5;
-    private static readonly TimeSpan FailureWindow = TimeSpan.FromMinutes(10);
-    private static readonly TimeSpan BlockDuration = TimeSpan.FromHours(1);
-
-    private readonly ConcurrentDictionary<string, LockoutEntry> _entries = new();
+    private readonly IpLockoutOptions _options;
     private readonly TimeProvider _timeProvider;
+    private readonly ConcurrentDictionary<string, LockoutEntry> _entries = new();
 
-    public ApiKeyLockoutService(TimeProvider? timeProvider = null)
+    public IpLockoutService(IpLockoutOptions options, TimeProvider? timeProvider = null)
     {
+        _options = options;
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
@@ -33,7 +31,7 @@ public class ApiKeyLockoutService : IApiKeyLockoutService
             return false;
         }
 
-        if (now - entry.LastFailureUtc > FailureWindow)
+        if (now - entry.LastFailureUtc > _options.FailureWindow)
         {
             _entries.TryRemove(ipAddress, out _);
             return false;
@@ -49,7 +47,7 @@ public class ApiKeyLockoutService : IApiKeyLockoutService
 
         lock (entry)
         {
-            if (now - entry.LastFailureUtc > FailureWindow)
+            if (now - entry.LastFailureUtc > _options.FailureWindow)
             {
                 entry.FailureCount = 0;
                 entry.LastFailureUtc = now;
@@ -58,8 +56,8 @@ public class ApiKeyLockoutService : IApiKeyLockoutService
             entry.FailureCount++;
             entry.LastFailureUtc = now;
 
-            if (entry.FailureCount >= MaxFailures)
-                entry.BlockedUntil = now.Add(BlockDuration);
+            if (entry.FailureCount >= _options.MaxFailures)
+                entry.BlockedUntil = now.Add(_options.BlockDuration);
         }
     }
 
