@@ -215,6 +215,12 @@ var app = builder.Build();
 // ======================================================================
 app.UseExceptionHandler();
 app.UseHttpsRedirection();
+
+// ======================================================================
+// Security headers (protección básica de respuesta; no aplica a Swagger)
+// ======================================================================
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
 app.UseRateLimiter();
 
 app.UseSwagger();
