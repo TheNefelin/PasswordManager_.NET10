@@ -10,23 +10,30 @@ public class ApiKeyLockoutService : IApiKeyLockoutService
     private static readonly TimeSpan BlockDuration = TimeSpan.FromHours(1);
 
     private readonly ConcurrentDictionary<string, LockoutEntry> _entries = new();
+    private readonly TimeProvider _timeProvider;
+
+    public ApiKeyLockoutService(TimeProvider? timeProvider = null)
+    {
+        _timeProvider = timeProvider ?? TimeProvider.System;
+    }
 
     public bool IsBlocked(string ipAddress)
     {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         var entry = _entries.GetValueOrDefault(ipAddress);
         if (entry is null)
             return false;
 
-        if (entry.BlockedUntil is DateTime blockedUntil && blockedUntil > DateTime.UtcNow)
+        if (entry.BlockedUntil is DateTime blockedUntil && blockedUntil > now)
             return true;
 
-        if (entry.BlockedUntil is DateTime expired && expired <= DateTime.UtcNow)
+        if (entry.BlockedUntil is DateTime expired && expired <= now)
         {
             _entries.TryRemove(ipAddress, out _);
             return false;
         }
 
-        if (DateTime.UtcNow - entry.LastFailureUtc > FailureWindow)
+        if (now - entry.LastFailureUtc > FailureWindow)
         {
             _entries.TryRemove(ipAddress, out _);
             return false;
@@ -37,7 +44,7 @@ public class ApiKeyLockoutService : IApiKeyLockoutService
 
     public void RegisterFailure(string ipAddress)
     {
-        var now = DateTime.UtcNow;
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         var entry = _entries.GetOrAdd(ipAddress, _ => new LockoutEntry());
 
         lock (entry)
@@ -66,7 +73,7 @@ public class ApiKeyLockoutService : IApiKeyLockoutService
         var entry = _entries.GetValueOrDefault(ipAddress);
         if (entry?.BlockedUntil is DateTime blockedUntil)
         {
-            var remaining = blockedUntil - DateTime.UtcNow;
+            var remaining = blockedUntil - _timeProvider.GetUtcNow().UtcDateTime;
             return remaining > TimeSpan.Zero ? remaining : null;
         }
 
