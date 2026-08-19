@@ -22,7 +22,7 @@ Reglas de operación: `AGENTS.md` (mismas reglas generales que en `Projects_.NET
 | `WebApiCore.Infrastructure` | Dapper + `Microsoft.Data.SqlClient`, repositorios, seguridad (`PasswordHasher` PBKDF2, `JwtTokenUtil`, `ApiKeyLockoutService`), `JwtOptions`. Referencia Application. |
 | `WebApiCore` (API) | `Program.cs`, controllers (`AuthController`, `CoreController`), `Middleware/GlobalExceptionHandler`, `Filters/` (`ApiKeyFilter`, `ApiKeyOperationFilter`, `AuthorizeOperationFilter`), `Helpers/ClientIpResolver`. |
 
-Dependencias (NuGet) en `WebApiCore`: `Microsoft.AspNetCore.Authentication.JwtBearer 10.0.11`, `Microsoft.AspNetCore.OpenApi 10.0.11`, `Swashbuckle.AspNetCore 10.2.3`. En Infrastructure: `Dapper 2.1.79`, `Microsoft.Data.SqlClient 7.0.2`, `Microsoft.AspNetCore.Cryptography.KeyDerivation 10.0.11`, `System.IdentityModel.Tokens.Jwt 8.22.0`. En `WebApiCore.Tests`: xUnit, `Microsoft.NET.Test.Sdk`, coverlet (sin Moq; fakes/stubs manuales).
+Dependencias (NuGet) en `WebApiCore`: `Microsoft.AspNetCore.Authentication.JwtBearer 10.0.11`, `Microsoft.AspNetCore.OpenApi 10.0.11`, `Swashbuckle.AspNetCore 10.2.3`. En Infrastructure: `Dapper 2.1.79`, `Microsoft.Data.SqlClient 7.0.2`, `System.IdentityModel.Tokens.Jwt 8.22.0` (el hashing de contraseñas usa `Rfc2898DeriveBytes.Pbkdf2` del BCL, sin paquete externo; se eliminó `Microsoft.AspNetCore.Cryptography.KeyDerivation`). En `WebApiCore.Tests`: xUnit, `Microsoft.NET.Test.Sdk`, coverlet (sin Moq; fakes/stubs manuales).
 
 ## 3. Decisiones de diseño clave
 

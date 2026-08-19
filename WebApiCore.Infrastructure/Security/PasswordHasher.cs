@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Cryptography.KeyDerivation;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using WebApiCore.Application.Interfaces;
 
 namespace WebApiCore.Infrastructure.Security;
@@ -28,11 +27,11 @@ public class PasswordHasher : IPasswordHasher
 
     private static string NewHash(string password, byte[] salt)
     {
-        return Convert.ToBase64String(KeyDerivation.Pbkdf2(
-            password: password,
-            salt: salt,
-            prf: KeyDerivationPrf.HMACSHA256,
-            iterationCount: IterationCount,
-            numBytesRequested: KeySize));
+        return Convert.ToBase64String(Rfc2898DeriveBytes.Pbkdf2(
+            password,
+            salt,
+            IterationCount,
+            HashAlgorithmName.SHA256,
+            KeySize));
     }
 }
