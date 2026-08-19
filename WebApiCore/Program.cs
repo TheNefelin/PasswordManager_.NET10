@@ -9,6 +9,7 @@ using WebApiCore.Application.Interfaces;
 using WebApiCore.Application.Services;
 using WebApiCore.Domain.Interfaces;
 using WebApiCore.Filters;
+using WebApiCore.Helpers;
 using WebApiCore.Infrastructure.Data;
 using WebApiCore.Infrastructure.Options;
 using WebApiCore.Infrastructure.Repositories;
@@ -44,6 +45,7 @@ builder.Services.AddSingleton(jwtOptions);
 // ======================================================================
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddSingleton<IAuthTokenService, JwtTokenUtil>();
+builder.Services.AddSingleton<IApiKeyLockoutService, ApiKeyLockoutService>();
 builder.Services.AddScoped<ApiKeyFilter>();
 
 // ======================================================================
@@ -159,7 +161,7 @@ builder.Services.AddRateLimiter(options =>
 
     options.AddPolicy("client_25_per_minute", context =>
         RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: GetClientKey(context),
+            partitionKey: ClientIpResolver.Resolve(context),
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 AutoReplenishment = true,
@@ -212,6 +214,7 @@ var app = builder.Build();
 // Pipeline HTTP
 // ======================================================================
 app.UseExceptionHandler();
+app.UseHttpsRedirection();
 app.UseRateLimiter();
 
 app.UseSwagger();
@@ -224,7 +227,6 @@ app.UseSwaggerUI(options =>
 
 app.UseCors("_allowedOrigins");
 app.UseAuthentication();
-app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
@@ -240,12 +242,3 @@ app.MapFallback(async context =>
 });
 
 app.Run();
-
-static string GetClientKey(HttpContext context)
-{
-    var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-    if (!string.IsNullOrWhiteSpace(forwardedFor))
-        return forwardedFor.Split(',')[0].Trim();
-
-    return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-}
