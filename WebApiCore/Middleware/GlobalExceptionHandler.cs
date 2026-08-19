@@ -29,8 +29,7 @@ public class GlobalExceptionHandler : IExceptionHandler
         httpContext.Response.StatusCode = statusCode;
         httpContext.Response.ContentType = "application/json";
 
-        var response = ApiResponse.Failure<object>(statusCode, message);
-        response.TraceId = httpContext.TraceIdentifier;
+        var response = ApiResponse.Failure<object>(statusCode, message, traceId: httpContext.TraceIdentifier);
 
         await httpContext.Response.WriteAsJsonAsync(response, cancellationToken);
         return true;

@@ -21,12 +21,13 @@ public static class ApiResponse
             Data = data
         };
 
-    public static ApiResponse<T> Failure<T>(int statusCode, string message, IDictionary<string, string[]>? errors = null)
+    public static ApiResponse<T> Failure<T>(int statusCode, string message, IDictionary<string, string[]>? errors = null, string? traceId = null)
         => new()
         {
             IsSuccess = false,
             StatusCode = statusCode,
             Message = message,
-            Errors = errors
+            Errors = errors,
+            TraceId = traceId
         };
 }

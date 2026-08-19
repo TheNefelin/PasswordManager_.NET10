@@ -76,12 +76,15 @@ builder.Services.AddControllers()
                     x => x.Key,
                     x => x.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
 
-            return new BadRequestObjectResult(ApiResponse.Failure<object>(400, "Validación fallida.", errors));
+            return new BadRequestObjectResult(
+                ApiResponse.Failure<object>(400, "Validación fallida.", errors, context.HttpContext.TraceIdentifier));
         };
     });
 
 // ======================================================================
 // Exception handler global (respuesta uniforme ApiResponse)
+// AddProblemDetails habilita UseExceptionHandler() para invocar los
+// IExceptionHandler registrados (GlobalExceptionHandler). No eliminar.
 // ======================================================================
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
@@ -116,7 +119,8 @@ builder.Services
                 context.HandleResponse();
                 context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 context.Response.ContentType = "application/json";
-                return context.Response.WriteAsJsonAsync(ApiResponse.Failure<object>(401, "No autorizado."));
+                return context.Response.WriteAsJsonAsync(
+                    ApiResponse.Failure<object>(401, "No autorizado.", traceId: context.HttpContext.TraceIdentifier));
             }
         };
     });
@@ -169,7 +173,8 @@ builder.Services.AddRateLimiter(options =>
         context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
         context.HttpContext.Response.ContentType = "application/json";
         await context.HttpContext.Response.WriteAsJsonAsync(
-            ApiResponse.Failure<object>(429, "Demasiadas solicitudes. Intenta nuevamente en un minuto."),
+            ApiResponse.Failure<object>(429, "Demasiadas solicitudes. Intenta nuevamente en un minuto.",
+                traceId: context.HttpContext.TraceIdentifier),
             cancellationToken);
     };
 });
@@ -230,7 +235,8 @@ app.MapFallback(async context =>
 {
     context.Response.StatusCode = StatusCodes.Status404NotFound;
     context.Response.ContentType = "application/json";
-    await context.Response.WriteAsJsonAsync(ApiResponse.Failure<object>(404, "Recurso no encontrado."));
+    await context.Response.WriteAsJsonAsync(
+        ApiResponse.Failure<object>(404, "Recurso no encontrado.", traceId: context.TraceIdentifier));
 });
 
 app.Run();
