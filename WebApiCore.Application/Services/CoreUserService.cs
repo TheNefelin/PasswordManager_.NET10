@@ -17,12 +17,12 @@ public class CoreUserService : ICoreUserService
         _passwordHasher = passwordHasher;
     }
 
-    public async Task<ApiResponse<CoreUserIV>> RegisterCoreUserPasswordAsync(CoreUserPassword coreUserPassword, CancellationToken cancellationToken)
+    public async Task<ApiResponse<CoreUserIV>> RegisterCoreUserPasswordAsync(Guid userId, CoreUserPassword coreUserPassword, CancellationToken cancellationToken)
     {
         var coreUser = await _coreUserRepository.GetCoreUserAsync(
             new CoreUser
             {
-                User_Id = coreUserPassword.CoreUser.User_Id,
+                User_Id = userId,
                 SqlToken = coreUserPassword.CoreUser.SqlToken
             },
             cancellationToken);
@@ -44,12 +44,12 @@ public class CoreUserService : ICoreUserService
             "Clave de encriptación creada correctamente.");
     }
 
-    public async Task<ApiResponse<CoreUserIV>> GetCoreUserIVAsync(CoreUserPassword coreUserPassword, CancellationToken cancellationToken)
+    public async Task<ApiResponse<CoreUserIV>> GetCoreUserIVAsync(Guid userId, CoreUserPassword coreUserPassword, CancellationToken cancellationToken)
     {
         var coreUser = await _coreUserRepository.GetCoreUserAsync(
             new CoreUser
             {
-                User_Id = coreUserPassword.CoreUser.User_Id,
+                User_Id = userId,
                 SqlToken = coreUserPassword.CoreUser.SqlToken
             },
             cancellationToken);

@@ -18,7 +18,7 @@ public class CoreDataServiceTests : IntegrationTestBase
         var service = CreateService();
         var coreUser = new CoreUserRequest { User_Id = userId, SqlToken = sqlToken };
 
-        var insertResult = await service.InsertAsync(new CoreDataRequest
+        var insertResult = await service.InsertAsync(userId, new CoreDataRequest
         {
             Data01 = "a",
             Data02 = "b",
@@ -29,7 +29,7 @@ public class CoreDataServiceTests : IntegrationTestBase
         Assert.True(insertResult.IsSuccess);
         Assert.Equal(201, insertResult.StatusCode);
 
-        var getAllResult = await service.GetAllAsync(coreUser, CancellationToken.None);
+        var getAllResult = await service.GetAllAsync(userId, coreUser, CancellationToken.None);
 
         Assert.True(getAllResult.IsSuccess);
         Assert.Contains(getAllResult.Data!, x => x.Data_Id == insertResult.Data!.Data_Id);
@@ -41,6 +41,7 @@ public class CoreDataServiceTests : IntegrationTestBase
         var service = CreateService();
 
         var result = await service.GetAllAsync(
+            Guid.NewGuid(),
             new CoreUserRequest { User_Id = Guid.NewGuid(), SqlToken = Guid.NewGuid() },
             CancellationToken.None);
 
@@ -54,7 +55,7 @@ public class CoreDataServiceTests : IntegrationTestBase
         var service = CreateService();
         var coreUser = new CoreUserRequest { User_Id = userId, SqlToken = sqlToken };
 
-        var insertResult = await service.InsertAsync(new CoreDataRequest
+        var insertResult = await service.InsertAsync(userId, new CoreDataRequest
         {
             Data01 = "a",
             Data02 = "b",
@@ -62,7 +63,7 @@ public class CoreDataServiceTests : IntegrationTestBase
             CoreUser = coreUser
         }, CancellationToken.None);
 
-        var updateResult = await service.UpdateAsync(new CoreDataRequest
+        var updateResult = await service.UpdateAsync(userId, new CoreDataRequest
         {
             Data_Id = insertResult.Data!.Data_Id,
             Data01 = "x",
@@ -73,7 +74,7 @@ public class CoreDataServiceTests : IntegrationTestBase
 
         Assert.True(updateResult.IsSuccess);
 
-        var getAllResult = await service.GetAllAsync(coreUser, CancellationToken.None);
+        var getAllResult = await service.GetAllAsync(userId, coreUser, CancellationToken.None);
         Assert.Contains(getAllResult.Data!, x => x.Data_Id == insertResult.Data.Data_Id && x.Data01 == "x");
     }
 
@@ -84,7 +85,7 @@ public class CoreDataServiceTests : IntegrationTestBase
         var service = CreateService();
         var coreUser = new CoreUserRequest { User_Id = userId, SqlToken = sqlToken };
 
-        var insertResult = await service.InsertAsync(new CoreDataRequest
+        var insertResult = await service.InsertAsync(userId, new CoreDataRequest
         {
             Data01 = "a",
             Data02 = "b",
@@ -92,7 +93,7 @@ public class CoreDataServiceTests : IntegrationTestBase
             CoreUser = coreUser
         }, CancellationToken.None);
 
-        var deleteResult = await service.DeleteAsync(new CoreDataDelete
+        var deleteResult = await service.DeleteAsync(userId, new CoreDataDelete
         {
             Data_Id = insertResult.Data!.Data_Id,
             CoreUser = coreUser
@@ -100,7 +101,7 @@ public class CoreDataServiceTests : IntegrationTestBase
 
         Assert.True(deleteResult.IsSuccess);
 
-        var getAllResult = await service.GetAllAsync(coreUser, CancellationToken.None);
+        var getAllResult = await service.GetAllAsync(userId, coreUser, CancellationToken.None);
         Assert.DoesNotContain(getAllResult.Data!, x => x.Data_Id == insertResult.Data.Data_Id);
     }
 }

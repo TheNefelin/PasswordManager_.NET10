@@ -20,6 +20,7 @@ public class CoreUserServiceTests : IntegrationTestBase
         var coreUser = new CoreUserRequest { User_Id = userId, SqlToken = sqlToken };
 
         var registerResult = await service.RegisterCoreUserPasswordAsync(
+            userId,
             new CoreUserPassword { Password = "SecretPM", CoreUser = coreUser },
             CancellationToken.None);
 
@@ -27,6 +28,7 @@ public class CoreUserServiceTests : IntegrationTestBase
         Assert.Equal(200, registerResult.StatusCode);
 
         var ivResult = await service.GetCoreUserIVAsync(
+            userId,
             new CoreUserPassword { Password = "SecretPM", CoreUser = coreUser },
             CancellationToken.None);
 
@@ -39,7 +41,7 @@ public class CoreUserServiceTests : IntegrationTestBase
     {
         var service = CreateService();
 
-        var result = await service.GetCoreUserIVAsync(new CoreUserPassword
+        var result = await service.GetCoreUserIVAsync(Guid.NewGuid(), new CoreUserPassword
         {
             Password = "SecretPM",
             CoreUser = new CoreUserRequest { User_Id = Guid.NewGuid(), SqlToken = Guid.NewGuid() }
@@ -56,12 +58,14 @@ public class CoreUserServiceTests : IntegrationTestBase
         var coreUser = new CoreUserRequest { User_Id = userId, SqlToken = sqlToken };
 
         var first = await service.RegisterCoreUserPasswordAsync(
+            userId,
             new CoreUserPassword { Password = "SecretPM", CoreUser = coreUser },
             CancellationToken.None);
 
         Assert.True(first.IsSuccess);
 
         var second = await service.RegisterCoreUserPasswordAsync(
+            userId,
             new CoreUserPassword { Password = "SecretPM", CoreUser = coreUser },
             CancellationToken.None);
 
