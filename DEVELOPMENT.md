@@ -61,7 +61,7 @@ Referencia: [Microsoft.OpenAPI.NET v2 upgrade guide](https://github.com/microsof
   },
   "Cors": { "AllowedOrigins": ["..."] },
   "RateLimit": { "PermitLimit": 25, "WindowSeconds": 60 },
-  "JWT": { "Key": "...", "Issuer": "...", "Audience": "...", "Subject": "...", "ExpireMin": 60 }
+  "JWT": { "Key": "...", "Issuer": "...", "Audience": "...", "ExpireMin": 60 }
 }
 ```
 

@@ -34,7 +34,7 @@ public class JwtTokenUtil : IAuthTokenService
             issuer: _options.Issuer,
             audience: _options.Audience,
             claims: claims,
-            expires: DateTime.Now.AddMinutes(_options.ExpireMin),
+            expires: DateTime.UtcNow.AddMinutes(_options.ExpireMin),
             signingCredentials: creds);
 
         return new TokenResult(

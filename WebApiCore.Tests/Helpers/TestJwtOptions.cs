@@ -9,7 +9,6 @@ public static class TestJwtOptions
         Key = "TestKeyTestKeyTestKeyTestKeyTestKeyTestKey",
         Issuer = "TestIssuer",
         Audience = "TestAudience",
-        Subject = "TestSubject",
         ExpireMin = 60
     };
 }
