@@ -23,8 +23,6 @@
 -- Drops (reconstrucción limpia) ---------------------------------------
 IF OBJECT_ID('dbo.Auth_Register', 'P') IS NOT NULL DROP PROCEDURE dbo.Auth_Register;
 GO
-IF OBJECT_ID('dbo.Auth_Login', 'P') IS NOT NULL DROP PROCEDURE dbo.Auth_Login;
-GO
 IF OBJECT_ID('dbo.PM_CoreData', 'U') IS NOT NULL DROP TABLE dbo.PM_CoreData;
 GO
 IF OBJECT_ID('dbo.Auth_Users', 'U') IS NOT NULL DROP TABLE dbo.Auth_Users;
@@ -98,7 +96,7 @@ BEGIN
 
     IF 0 = (SELECT ISNULL(IsEnableRegister, 0) FROM dbo.Mae_Config WHERE Config_Id = 1)
     BEGIN
-        SELECT 0 AS IsSuccess, 401 AS StatusCode, 'El Servicio de Registro No Esta Disponible' AS Message
+        SELECT 0 AS IsSuccess, 403 AS StatusCode, 'El Servicio de Registro No Esta Disponible' AS Message
         RETURN
     END
 
@@ -115,7 +113,7 @@ BEGIN
         SELECT 1 AS IsSuccess, 201 AS StatusCode, 'Usuario Registrado Correctamente' AS Message
     END TRY
     BEGIN CATCH
-        SELECT 0 AS IsSuccess, ERROR_STATE() AS StatusCode, ERROR_MESSAGE() AS Message
+        SELECT 0 AS IsSuccess, 500 AS StatusCode, ERROR_MESSAGE() AS Message
     END CATCH
 END
 GO

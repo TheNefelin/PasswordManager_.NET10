@@ -8,8 +8,8 @@ Solución (`PasswordManager_.NET10.slnx`) con **dos proyectos deployables indepe
 
 | Proyecto | Qué es | Estado |
 |---|---|---|
-| `WebApiCore` + capas (`Application`, `Domain`, `Infrastructure`) | **API** (ASP.NET Core, .NET 10) | Port a .NET 10 de la API `WebApiCore` del repo `D:\Repo\.NET\Projects_.NET9`. Debe funcionar igual y ser el **reemplazo** de la v9. |
-| `PasswordManager_.NET10` | Cliente **MAUI** (net10.0-android/ios/maccatalyst/windows) | Versión v1 existente. Plan de migración v1→v2 en `ANALISIS_V1.md`. |
+| `WebApiCore` + capas (`Application`, `Domain`, `Infrastructure`) | **API** (ASP.NET Core, .NET 10) | Port a .NET 10 de la API `WebApiCore` del repo `D:\Repo\.NET\Projects_.NET9`. Reemplazo de la v9. Con mejoras de seguridad/calidad aplicadas (secciones 3 y 7). |
+| `PasswordManager_.NET10` | Cliente **MAUI** (net10.0-android/ios/maccatalyst/windows) | Versión v1 existente. `ANALISIS_V1.md` fue eliminado; auditoría v1→v2 pendiente de documentar si se retoma el MAUI. |
 
 Reglas de operación: `AGENTS.md` (mismas reglas generales que en `Projects_.NET9`).
 
@@ -18,20 +18,25 @@ Reglas de operación: `AGENTS.md` (mismas reglas generales que en `Projects_.NET
 | Capa | Contenido |
 |---|---|
 | `WebApiCore.Domain` | Interfaces de repositorios (`IAuthUserRepository`, `ICoreUserRepository`, `ICoreDataRepository`, `IMaeConfigRepository`), entidades. Sin dependencias. |
-| `WebApiCore.Application` | DTOs, servicios de aplicación, `ApiResponse` (envelope), interfaces de servicios. Referencia solo Domain. |
-| `WebApiCore.Infrastructure` | Dapper + `Microsoft.Data.SqlClient`, repositorios, `PasswordHasher` (PBKDF2), `JwtTokenUtil`, `JwtOptions`. Referencia Application. |
-| `WebApiCore` (API) | `Program.cs`, controllers (`AuthController`, `CoreController`), `Middleware/GlobalExceptionHandler`, `Filters/` (`ApiKeyFilter`, `ApiKeyOperationFilter`, `AuthorizeOperationFilter`). |
+| `WebApiCore.Application` | DTOs (incluye `CoreDataResponse`, el DTO de salida de Core), `ApiResponse` (envelope), servicios de aplicación, interfaces (`IApiKeyLockoutService`, `IAuthTokenService`, `IPasswordHasher`, etc.). Referencia solo Domain. |
+| `WebApiCore.Infrastructure` | Dapper + `Microsoft.Data.SqlClient`, repositorios, seguridad (`PasswordHasher` PBKDF2, `JwtTokenUtil`, `ApiKeyLockoutService`), `JwtOptions`. Referencia Application. |
+| `WebApiCore` (API) | `Program.cs`, controllers (`AuthController`, `CoreController`), `Middleware/GlobalExceptionHandler`, `Filters/` (`ApiKeyFilter`, `ApiKeyOperationFilter`, `AuthorizeOperationFilter`), `Helpers/ClientIpResolver`. |
 
-Dependencias (NuGet) en `WebApiCore`: `Microsoft.AspNetCore.Authentication.JwtBearer 10.0.11`, `Microsoft.AspNetCore.OpenApi 10.0.11`, `Swashbuckle.AspNetCore 10.2.3`. En Infrastructure: `Dapper 2.1.79`, `Microsoft.Data.SqlClient 7.0.2`, `Microsoft.AspNetCore.Cryptography.KeyDerivation 10.0.11`, `System.IdentityModel.Tokens.Jwt 8.22.0`.
+Dependencias (NuGet) en `WebApiCore`: `Microsoft.AspNetCore.Authentication.JwtBearer 10.0.11`, `Microsoft.AspNetCore.OpenApi 10.0.11`, `Swashbuckle.AspNetCore 10.2.3`. En Infrastructure: `Dapper 2.1.79`, `Microsoft.Data.SqlClient 7.0.2`, `Microsoft.AspNetCore.Cryptography.KeyDerivation 10.0.11`, `System.IdentityModel.Tokens.Jwt 8.22.0`. En `WebApiCore.Tests`: xUnit, `Microsoft.NET.Test.Sdk`, coverlet (sin Moq; fakes/stubs manuales).
 
 ## 3. Decisiones de diseño clave
 
-- **Envelope uniforme `ApiResponse`**: toda respuesta (éxito y error) usa `ApiResponse<T>` (`isSuccess`, `statusCode`, `message`, `data`, `errors`, `traceId`). Errores centralizados en `GlobalExceptionHandler` (500 genérico sin fuga de detalle) + `InvalidModelStateResponseFactory` (400) + `JwtBearerEvents.OnChallenge` (401) + `OnRejected` del rate limiter (429) + `MapFallback` (404).
-- **Dapper + SQL Server** con SP `Auth_Register` para el registro. El login se resuelve en C# (`GetUserByEmailAsync` + token nuevo), no con SP.
+- **Envelope uniforme `ApiResponse`**: toda respuesta (éxito y error) usa `ApiResponse<T>` (`isSuccess`, `statusCode`, `message`, `data`, `errors`, `traceId`). Errores centralizados en `GlobalExceptionHandler` (500 genérico sin fuga de detalle) + `InvalidModelStateResponseFactory` (400) + `JwtBearerEvents.OnChallenge` (401) + `OnRejected` del rate limiter (429) + `MapFallback` (404). El `traceId` se propaga desde `HttpContext.TraceIdentifier` en todos los caminos de error.
+- **Pipeline HTTP** (orden en `Program.cs`): `UseExceptionHandler` → `UseHttpsRedirection` → `UseRateLimiter` → Swagger → `UseCors` → `UseAuthentication` → `UseAuthorization` → `MapControllers` → `MapFallback` (404 uniforme).
+- **Dapper + SQL Server**: el login se resuelve en C# (`GetUserByEmailAsync` + token nuevo), sin SP. El registro usa el SP `Auth_Register` (único SP del stack; `Auth_Login` nunca existió — su `DROP` se eliminó del script). El SP devuelve `IsSuccess`/`StatusCode`/`Message`: `403` si `IsEnableRegister=0`, `400` si el email ya existe, `201` en éxito y `500` en error no controlado (ya NO usa `ERROR_STATE()` como status code).
 - **Autenticación doble**: `ApiKey` (header, validada contra `Mae_Config.ApiKey`, filtro `ApiKeyFilter` aplicado a ambos controllers) + `JWT` Bearer.
+- **Lockout por IP de la ApiKey** (`ApiKeyLockoutService`, singleton): 5 fallos en ventana de 10 min bloquean la IP durante 1 h. `ApiKeyFilter` devuelve `429` + header `Retry-After` si está bloqueada, registra fallos (401) y resetea en éxito. Logging del bloqueo en el filtro (el servicio no depende de `ILogger` para no requerir el shared framework en Infrastructure). La IP se resuelve con `ClientIpResolver` (compartido con el rate limiter).
+- **Vínculo JWT↔SqlToken**: la identidad de los endpoints core se toma del **claim `sub` del JWT** (`ClaimTypes.NameIdentifier`), nunca del `User_Id` enviado por el cliente (que se ignora). El `SqlToken` del request debe pertenecer al mismo usuario del JWT, o se responde `401`. Elimina el cruce "JWT de A + SqlToken de B".
+- **DTO de salida `CoreDataResponse`**: la API no expone la entidad de dominio `CoreData`; se mapea en `CoreDataService` con `ToDTO`/`ToEntity` (shape 1:1 → sin cambio de contrato JSON).
+- **JWT**: `sub` = `AuthUser.User_Id` (GUID inmutable), `exp` calculado con `DateTime.UtcNow`; `JwtOptions` no tiene `Subject` (era config muerta; el `sub` identifica al usuario, no a la institución).
 - **Fail-fast de configuración**: si falta `ConnectionStrings`, `JWT`, o `Cors:AllowedOrigins` vacío → `InvalidOperationException` al arrancar. Es deliberado (no arranca con config inválida).
 - **Connection string por entorno**: `Development` → `ConnectionStrings:SqlServer` (local `db_testing`); cualquier otro entorno → `ConnectionStrings:SqlServerWeb` (producción).
-- **Rate limiting**: `client_25_per_minute`, 25 req/min por cliente, ventana fija 60 s, `QueueLimit=0`; particionado por `X-Forwarded-For` (primer valor) → fallback `RemoteIpAddress`. Parámetros `RateLimit:PermitLimit`/`WindowSeconds`.
+- **Rate limiting**: `client_25_per_minute`, 25 req/min por cliente, ventana fija 60 s, `QueueLimit=0`; particionado por `ClientIpResolver` (`X-Forwarded-For` primer valor → fallback `RemoteIpAddress`). Parámetros `RateLimit:PermitLimit`/`WindowSeconds`.
 - **CORS configurable** desde `Cors:AllowedOrigins` (sin `SetIsOriginAllowed(_ => true)`).
 - **Swagger UI en la raíz** (`RoutePrefix = ""`) con **ruta absoluta** `/swagger/v1/swagger.json` (evita el rewrite relativo de `index.js`).
 
@@ -71,14 +76,19 @@ El usuario gestiona `appsettings.json` (producción) y `appsettings.Development.
 
 `SqlServer.sql` (raíz del repo) = **esquema consolidado** para la API: tablas `Mae_Config`, `Auth_Profiles`, `Auth_Users`, `PM_CoreData`, seed (`ADMIN`/`USER`, y `Mae_Config` con `ApiKey='Testing-777'`, `IsEnableRegister=1`) y SP `Auth_Register`. Reconstrucción limpia (DROP + CREATE). No incluye `CREATE DATABASE`/`LOGIN` (específicos del entorno). La API de la v9 usaba este mismo esquema.
 
+> **Importante para tests de integración**: los tests `WebApiCore.Tests` requieren la BD local `db_testing` con el esquema del seed (especialmente `Mae_Config` con `Config_Id=1`, `ApiKey='Testing-777'`, `IsEnableRegister=1`). La ApiKey que ve el servidor se lee siempre de `Config_Id=1` (`MaeConfigRepository`); el `Config_Id` NO distingue entornos — la distinción es por BD/connection string. Los tests de integración NO pasan por `ApiKeyFilter`/`ValidateApiKey` (llaman a services/repositorios directo).
+
 ## 7. Estado actual
 
-- ✅ API `WebApiCore` (.NET 10) **compila 0 errores / 0 warnings** tras los fixes de OpenApi 2.x (sección 4).
-- ⏳ Pendiente: `appsettings.json` con config real para arrancar; verificación en runtime; trabajo sobre MAUI (v1→v2 según `ANALISIS_V1.md`).
-- Git: los proyectos de la API, `AGENTS.md`, `ANALISIS_V1.md`, `DEVELOPMENT.md` y `SqlServer.sql` están **sin trackear** (nuevos). `PasswordManager_.NET10.slnx` modificado.
+- ✅ API `WebApiCore` (.NET 10) **compila 0 errores / 0 warnings** (`dotnet build WebApiCore.csproj` y `WebApiCore.Tests.csproj`).
+- ✅ **Tests unitarios** (`WebApiCore.Tests/Security`, `WebApiCore.Tests/Services`): 12/12 pasan sin BD (`PasswordHasher`, `JwtTokenUtil`, `MaeConfigService`). Ejecutar solo unit: `dotnet test WebApiCore.Tests --filter "FullyQualifiedName~Security|FullyQualifiedName~MaeConfigServiceTests"`.
+- ✅ Mejoras aplicadas: envelope con `traceId` uniforme; pipeline reordenado (`UseHttpsRedirection` temprano); lockout por IP de ApiKey; `JwtOptions.Subject` eliminado + `exp` con `UtcNow`; DTO de salida `CoreDataResponse`; vínculo JWT↔SqlToken; SP `Auth_Register` corregido (`403`/`500`, sin `ERROR_STATE()`) y `DROP` de `Auth_Login` eliminado del script.
+- ⏳ Pendiente: **re-ejecutar `SqlServer.sql` en la BD local** para aplicar los cambios del SP (`Auth_Register`: 403/500, sin `ERROR_STATE()`) y limpiar el `DROP` de `Auth_Login`. Los tests de **integración** (`WebApiCore.Tests/Auth`, `WebApiCore.Tests/Core`) requieren esa BD actualizada y **autorización explícita** para ejecutarse (`dotnet test` está restringido por `AGENTS.md`). Casos borde ya escritos: login con usuario inexistente (401), password inválida (401), `IsEnableRegister=0` (403), IV con password errónea (401); el login ahora responde `401` (antes `400`) para credenciales inválidas.
+- ⏳ Pendiente MAUI (v1→v2): auditoría y refactor no iniciados.
+- Git: `WebApiCore.Tests/` nuevo (untracked), `PasswordManager_.NET10.slnx` modificado (incluye el proyecto de tests), `ANALISIS_V1.md` eliminado.
 
 ## 8. Referencias
 
-- `ANALISIS_V1.md` — auditoría técnica del MAUI v1 (seguridad, arquitectura, MVVM) y plan/checklist para v2.
 - `README.md` — manual de usuario del cliente MAUI.
 - `D:\Repo\.NET\Projects_.NET9` — repo fuente de la API v9 (`WebApiCore`); referencia de comparación y paridad.
+- `ANALISIS_V1.md` fue **eliminado** del repo (decisión del usuario); si se retoma la auditoría del MAUI v1, recrear el documento con los hallazgos de la conversación.

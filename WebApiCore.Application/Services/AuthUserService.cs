@@ -58,10 +58,10 @@ public class AuthUserService : IAuthUserService
         var authUser = await _authUserRepository.GetUserByEmailAsync(authUserLogin.Email, cancellationToken);
 
         if (authUser == null)
-            return ApiResponse.Failure<AuthUserLogged>(400, "Usuario o contraseña incorrecta.");
+            return ApiResponse.Failure<AuthUserLogged>(401, "Usuario o contraseña incorrecta.");
 
         if (!_passwordHasher.VerifyPassword(authUserLogin.Password, authUser.HashLogin, authUser.SaltLogin))
-            return ApiResponse.Failure<AuthUserLogged>(400, "Usuario o contraseña incorrecta.");
+            return ApiResponse.Failure<AuthUserLogged>(401, "Usuario o contraseña incorrecta.");
 
         var sqlToken = await _authUserRepository.NewSqlToken(authUser.Email, cancellationToken);
         var token = _authTokenService.GenerateToken(authUser);

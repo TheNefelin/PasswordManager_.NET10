@@ -1,4 +1,5 @@
-﻿using WebApiCore.Application.DTOs;
+﻿using Dapper;
+using WebApiCore.Application.DTOs;
 using WebApiCore.Application.Services;
 using WebApiCore.Infrastructure.Repositories;
 using WebApiCore.Infrastructure.Security;
@@ -86,7 +87,7 @@ public class AuthUserServiceTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task LoginAsync_WithInvalidPassword_ReturnsBadRequest()
+    public async Task LoginAsync_WithInvalidPassword_ReturnsUnauthorized()
     {
         var email = NewEmail();
         await CreateUserDirectAsync(email);
@@ -99,6 +100,47 @@ public class AuthUserServiceTests : IntegrationTestBase
         }, CancellationToken.None);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal(400, result.StatusCode);
+        Assert.Equal(401, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task LoginAsync_WithNonexistentUser_ReturnsUnauthorized()
+    {
+        var service = CreateService();
+
+        var result = await service.LoginAsync(new AuthUserLogin
+        {
+            Email = NewEmail(),
+            Password = "Password123"
+        }, CancellationToken.None);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(401, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_WhenRegistrationDisabled_ReturnsForbidden()
+    {
+        var service = CreateService();
+
+        using var connection = Context.CreateConnection();
+        await connection.ExecuteAsync("UPDATE Mae_Config SET IsEnableRegister = 0 WHERE Config_Id = 1");
+
+        try
+        {
+            var result = await service.RegisterAsync(new AuthUserRegister
+            {
+                Email = NewEmail(),
+                Password1 = "Password123",
+                Password2 = "Password123"
+            }, CancellationToken.None);
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(403, result.StatusCode);
+        }
+        finally
+        {
+            await connection.ExecuteAsync("UPDATE Mae_Config SET IsEnableRegister = 1 WHERE Config_Id = 1");
+        }
     }
 }

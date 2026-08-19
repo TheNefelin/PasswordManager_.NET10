@@ -72,4 +72,27 @@ public class CoreUserServiceTests : IntegrationTestBase
         Assert.False(second.IsSuccess);
         Assert.Equal(400, second.StatusCode);
     }
+
+    [Fact]
+    public async Task GetCoreUserIVAsync_WithWrongPassword_ReturnsUnauthorized()
+    {
+        var (userId, sqlToken) = await CreateUserDirectAsync(NewEmail());
+        var service = CreateService();
+        var coreUser = new CoreUserRequest { User_Id = userId, SqlToken = sqlToken };
+
+        var registerResult = await service.RegisterCoreUserPasswordAsync(
+            userId,
+            new CoreUserPassword { Password = "CorrectPassword", CoreUser = coreUser },
+            CancellationToken.None);
+
+        Assert.True(registerResult.IsSuccess);
+
+        var ivResult = await service.GetCoreUserIVAsync(
+            userId,
+            new CoreUserPassword { Password = "WrongPassword", CoreUser = coreUser },
+            CancellationToken.None);
+
+        Assert.False(ivResult.IsSuccess);
+        Assert.Equal(401, ivResult.StatusCode);
+    }
 }
