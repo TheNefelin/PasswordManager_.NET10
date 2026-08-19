@@ -20,56 +20,52 @@ public class CoreDataService : ICoreDataService
         _coreUserRepository = coreUserRepository;
     }
 
-    public async Task<ApiResponse<IEnumerable<CoreData>>> GetAllAsync(CoreUserRequest coreUserRequest, CancellationToken cancellationToken)
+    public async Task<ApiResponse<IEnumerable<CoreDataResponse>>> GetAllAsync(CoreUserRequest coreUserRequest, CancellationToken cancellationToken)
     {
         var coreUser = await GetValidSessionAsync(coreUserRequest, cancellationToken);
         if (coreUser == null)
-            return ApiResponse.Failure<IEnumerable<CoreData>>(UnauthorizedStatusCode, UnauthorizedMessage);
+            return ApiResponse.Failure<IEnumerable<CoreDataResponse>>(UnauthorizedStatusCode, UnauthorizedMessage);
 
         var coreDatas = await _coreDataRepository.GetAllAsync(
             new CoreData { User_Id = coreUser.User_Id },
             cancellationToken);
 
-        return ApiResponse.Success(coreDatas, "Ok");
+        var response = coreDatas.Select(c => new CoreDataResponse
+        {
+            Data_Id = c.Data_Id,
+            Data01 = c.Data01,
+            Data02 = c.Data02,
+            Data03 = c.Data03,
+            User_Id = c.User_Id
+        });
+
+        return ApiResponse.Success(response, "Ok");
     }
 
-    public async Task<ApiResponse<CoreData>> InsertAsync(CoreDataRequest coreDataRequest, CancellationToken cancellationToken)
+    public async Task<ApiResponse<CoreDataResponse>> InsertAsync(CoreDataRequest coreDataRequest, CancellationToken cancellationToken)
     {
         var coreUser = await GetValidSessionAsync(coreDataRequest.CoreUser, cancellationToken);
         if (coreUser == null)
-            return ApiResponse.Failure<CoreData>(UnauthorizedStatusCode, UnauthorizedMessage);
+            return ApiResponse.Failure<CoreDataResponse>(UnauthorizedStatusCode, UnauthorizedMessage);
 
         var coreData = await _coreDataRepository.InsertAsync(
-            new CoreData
-            {
-                Data01 = coreDataRequest.Data01,
-                Data02 = coreDataRequest.Data02,
-                Data03 = coreDataRequest.Data03,
-                User_Id = coreUser.User_Id
-            },
+            ToEntity(coreDataRequest, coreUser.User_Id),
             cancellationToken);
 
-        return ApiResponse.Success(coreData, "Se ha creado correctamente", 201);
+        return ApiResponse.Success(ToDTO(coreData), "Se ha creado correctamente", 201);
     }
 
-    public async Task<ApiResponse<CoreData>> UpdateAsync(CoreDataRequest coreDataRequest, CancellationToken cancellationToken)
+    public async Task<ApiResponse<CoreDataResponse>> UpdateAsync(CoreDataRequest coreDataRequest, CancellationToken cancellationToken)
     {
         var coreUser = await GetValidSessionAsync(coreDataRequest.CoreUser, cancellationToken);
         if (coreUser == null)
-            return ApiResponse.Failure<CoreData>(UnauthorizedStatusCode, UnauthorizedMessage);
+            return ApiResponse.Failure<CoreDataResponse>(UnauthorizedStatusCode, UnauthorizedMessage);
 
         var coreData = await _coreDataRepository.UpdateAsync(
-            new CoreData
-            {
-                Data_Id = coreDataRequest.Data_Id,
-                Data01 = coreDataRequest.Data01,
-                Data02 = coreDataRequest.Data02,
-                Data03 = coreDataRequest.Data03,
-                User_Id = coreUser.User_Id
-            },
+            ToEntity(coreDataRequest, coreUser.User_Id),
             cancellationToken);
 
-        return ApiResponse.Success(coreData, "Ok");
+        return ApiResponse.Success(ToDTO(coreData), "Ok");
     }
 
     public async Task<ApiResponse<object>> DeleteAsync(CoreDataDelete coreDataDelete, CancellationToken cancellationToken)
@@ -79,11 +75,7 @@ public class CoreDataService : ICoreDataService
             return ApiResponse.Failure<object>(UnauthorizedStatusCode, UnauthorizedMessage);
 
         await _coreDataRepository.DeleteAsync(
-            new CoreData
-            {
-                Data_Id = coreDataDelete.Data_Id,
-                User_Id = coreUser.User_Id
-            },
+            ToEntity(coreDataDelete, coreUser.User_Id),
             cancellationToken);
 
         return ApiResponse.Success<object>(null!, "Se ha eliminado correctamente");
@@ -98,5 +90,38 @@ public class CoreDataService : ICoreDataService
                 SqlToken = coreUserRequest.SqlToken
             },
             cancellationToken);
+    }
+
+    private static CoreDataResponse ToDTO(CoreData coreData)
+    {
+        return new CoreDataResponse
+        {
+            Data_Id = coreData.Data_Id,
+            Data01 = coreData.Data01,
+            Data02 = coreData.Data02,
+            Data03 = coreData.Data03,
+            User_Id = coreData.User_Id
+        };
+    }
+
+    private static CoreData ToEntity(CoreDataRequest coreDataRequest, Guid userId)
+    {
+        return new CoreData
+        {
+            Data_Id = coreDataRequest.Data_Id,
+            Data01 = coreDataRequest.Data01,
+            Data02 = coreDataRequest.Data02,
+            Data03 = coreDataRequest.Data03,
+            User_Id = userId
+        };
+    }
+
+    private static CoreData ToEntity(CoreDataDelete coreDataDelete, Guid userId)
+    {
+        return new CoreData
+        {
+            Data_Id = coreDataDelete.Data_Id,
+            User_Id = userId
+        };
     }
 }

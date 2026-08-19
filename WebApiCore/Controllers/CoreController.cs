@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.RateLimiting;
 using WebApiCore.Application.Common;
 using WebApiCore.Application.DTOs;
 using WebApiCore.Application.Interfaces;
-using WebApiCore.Domain.Entities;
 using WebApiCore.Filters;
 
 namespace WebApiCore.Controllers;
@@ -40,21 +39,21 @@ public class CoreController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<ApiResponse<IEnumerable<CoreData>>>> GetAllCore([FromQuery] CoreUserRequest coreUserRequest, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<IEnumerable<CoreDataResponse>>>> GetAllCore([FromQuery] CoreUserRequest coreUserRequest, CancellationToken cancellationToken)
     {
         var apiResult = await _coreService.GetAllAsync(coreUserRequest, cancellationToken);
         return StatusCode(apiResult.StatusCode, apiResult);
     }
 
     [HttpPost]
-    public async Task<ActionResult<ApiResponse<CoreData>>> InsertCore(CoreDataRequest coreDataRequest, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<CoreDataResponse>>> InsertCore(CoreDataRequest coreDataRequest, CancellationToken cancellationToken)
     {
         var apiResult = await _coreService.InsertAsync(coreDataRequest, cancellationToken);
         return StatusCode(apiResult.StatusCode, apiResult);
     }
 
     [HttpPut]
-    public async Task<ActionResult<ApiResponse<CoreData>>> UpdateCore(CoreDataRequest coreDataRequest, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<CoreDataResponse>>> UpdateCore(CoreDataRequest coreDataRequest, CancellationToken cancellationToken)
     {
         var apiResult = await _coreService.UpdateAsync(coreDataRequest, cancellationToken);
         return StatusCode(apiResult.StatusCode, apiResult);
