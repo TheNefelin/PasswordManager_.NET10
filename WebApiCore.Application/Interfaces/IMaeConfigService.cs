@@ -2,5 +2,5 @@
 
 public interface IMaeConfigService
 {
-    Task<bool> ValidateApiKey(string apiKey);
+    Task<bool> ValidateApiKey(string apiKey, CancellationToken cancellationToken);
 }

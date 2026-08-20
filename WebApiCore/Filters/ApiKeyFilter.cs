@@ -51,7 +51,7 @@ public class ApiKeyFilter : IAsyncActionFilter
             return;
         }
 
-        var isValid = await _maeConfigService.ValidateApiKey(apiKey);
+        var isValid = await _maeConfigService.ValidateApiKey(apiKey, context.HttpContext.RequestAborted);
 
         if (!isValid)
         {

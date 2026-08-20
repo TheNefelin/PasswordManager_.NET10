@@ -14,9 +14,9 @@ public class MaeConfigService : IMaeConfigService
         _maeConfigRepository = maeConfigRepository;
     }
 
-    public async Task<bool> ValidateApiKey(string apiKey)
+    public async Task<bool> ValidateApiKey(string apiKey, CancellationToken cancellationToken)
     {
-        var sqlApiKey = await _maeConfigRepository.GetApiKeyAsync();
+        var sqlApiKey = await _maeConfigRepository.GetApiKeyAsync(cancellationToken);
         if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(sqlApiKey))
             return false;
 

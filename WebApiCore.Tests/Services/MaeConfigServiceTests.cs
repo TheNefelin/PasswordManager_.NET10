@@ -10,7 +10,7 @@ public class MaeConfigServiceTests
     {
         var service = new MaeConfigService(new StubMaeConfigRepository("Testing-777"));
 
-        Assert.True(await service.ValidateApiKey("Testing-777"));
+        Assert.True(await service.ValidateApiKey("Testing-777", CancellationToken.None));
     }
 
     [Fact]
@@ -18,14 +18,14 @@ public class MaeConfigServiceTests
     {
         var service = new MaeConfigService(new StubMaeConfigRepository("Testing-777"));
 
-        Assert.False(await service.ValidateApiKey("WrongKey"));
+        Assert.False(await service.ValidateApiKey("WrongKey", CancellationToken.None));
     }
 
     [Fact]
     public async Task ValidateApiKey_WhenStoredKeyIsNullOrEmpty_ReturnsFalse()
     {
-        Assert.False(await new MaeConfigService(new StubMaeConfigRepository(null)).ValidateApiKey("Testing-777"));
-        Assert.False(await new MaeConfigService(new StubMaeConfigRepository(string.Empty)).ValidateApiKey("Testing-777"));
+        Assert.False(await new MaeConfigService(new StubMaeConfigRepository(null)).ValidateApiKey("Testing-777", CancellationToken.None));
+        Assert.False(await new MaeConfigService(new StubMaeConfigRepository(string.Empty)).ValidateApiKey("Testing-777", CancellationToken.None));
     }
 
     private sealed class StubMaeConfigRepository : IMaeConfigRepository
@@ -37,6 +37,6 @@ public class MaeConfigServiceTests
             _apiKey = apiKey;
         }
 
-        public Task<string?> GetApiKeyAsync() => Task.FromResult(_apiKey);
+        public Task<string?> GetApiKeyAsync(CancellationToken cancellationToken) => Task.FromResult(_apiKey);
     }
 }

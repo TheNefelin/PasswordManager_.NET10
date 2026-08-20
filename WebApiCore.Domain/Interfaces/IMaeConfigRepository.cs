@@ -2,5 +2,5 @@
 
 public interface IMaeConfigRepository
 {
-    Task<string?> GetApiKeyAsync();
+    Task<string?> GetApiKeyAsync(CancellationToken cancellationToken);
 }

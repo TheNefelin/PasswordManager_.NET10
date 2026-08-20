@@ -1,5 +1,5 @@
-﻿using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
+﻿using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 using WebApiCore.Application.Interfaces;
@@ -19,26 +19,30 @@ public class JwtTokenUtil : IAuthTokenService
 
     public TokenResult GenerateToken(AuthUser user)
     {
-        var claims = new[]
+        var claimsIdentity = new ClaimsIdentity(new[]
         {
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Sub, user.User_Id.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(ClaimTypes.Role, user.Role ?? "USER")
-        };
+        });
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Key));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var token = new JwtSecurityToken(
-            issuer: _options.Issuer,
-            audience: _options.Audience,
-            claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_options.ExpireMin),
-            signingCredentials: creds);
+        var descriptor = new SecurityTokenDescriptor
+        {
+            Issuer = _options.Issuer,
+            Audience = _options.Audience,
+            Subject = claimsIdentity,
+            Expires = DateTime.UtcNow.AddMinutes(_options.ExpireMin),
+            SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+        };
 
-        return new TokenResult(
-            new JwtSecurityTokenHandler().WriteToken(token),
-            _options.ExpireMin);
+        var handler = new JsonWebTokenHandler
+        {
+            SetDefaultTimesOnTokenCreation = false
+        };
+
+        return new TokenResult(handler.CreateToken(descriptor), _options.ExpireMin);
     }
 }

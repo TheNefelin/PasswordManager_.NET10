@@ -9,6 +9,7 @@ using WebApiCore.Application.Interfaces;
 using WebApiCore.Application.Services;
 using WebApiCore.Domain.Interfaces;
 using WebApiCore.Filters;
+using WebApiCore.Health;
 using WebApiCore.Helpers;
 using WebApiCore.Infrastructure.Data;
 using WebApiCore.Infrastructure.Options;
@@ -60,6 +61,11 @@ builder.Services.AddKeyedSingleton<IIpLockoutService>("api-key", (_, _) =>
         BlockDuration = TimeSpan.FromHours(1)
     }));
 builder.Services.AddScoped<ApiKeyFilter>();
+
+// ======================================================================
+// Health checks (liveness + BD)
+// ======================================================================
+builder.Services.AddHealthChecks().AddCheck<SqlHealthCheck>("sql");
 
 // ======================================================================
 // Repositories
@@ -248,6 +254,7 @@ app.UseCors("_allowedOrigins");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 // ======================================================================
 // 404 uniforme (ApiResponse)
