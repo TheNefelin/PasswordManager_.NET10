@@ -24,6 +24,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting("register_5_per_minute")]
     public async Task<ActionResult<ApiResponse<AuthUserResponse>>> Register(AuthUserRegister authUserRegister, CancellationToken cancellationToken)
     {
         var apiResult = await _authUserService.RegisterAsync(authUserRegister, cancellationToken);

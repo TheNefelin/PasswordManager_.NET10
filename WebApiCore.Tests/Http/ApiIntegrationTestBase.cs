@@ -11,9 +11,11 @@ public abstract class ApiIntegrationTestBase : IClassFixture<ApiFactory>, IAsync
 {
     private readonly List<Guid> _createdUserIds = new();
 
+    private static int _ipSequence;
+
     protected ApiFactory Factory { get; }
 
-    protected string TestIp { get; } = $"192.0.2.{Random.Shared.Next(1, 255)}";
+    protected string TestIp { get; } = $"192.0.2.{200 + Interlocked.Increment(ref _ipSequence) % 55}";
 
     protected ApiIntegrationTestBase(ApiFactory factory) => Factory = factory;
 

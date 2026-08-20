@@ -136,6 +136,23 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
     }
 
     [Fact]
+    public async Task Register_OverRateLimit_Returns429()
+    {
+        var client = CreateClient();
+
+        for (var i = 0; i < 5; i++)
+        {
+            var response = await RegisterAsync(client, NewEmail());
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+            await ParseUserIdAsync(response);
+        }
+
+        var throttled = await RegisterAsync(client, NewEmail());
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, throttled.StatusCode);
+    }
+
+    [Fact]
     public async Task MissingApiKey_Returns401()
     {
         var client = CreateClientWithoutApiKey();

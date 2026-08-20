@@ -178,6 +178,8 @@ var rateLimitPermit = builder.Configuration.GetValue("RateLimit:PermitLimit", 25
 var rateLimitWindow = TimeSpan.FromSeconds(builder.Configuration.GetValue("RateLimit:WindowSeconds", 60));
 var loginRateLimitPermit = builder.Configuration.GetValue("RateLimit:LoginPermitLimit", 5);
 var loginRateLimitWindow = TimeSpan.FromSeconds(builder.Configuration.GetValue("RateLimit:LoginWindowSeconds", 60));
+var registerRateLimitPermit = builder.Configuration.GetValue("RateLimit:RegisterPermitLimit", 5);
+var registerRateLimitWindow = TimeSpan.FromSeconds(builder.Configuration.GetValue("RateLimit:RegisterWindowSeconds", 60));
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -202,6 +204,17 @@ builder.Services.AddRateLimiter(options =>
                 AutoReplenishment = true,
                 PermitLimit = loginRateLimitPermit,
                 Window = loginRateLimitWindow,
+                QueueLimit = 0
+            }));
+
+    options.AddPolicy("register_5_per_minute", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ClientIpResolver.Resolve(context),
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = registerRateLimitPermit,
+                Window = registerRateLimitWindow,
                 QueueLimit = 0
             }));
 
