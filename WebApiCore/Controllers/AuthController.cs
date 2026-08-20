@@ -38,6 +38,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("login_5_per_minute")]
     public async Task<ActionResult<ApiResponse<AuthUserLogged>>> Login(AuthUserLogin authUserLogin, CancellationToken cancellationToken)
     {
         var clientIp = ClientIpResolver.Resolve(HttpContext);
