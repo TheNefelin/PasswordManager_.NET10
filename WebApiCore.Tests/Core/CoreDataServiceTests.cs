@@ -5,6 +5,7 @@ using WebApiCore.Tests.Helpers;
 
 namespace WebApiCore.Tests.Core;
 
+[Collection("Database")]
 public class CoreDataServiceTests : IntegrationTestBase
 {
     private static CoreDataService CreateService() => new(

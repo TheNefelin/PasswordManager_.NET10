@@ -10,9 +10,9 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     private readonly List<Guid> _createdUserIds = new();
 
-    public Task InitializeAsync() => Task.CompletedTask;
+    public ValueTask InitializeAsync() => ValueTask.CompletedTask;
 
-    public async Task DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         foreach (var userId in _createdUserIds)
             await CleanupUserAsync(userId);

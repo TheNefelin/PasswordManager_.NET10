@@ -7,6 +7,7 @@ using WebApiCore.Tests.Helpers;
 
 namespace WebApiCore.Tests.Auth;
 
+[Collection("Database")]
 public class AuthUserServiceTests : IntegrationTestBase
 {
     private const string TestIp = "127.0.0.1";

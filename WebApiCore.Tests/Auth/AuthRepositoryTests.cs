@@ -4,6 +4,7 @@ using WebApiCore.Tests.Helpers;
 
 namespace WebApiCore.Tests.Auth;
 
+[Collection("Database")]
 public class AuthRepositoryTests : IntegrationTestBase
 {
     [Fact]

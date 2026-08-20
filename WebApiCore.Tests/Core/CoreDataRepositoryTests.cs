@@ -4,6 +4,7 @@ using WebApiCore.Tests.Helpers;
 
 namespace WebApiCore.Tests.Core;
 
+[Collection("Database")]
 public class CoreDataRepositoryTests : IntegrationTestBase
 {
     [Fact]
