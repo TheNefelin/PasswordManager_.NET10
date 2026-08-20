@@ -1,7 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Dapper;
-using WebApiCore.Infrastructure.Data;
 using WebApiCore.Tests.Helpers;
 
 namespace WebApiCore.Tests.Http;
