@@ -79,7 +79,10 @@ builder.Services.AddTransient<ICoreDataRepository, CoreDataRepository>();
 // Application services
 // ======================================================================
 builder.Services.AddTransient<IAuthUserService, AuthUserService>();
-builder.Services.AddTransient<IMaeConfigService, MaeConfigService>();
+builder.Services.AddTransient<IMaeConfigService>(sp =>
+    new MaeConfigService(
+        sp.GetRequiredService<IMaeConfigRepository>(),
+        TimeSpan.FromSeconds(builder.Configuration.GetValue("ApiKeyCache:ExpirationSeconds", 30))));
 builder.Services.AddTransient<ICoreUserService, CoreUserService>();
 builder.Services.AddTransient<ICoreDataService, CoreDataService>();
 
