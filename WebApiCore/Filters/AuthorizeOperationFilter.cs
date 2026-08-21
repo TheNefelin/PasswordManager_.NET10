@@ -1,47 +1,67 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using System.Reflection;
 
 namespace WebApiCore.Filters;
 
-public class AuthorizeOperationFilter : IOperationFilter
+public sealed class AuthorizeOperationFilter : IOpenApiOperationTransformer
 {
-    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    public Task TransformAsync(
+        OpenApiOperation operation,
+        OpenApiOperationTransformerContext context,
+        CancellationToken cancellationToken)
     {
-        var hasAuthorize = context.MethodInfo.GetCustomAttribute<AuthorizeAttribute>() != null;
-        var controllerHasAuthorize = context.MethodInfo.DeclaringType?.GetCustomAttribute<AuthorizeAttribute>() != null;
-        var hasAllowAnonymous = context.MethodInfo.GetCustomAttribute<AllowAnonymousAttribute>() != null;
+        if (context.Description.ActionDescriptor is not ControllerActionDescriptor controllerActionDescriptor)
+            return Task.CompletedTask;
+
+        var methodInfo = controllerActionDescriptor.MethodInfo;
+
+        var hasAuthorize =
+            methodInfo.IsDefined(typeof(AuthorizeAttribute), inherit: true);
+
+        var controllerHasAuthorize =
+            controllerActionDescriptor.ControllerTypeInfo
+                .IsDefined(typeof(AuthorizeAttribute), inherit: true);
+
+        var hasAllowAnonymous =
+            methodInfo.IsDefined(typeof(AllowAnonymousAttribute), inherit: true);
 
         if ((hasAuthorize || controllerHasAuthorize) && !hasAllowAnonymous)
         {
-            operation.Security = new List<OpenApiSecurityRequirement>
-            {
+            operation.Security ??= [];
+
+            operation.Security.Add(
                 new OpenApiSecurityRequirement
                 {
-                    {
-                        new OpenApiSecuritySchemeReference("Bearer"),
-                        new List<string>()
-                    }
-                }
-            };
+                    [new OpenApiSecuritySchemeReference("Bearer")] = []
+                });
 
             operation.Responses ??= new OpenApiResponses();
+
             if (!operation.Responses.ContainsKey("401"))
             {
-                operation.Responses.Add("401", new OpenApiResponse
-                {
-                    Description = "Unauthorized - Token requerido o inválido"
-                });
+                operation.Responses.Add(
+                    "401",
+                    new OpenApiResponse
+                    {
+                        Description =
+                            "Unauthorized - Token requerido o inválido"
+                    });
             }
 
             if (!operation.Responses.ContainsKey("403"))
             {
-                operation.Responses.Add("403", new OpenApiResponse
-                {
-                    Description = "Forbidden - Permisos insuficientes"
-                });
+                operation.Responses.Add(
+                    "403",
+                    new OpenApiResponse
+                    {
+                        Description =
+                            "Forbidden - Permisos insuficientes"
+                    });
             }
         }
+
+        return Task.CompletedTask;
     }
 }
