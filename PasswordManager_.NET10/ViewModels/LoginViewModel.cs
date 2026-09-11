@@ -12,10 +12,10 @@ namespace PasswordManager_.NET10.ViewModels;
 public partial class LoginViewModel : BaseViewModel
 {
     private readonly ILogger<LoginViewModel> _logger;
-    private readonly IServiceProvider _serviceProvider;
     private readonly IAuthService _authService;
     private readonly IBiometricService _biometricService;
     private readonly ISessionManager _sessionManager;
+    private readonly INavigationService _navigationService;
 
     [ObservableProperty]
     public partial string Email { get; set; } = string.Empty;
@@ -40,16 +40,16 @@ public partial class LoginViewModel : BaseViewModel
 
     public LoginViewModel(
         ILogger<LoginViewModel> logger,
-        IServiceProvider serviceProvider,
         IAuthService authService,
         IBiometricService biometricService,
-        ISessionManager sessionManager)
+        ISessionManager sessionManager,
+        INavigationService navigationService)
     {
         _logger = logger;
-        _serviceProvider = serviceProvider;
         _authService = authService;
         _biometricService = biometricService;
         _sessionManager = sessionManager;
+        _navigationService = navigationService;
 
         Title = "Login";
 
@@ -167,8 +167,7 @@ public partial class LoginViewModel : BaseViewModel
             Password = string.Empty;
             Message = string.Empty; //Message = "Login exitoso";
 
-            var appShell = _serviceProvider.GetRequiredService<AppShell>();
-            Application.Current!.Windows[0].Page = appShell;
+            await _navigationService.GoToAppShellAsync();
             _logger.LogInformation("[LoginViewModel-LoginAsync] Navigated to AppShell");
         }
         catch (Exception ex)
@@ -198,8 +197,7 @@ public partial class LoginViewModel : BaseViewModel
         {
             var user = await _authService.LoginAsync(email, password);
 
-            var appShell = _serviceProvider.GetRequiredService<AppShell>();
-            Application.Current!.Windows[0].Page = appShell;
+            await _navigationService.GoToAppShellAsync();
             _logger.LogInformation("[LoginViewModel-LoginByBiometric] Navigated to AppShell");
 
             IsLoading = false;
@@ -225,8 +223,7 @@ public partial class LoginViewModel : BaseViewModel
         {
             _logger.LogInformation("[LoginViewModel-GoToRegisterAsync] Navigating to RegisterPage");
 
-            var registerPage = _serviceProvider.GetRequiredService<RegisterPage>();
-            await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(registerPage);
+            await _navigationService.PushModalAsync<RegisterPage>();
         }
         catch (Exception ex)
         {

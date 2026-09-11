@@ -8,7 +8,7 @@ namespace PasswordManager_.NET10.ViewModels;
 
 public partial class PasswordFormViewModel : BaseViewModel
 {
-    private readonly ILogger<PasswordDetailsViewModel> _logger;
+    private readonly ILogger<PasswordFormViewModel> _logger;
     private readonly ICoreDataService _coreDataService;
     private readonly IEncryptionService _encryptionService;
 
@@ -41,7 +41,7 @@ public partial class PasswordFormViewModel : BaseViewModel
     private CoreSecretData? _currentItem;
 
     public PasswordFormViewModel(
-        ILogger<PasswordDetailsViewModel> logger,
+        ILogger<PasswordFormViewModel> logger,
         ICoreDataService coreDataService,
         IEncryptionService encryptionService)
     {

@@ -1,5 +1,4 @@
 ﻿using PasswordManager_.NET10.Exceptions;
-using PasswordManager_.NET10.Helpers;
 using PasswordManager_.NET10.Models;
 using PasswordManager_.NET10.Services.Interfaces;
 using System.Net.Http.Json;
@@ -15,22 +14,7 @@ public class ApiService : IApiService
 
     public ApiService(HttpClient httpClient)
     {
-        var handler = new HttpClientHandler();
-
-        // Para desarrollo: permitir SSL no seguro (SOLO en DEV)
-#if DEBUG
-        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
-#endif
-
-        _httpClient = new HttpClient(handler)
-        {
-            BaseAddress = new Uri(Constants.API_BASE_URL),
-            Timeout = TimeSpan.FromSeconds(30)
-        };
-
-        // Headers por defecto
-        _httpClient.DefaultRequestHeaders.Add("ApiKey", Constants.API_KEY);
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", "PasswordManager-MAUI/1.0");
+        _httpClient = httpClient;
 
         // Configurar opciones JSON
         _jsonOptions = new JsonSerializerOptions

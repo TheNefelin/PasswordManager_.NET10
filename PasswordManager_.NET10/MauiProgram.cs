@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
+using PasswordManager_.NET10.Helpers;
 using PasswordManager_.NET10.Services.Implementation;
 using PasswordManager_.NET10.Services.Interfaces;
 using PasswordManager_.NET10.ViewModels;
@@ -23,7 +24,7 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             })
-            .ConfigureServices(); ;
+            .ConfigureServices();
 
 #if DEBUG
 		builder.Logging.AddDebug();
@@ -39,7 +40,7 @@ public static class MauiProgram
     {
         // Servicios
         builder.Services
-            .AddSingleton<HttpClient>()
+            .AddSingleton(sp => CreateApiHttpClient())
             .AddSingleton<ISessionManager, SessionManager>()
             .AddSingleton<IBiometricService, BiometricService>()
             .AddSingleton<ISecureStorageService, SecureStorageService>()
@@ -47,7 +48,8 @@ public static class MauiProgram
             .AddSingleton<IEncryptionService, EncryptionService>()
             .AddSingleton<IApiService, ApiService>()
             .AddSingleton<IAuthService, AuthService>()
-            .AddSingleton<ICoreDataService, CoreDataService>();
+            .AddSingleton<ICoreDataService, CoreDataService>()
+            .AddSingleton<INavigationService, NavigationService>();
 
         // ViewModels (Singleton para screens principales)
         builder.Services
@@ -79,5 +81,32 @@ public static class MauiProgram
         builder.Services.AddSingleton<IBiometric>(BiometricAuthenticationService.Default);
 
         return builder;
+    }
+
+    /// <summary>
+    /// Crea el HttpClient de la API con la configuración base (BaseAddress, headers y timeout).
+    /// El bypass de validación de certificados solo se habilita en DEBUG para desarrollo.
+    /// </summary>
+    private static HttpClient CreateApiHttpClient()
+    {
+#if DEBUG
+        var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+        };
+#else
+        var handler = new HttpClientHandler();
+#endif
+
+        var client = new HttpClient(handler)
+        {
+            BaseAddress = new Uri(Constants.API_BASE_URL),
+            Timeout = TimeSpan.FromSeconds(30)
+        };
+
+        client.DefaultRequestHeaders.Add("ApiKey", Constants.API_KEY);
+        client.DefaultRequestHeaders.Add("User-Agent", "PasswordManager-MAUI/1.0");
+
+        return client;
     }
 }

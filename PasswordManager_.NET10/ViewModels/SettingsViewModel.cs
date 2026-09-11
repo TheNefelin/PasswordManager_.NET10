@@ -3,7 +3,6 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using PasswordManager_.NET10.Helpers;
 using PasswordManager_.NET10.Services.Interfaces;
-using PasswordManager_.NET10.Views.Authentication;
 using PasswordManager_.NET10.Views.Main;
 
 namespace PasswordManager_.NET10.ViewModels;
@@ -15,7 +14,7 @@ public partial class SettingsViewModel : BaseViewModel
     private readonly IThemeService _themeService;
     private readonly IBiometricService _biometricService;
     private readonly ISessionManager _sessionManager;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly INavigationService _navigationService;
     private System.Timers.Timer? _sessionTimer;
 
     [ObservableProperty]
@@ -62,14 +61,14 @@ public partial class SettingsViewModel : BaseViewModel
         IThemeService themeService,
         IBiometricService biometricService,
         ISessionManager sessionManager,
-        IServiceProvider serviceProvider)
+        INavigationService navigationService)
     {
         _logger = logger;
         _authService = authService;
         _themeService = themeService;
         _biometricService = biometricService;
         _sessionManager = sessionManager;
-        _serviceProvider = serviceProvider;
+        _navigationService = navigationService;
 
         Title = "Settings";
     }
@@ -316,8 +315,7 @@ public partial class SettingsViewModel : BaseViewModel
     [RelayCommand]
     public async Task GoToHelpAsync()
     {
-        var helpPage = _serviceProvider.GetRequiredService<HelpPage>();
-        await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(helpPage);
+        await _navigationService.PushModalAsync<HelpPage>();
     }
 
     [RelayCommand]
@@ -371,8 +369,7 @@ public partial class SettingsViewModel : BaseViewModel
             StopSessionTimer();
             await _authService.LogoutAsync();
 
-            var loginPage = _serviceProvider.GetRequiredService<LoginPage>();
-            Application.Current!.Windows[0].Page = loginPage;
+            await _navigationService.GoToLoginAsync();
 
             _logger.LogInformation("[SettingsViewModel-PerformLogoutForPasswordSave] Logout completed, navigating to login");
         }

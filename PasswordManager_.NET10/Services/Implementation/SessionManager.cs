@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using PasswordManager_.NET10.Services.Interfaces;
-using PasswordManager_.NET10.Views.Authentication;
 
 namespace PasswordManager_.NET10.Services.Implementation;
 
@@ -8,16 +7,16 @@ public class SessionManager : ISessionManager
 {
     private readonly ILogger<SessionManager> _logger;
     private readonly IAuthService _authService;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly INavigationService _navigationService;
 
     public SessionManager(
         ILogger<SessionManager> logger, 
         IAuthService authService,
-        IServiceProvider serviceProvider)
+        INavigationService navigationService)
     {
         _logger = logger;
         _authService = authService;
-        _serviceProvider = serviceProvider;
+        _navigationService = navigationService;
     }
 
     public async Task LoginAsync(string email, string password)
@@ -92,8 +91,7 @@ public class SessionManager : ISessionManager
             await _authService.LogoutAsync();
             _logger.LogInformation("[SessionManager-PerformFullLogoutAsync] Session cleared");
 
-            var loginPage = _serviceProvider.GetRequiredService<LoginPage>();
-            Application.Current!.Windows[0].Page = loginPage;
+            await _navigationService.GoToLoginAsync();
         }
         catch (Exception ex)
         {

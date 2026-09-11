@@ -79,7 +79,7 @@ public class AuthService : IAuthService
             if (!response.IsSuccess || response.Data == null)
             {
                 _logger.LogWarning("[AuthService-LoginAsync] Login failed: {Message}", response.Message);
-                throw new Exception($"Failed to register core password. StatusCode: {response.StatusCode}, Message: {response.Message}");
+                throw new Exception($"No se pudo iniciar sesión. StatusCode: {response.StatusCode}, Message: {response.Message}");
             }
 
             var expirationTime = DateTime.UtcNow.AddMinutes(int.Parse(response.Data.ExpireMin));
