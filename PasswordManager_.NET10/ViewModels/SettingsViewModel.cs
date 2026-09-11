@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using PasswordManager_.NET10.Helpers;
 using PasswordManager_.NET10.Services.Interfaces;
 using PasswordManager_.NET10.Views.Authentication;
 using PasswordManager_.NET10.Views.Main;
@@ -13,63 +14,62 @@ public partial class SettingsViewModel : BaseViewModel
     private readonly IAuthService _authService;
     private readonly IThemeService _themeService;
     private readonly IBiometricService _biometricService;
+    private readonly ISessionManager _sessionManager;
     private readonly IServiceProvider _serviceProvider;
-    private System.Timers.Timer _sessionTimer;
-    private int _secondsRemaining;
-    private CancellationTokenSource _timerCts; // Para cancelar el timer
+    private System.Timers.Timer? _sessionTimer;
 
     [ObservableProperty]
-    private bool isLoading = false;
+    public partial bool IsLoading { get; set; } = false;
 
     [ObservableProperty]
-    private string userId = string.Empty;
+    public partial string UserId { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string role = string.Empty;
+    public partial string Role { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string sqlToken = string.Empty;
+    public partial string SqlToken { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string apiToken = string.Empty;
+    public partial string ApiToken { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string sessionTimeRemaining = string.Empty;
+    public partial string SessionTimeRemaining { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private bool isSessionExpired = false;
+    public partial bool IsSessionExpired { get; set; } = false;
 
     [ObservableProperty]
-    private bool isBiometricEnabled = false;
+    public partial bool IsBiometricEnabled { get; set; } = false;
 
     [ObservableProperty]
-    private bool isBiometricAvailable;
+    public partial bool IsBiometricAvailable { get; set; }
 
     [ObservableProperty]
-    private string appVersion = "Beta 1.0.1";
+    public partial string AppVersion { get; set; } = Constants.APP_VERSION;
 
     [ObservableProperty]
-    private string selectedTheme = "Auto";
+    public partial string SelectedTheme { get; set; } = "Dark";
 
     [ObservableProperty]
-    private bool isSavePasswordEnabled = false;
+    public partial bool IsSavePasswordEnabled { get; set; } = false;
 
     private bool _isInitializing = false;
-    private readonly string[] _themes = { "Auto", "Light", "Dark" };
 
     public SettingsViewModel(
         ILogger<SettingsViewModel> logger,
         IAuthService authService,
         IThemeService themeService,
         IBiometricService biometricService,
+        ISessionManager sessionManager,
         IServiceProvider serviceProvider)
     {
         _logger = logger;
         _authService = authService;
         _themeService = themeService;
         _biometricService = biometricService;
+        _sessionManager = sessionManager;
         _serviceProvider = serviceProvider;
-        _timerCts = new CancellationTokenSource();
 
         Title = "Settings";
     }
@@ -120,25 +120,17 @@ public partial class SettingsViewModel : BaseViewModel
                 SqlToken = currentUser.SqlToken;
                 ApiToken = currentUser.ApiToken;
 
-                // Calcular tiempo restante
-                var timeRemaining = currentUser.TokenExpiry - DateTime.UtcNow;
-                if (timeRemaining.TotalSeconds > 0)
-                {
-                    _secondsRemaining = (int)timeRemaining.TotalSeconds;
-
-                    // IMPORTANTE: Detener timer anterior si existe
-                    StopSessionTimer();
-
-                    // Crear nuevo CancellationTokenSource
-                    _timerCts = new CancellationTokenSource();
-
-                    StartSessionTimer();
-                }
-                else
+                // Determinar estado de sesión desde el manager
+                if (await _sessionManager.IsSessionExpiredAsync())
                 {
                     IsSessionExpired = true;
                     SessionTimeRemaining = "Sesión expirada";
                     _logger.LogWarning("[SettingsViewModel-LoadSessionDataAsync] Session already expired");
+                }
+                else
+                {
+                    StopSessionTimer();
+                    StartSessionTimer();
                 }
 
                 _logger.LogInformation("[SettingsViewModel-LoadSessionDataAsync] Session data loaded successfully");
@@ -164,27 +156,24 @@ public partial class SettingsViewModel : BaseViewModel
     }
 
     /// <summary>
-    /// Iniciar timer de cuenta regresiva - Versión corregida con mejor manejo de threading
+    /// Iniciar timer de cuenta regresiva (solo refresco visual)
     /// </summary>
     private void StartSessionTimer()
     {
-        _sessionTimer = new System.Timers.Timer(1000); // Cada segundo
+        _sessionTimer = new System.Timers.Timer(1000);
         _sessionTimer.Elapsed += SessionTimer_Elapsed;
         _sessionTimer.AutoReset = true;
         _sessionTimer.Start();
 
-        UpdateSessionTime(); // Actualizar inmediatamente
+        _ = RefreshSessionTimeAsync(); // Actualizar inmediatamente
     }
 
     /// <summary>
-    /// Handler del timer - evita múltiples callbacks simultáneos
+    /// Handler del timer - delega al manager para obener el estado de expiración real
     /// </summary>
-    private void SessionTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+    private void SessionTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
     {
-        if (_timerCts.Token.IsCancellationRequested)
-            return;
-
-        UpdateSessionTime();
+        _ = RefreshSessionTimeAsync();
     }
 
     /// <summary>
@@ -198,63 +187,54 @@ public partial class SettingsViewModel : BaseViewModel
             _sessionTimer.Dispose();
             _sessionTimer = null;
         }
-
-        _timerCts?.Cancel();
     }
 
     /// <summary>
-    /// Actualizar tiempo de sesión
+    /// Actualizar tiempo de sesión usando el SessionManager como fuente de verdad
     /// </summary>
-    private void UpdateSessionTime()
-    {
-        _secondsRemaining--;
-
-        if (_secondsRemaining <= 0)
-        {
-            StopSessionTimer();
-
-            IsSessionExpired = true;
-            SessionTimeRemaining = "Sesión expirada";
-
-            _logger.LogWarning("[SettingsViewModel-UpdateSessionTime] Session expired");
-
-            // Ejecutar logout automático en el main thread
-            MainThread.BeginInvokeOnMainThread(async () =>
-            {
-                await PerformAutoLogout();
-            });
-        }
-        else
-        {
-            var timeSpan = TimeSpan.FromSeconds(_secondsRemaining);
-            string newTimeRemaining = $"{timeSpan.Hours:D2}h {timeSpan.Minutes:D2}m {timeSpan.Seconds:D2}s";
-
-            // Actualizar solo si cambió para evitar flickering
-            if (SessionTimeRemaining != newTimeRemaining)
-            {
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    SessionTimeRemaining = newTimeRemaining;
-                });
-            }
-        }
-    }
-
-    /// <summary>
-    /// Logout automático cuando expira la sesión
-    /// </summary>
-    private async Task PerformAutoLogout()
+    private async Task RefreshSessionTimeAsync()
     {
         try
         {
-            _logger.LogInformation("[SettingsViewModel-PerformAutoLogout] Auto logout triggered");
-            StopSessionTimer();
-            await _authService.LogoutAsync();
+            var timeRemaining = await _sessionManager.GetRemainingTimeAsync();
+
+            // Sin sesión activa (ej. logout manual ya limpió el usuario): detener el timer sin diálogo
+            if (timeRemaining <= TimeSpan.Zero && !await _authService.IsAuthenticatedAsync())
+            {
+                StopSessionTimer();
+                return;
+            }
+
+            if (timeRemaining <= TimeSpan.Zero)
+            {
+                StopSessionTimer();
+
+                _logger.LogWarning("[SettingsViewModel-RefreshSessionTime] Session expired");
+
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    IsSessionExpired = true;
+                    SessionTimeRemaining = "Sesión expirada";
+                    await _sessionManager.PerformFullLogoutAsync("La sesión ha expirado");
+                });
+            }
+            else
+            {
+                string newTimeRemaining = $"{timeRemaining.Hours:D2}h {timeRemaining.Minutes:D2}m {timeRemaining.Seconds:D2}s";
+
+                // Actualizar solo si cambió para evitar flickering
+                if (SessionTimeRemaining != newTimeRemaining)
+                {
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        SessionTimeRemaining = newTimeRemaining;
+                    });
+                }
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[SettingsViewModel-PerformAutoLogout] Error during auto logout: {ExceptionType} - {Message}",
-                ex.GetType().Name, ex.Message);
+            _logger.LogError(ex, "[SettingsViewModel-RefreshSessionTime] Error updating session time");
         }
     }
 
@@ -349,7 +329,7 @@ public partial class SettingsViewModel : BaseViewModel
 
             if (IsSavePasswordEnabled)
             {
-                bool confirmed = await Application.Current!.MainPage!.DisplayAlertAsync(
+                bool confirmed = await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
                     "Guardar Contraseña",
                     "Para completar este proceso debes iniciar sesión nuevamente.\n\nLuego de esto, la autenticación por biometría estará habilitada para tu próximo login.",
                     "Continuar",
@@ -392,14 +372,14 @@ public partial class SettingsViewModel : BaseViewModel
             await _authService.LogoutAsync();
 
             var loginPage = _serviceProvider.GetRequiredService<LoginPage>();
-            Application.Current!.MainPage = loginPage;
+            Application.Current!.Windows[0].Page = loginPage;
 
             _logger.LogInformation("[SettingsViewModel-PerformLogoutForPasswordSave] Logout completed, navigating to login");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "[SettingsViewModel-PerformLogoutForPasswordSave] Error during logout: {Message}", ex.Message);
-            await Application.Current!.MainPage!.DisplayAlertAsync("Error", "Ocurrió un error al procesar tu solicitud", "OK");
+            await Application.Current!.Windows[0].Page!.DisplayAlertAsync("Error", "Ocurrió un error al procesar tu solicitud", "OK");
         }
     }
 }

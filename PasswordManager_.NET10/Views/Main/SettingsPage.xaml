@@ -108,20 +108,46 @@
                            FontAttributes="Bold" 
                            FontSize="16"/>
 
-                    <Grid ColumnDefinitions="*,*,*" 
+                    <Grid ColumnDefinitions="*,*" 
                           ColumnSpacing="10">
                         <Button Grid.Column="0"
-                                Text="🔄 Auto"
-                                Command="{Binding ChangeThemeCommand}"
-                                CommandParameter="Auto"/>
-                        <Button Grid.Column="1"
                                 Text="☀️ Light"
                                 Command="{Binding ChangeThemeCommand}"
-                                CommandParameter="Light"/>
-                        <Button Grid.Column="2"
+                                CommandParameter="Light">
+                            <Button.Triggers>
+                                <DataTrigger TargetType="Button"
+                                             Binding="{Binding SelectedTheme}"
+                                             Value="Light">
+                                    <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"/>
+                                    <Setter Property="TextColor" Value="{StaticResource White}"/>
+                                </DataTrigger>
+                                <DataTrigger TargetType="Button"
+                                             Binding="{Binding SelectedTheme}"
+                                             Value="Dark">
+                                    <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"/>
+                                    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
+                                </DataTrigger>
+                            </Button.Triggers>
+                        </Button>
+                        <Button Grid.Column="1"
                                 Text="🌙 Dark"
                                 Command="{Binding ChangeThemeCommand}"
-                                CommandParameter="Dark"/>
+                                CommandParameter="Dark">
+                            <Button.Triggers>
+                                <DataTrigger TargetType="Button"
+                                             Binding="{Binding SelectedTheme}"
+                                             Value="Dark">
+                                    <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"/>
+                                    <Setter Property="TextColor" Value="{StaticResource White}"/>
+                                </DataTrigger>
+                                <DataTrigger TargetType="Button"
+                                             Binding="{Binding SelectedTheme}"
+                                             Value="Light">
+                                    <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"/>
+                                    <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
+                                </DataTrigger>
+                            </Button.Triggers>
+                        </Button>
                     </Grid>
 
                     <Label Text="{Binding SelectedTheme, StringFormat='Tema actual: {0}'}"

@@ -191,6 +191,56 @@ R: Inicia sesión desde otro dispositivo y descarga tus secretos.
 
 # Password Manager .NET 10
 
+## 🐳 Docker
+
+> Sección en construcción: los comandos de despliegue y configuración de contenedores (SQL Server, API WebApiCore, etc.) se documentarán aquí.
+
+- Descargar imagen
+```sh
+docker pull mcr.microsoft.com/mssql/server
+```
+- Crear contenedor
+```sh
+docker container create -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=mysecretpassword" -e "MSSQL_PID=Developer" -p 1433:1433 --name SQLServer mcr.microsoft.com/mssql/server
+```
+- Prepara una Base de Datos de prueba
+```sql
+SELECT 
+	NAME AS LoginName, 
+	TYPE_DESC AS AccountType, 
+	create_date, 
+	modify_date,
+	TYPE
+FROM sys.server_principals
+WHERE TYPE IN ('S', 'U', 'G');
+GO
+
+CREATE LOGIN testing WITH PASSWORD = 'testing', CHECK_POLICY = OFF;
+GO
+
+CREATE DATABASE db_testing
+GO
+
+USE db_testing
+GO
+
+CREATE USER testing FOR LOGIN testing;
+GO
+
+EXEC sp_addrolemember 'db_owner', 'testing';
+GO
+```
+
+- Ejecutar el script del esquema
+> El esquema completo (tablas, seed y stored procedures) está en el archivo **`SqlServer.sql`** en la raíz del repositorio (`D:\Repo\.NET\PasswordManager_.NET10\SqlServer.sql`). Ejecútalo contra `db_testing` (en SSMS, Management Studio del contenedor o `sqlcmd`).
+
+```sh
+# Ejemplo con sqlcmd dentro del contenedor
+docker exec -i SQLServer /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "mysecretpassword" -d db_testing -i /dev/stdin < SqlServer.sql
+```
+
+---
+
 ### Dependency
 - CommunityToolkit.Maui 13.0.0
 - CommunityToolkit.Mvvm 8.4.0

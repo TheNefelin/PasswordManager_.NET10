@@ -9,19 +9,19 @@ public partial class PasswordPromptCreateViewModel : BaseViewModel
 {
 
     [ObservableProperty]
-    string newPassword = string.Empty;
+    public partial string NewPassword { get; set; } = string.Empty;
 
     [ObservableProperty]
-    string confirmPassword = string.Empty;
+    public partial string ConfirmPassword { get; set; } = string.Empty;
 
     [ObservableProperty]
-    string message = string.Empty;
+    public partial string Message { get; set; } = string.Empty;
 
     [ObservableProperty]
-    bool isPassword1 = true;
+    public partial bool IsPassword1 { get; set; } = true;
 
     [ObservableProperty]
-    bool isPassword2 = true;
+    public partial bool IsPassword2 { get; set; } = true;
 
     private readonly ILogger<PasswordPromptCreateViewModel> _logger;
     private readonly ICoreDataService _coreDataService;

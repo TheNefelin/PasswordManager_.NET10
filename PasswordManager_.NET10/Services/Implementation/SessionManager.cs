@@ -22,8 +22,7 @@ public class SessionManager : ISessionManager
 
     public async Task LoginAsync(string email, string password)
     {
-        // Intentar login
-        var user = await _authService.LoginAsync(email, password);
+        await _authService.LoginAsync(email, password);
 
         bool shouldSavePassword = await _authService.GetSavePasswordOnNextLoginAsync();
         if (shouldSavePassword)
@@ -36,36 +35,46 @@ public class SessionManager : ISessionManager
                 // Limpiar el flag
                 await _authService.SetSavePasswordOnNextLoginAsync(false);
 
-                _logger.LogInformation("[LoginViewModel-LoginAsync] Password saved successfully for next biometric login");
+                _logger.LogInformation("[SessionManager-LoginAsync] Password saved successfully for next biometric login");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[LoginViewModel-LoginAsync] Error saving password: {Message}", ex.Message);
+                _logger.LogError(ex, "[SessionManager-LoginAsync] Error saving password: {Message}", ex.Message);
                 // No fallar el login si hay error al guardar contraseña
             }
         }
     }
 
-    public async Task Logout(bool hasExpired)
+    public Task Logout(bool hasExpired)
     {
+        return PerformFullLogoutAsync(hasExpired ? "La sesión ha expirado" : null);
+    }
+
+    public async Task PerformFullLogoutAsync(string? message = null)
+    {
+        var page = Application.Current?.Windows[0]?.Page;
+
         try
         {
-            _logger.LogInformation("[AppShell-PerformLogout] Logout initiated");
+            _logger.LogInformation("[SessionManager-PerformFullLogoutAsync] Logout initiated");
             bool confirmed;
 
-            if (hasExpired)
+            if (message != null)
             {
-                await Shell.Current.DisplayAlertAsync(
-                    "Cerrar sesión",
-                    "La Session ha Expirado",
-                    "Sí"
-                );
+                if (page != null)
+                {
+                    await page.DisplayAlertAsync(
+                        "Cerrar sesión",
+                        message,
+                        "Sí"
+                    );
+                }
                 confirmed = true;
             }
             else
             {
                 // Pedir confirmación
-                confirmed = await Shell.Current.DisplayAlertAsync(
+                confirmed = page == null || await page.DisplayAlertAsync(
                     "Cerrar sesión",
                     "¿Estás seguro de que deseas cerrar sesión?",
                     "Sí",
@@ -75,52 +84,53 @@ public class SessionManager : ISessionManager
 
             if (!confirmed)
             {
-                _logger.LogInformation("[AppShell-PerformLogout] Logout cancelled by user");
+                _logger.LogInformation("[SessionManager-PerformFullLogoutAsync] Logout cancelled by user");
                 return;
             }
 
             // Limpiar sesión en SecureStorage
             await _authService.LogoutAsync();
-            _logger.LogInformation("[AppShell-PerformLogout] Session cleared");
+            _logger.LogInformation("[SessionManager-PerformFullLogoutAsync] Session cleared");
 
             var loginPage = _serviceProvider.GetRequiredService<LoginPage>();
             Application.Current!.Windows[0].Page = loginPage;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[AppShell-PerformLogout] Error during logout: {ExceptionType} - {Message}",
+            _logger.LogError(ex, "[SessionManager-PerformFullLogoutAsync] Error during logout: {ExceptionType} - {Message}",
                 ex.GetType().Name, ex.Message);
 
-            await Shell.Current.DisplayAlertAsync(
-                "Error",
-                "Ocurrió un error al cerrar sesión",
-                "OK"
-            );
+            if (page != null)
+            {
+                await page.DisplayAlertAsync(
+                    "Error",
+                    "Ocurrió un error al cerrar sesión",
+                    "OK"
+                );
+            }
         }
     }
 
-    public TimeSpan GetRemainingTime()
+    public async Task<TimeSpan> GetRemainingTimeAsync()
     {
-        throw new NotImplementedException();
+        var currentUser = await _authService.GetCurrentUserAsync();
+        if (currentUser == null)
+        {
+            return TimeSpan.Zero;
+        }
+
+        var remaining = currentUser.TokenExpiry - DateTime.UtcNow;
+        return remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero;
     }
 
-    public void InitializeSession(int expireMinutes)
+    public async Task<bool> IsSessionExpiredAsync()
     {
-        throw new NotImplementedException();
-    }
+        var currentUser = await _authService.GetCurrentUserAsync();
+        if (currentUser == null)
+        {
+            return true;
+        }
 
-    public bool IsSessionExpired()
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task PerformFullLogoutAsync(string? message = null)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void UpdateSessionTime()
-    {
-        throw new NotImplementedException();
+        return currentUser.TokenExpiry <= DateTime.UtcNow;
     }
 }

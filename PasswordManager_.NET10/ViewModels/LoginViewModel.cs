@@ -18,25 +18,25 @@ public partial class LoginViewModel : BaseViewModel
     private readonly ISessionManager _sessionManager;
 
     [ObservableProperty]
-    private string email = string.Empty;
+    public partial string Email { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string password = string.Empty;
+    public partial string Password { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private string message = string.Empty;
+    public partial string Message { get; set; } = string.Empty;
 
     [ObservableProperty]
-    private bool isLoading = false;
+    public partial bool IsLoading { get; set; } = false;
 
     [ObservableProperty]
-    private bool isFormValid = false;
+    public partial bool IsFormValid { get; set; } = false;
 
     [ObservableProperty]
-    private bool isBiometricEnabled = false;
+    public partial bool IsBiometricEnabled { get; set; } = false;
 
     [ObservableProperty]
-    bool isPassword = true;
+    public partial bool IsPassword { get; set; } = true;
 
     public LoginViewModel(
         ILogger<LoginViewModel> logger,
@@ -249,7 +249,7 @@ public partial class LoginViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-
+            _logger.LogWarning(ex, "[LoginViewModel-OpenUrl] Error opening URL: {Url}", url);
         }
     }
 }

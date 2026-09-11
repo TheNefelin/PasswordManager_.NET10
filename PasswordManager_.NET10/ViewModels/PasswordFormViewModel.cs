@@ -14,28 +14,28 @@ public partial class PasswordFormViewModel : BaseViewModel
 
     // ==================== UI STATE ====================
     [ObservableProperty]
-    string data01 = string.Empty; // Título/Nombre
+    public partial string Data01 { get; set; } = string.Empty; // Título/Nombre
 
     [ObservableProperty]
-    string data02 = string.Empty; // Usuario
+    public partial string Data02 { get; set; } = string.Empty; // Usuario
 
     [ObservableProperty]
-    string data03 = string.Empty; // Contraseña
+    public partial string Data03 { get; set; } = string.Empty; // Contraseña
 
     [ObservableProperty]
-    string encryptingPassword = string.Empty;
+    public partial string EncryptingPassword { get; set; } = string.Empty;
 
     [ObservableProperty]
-    bool isPassword = true;
+    public partial bool IsPassword { get; set; } = true;
 
     [ObservableProperty]
-    bool isPasswordEncrypt = true;
+    public partial bool IsPasswordEncrypt { get; set; } = true;
 
     [ObservableProperty]
-    bool isLoading = false;
+    public partial bool IsLoading { get; set; } = false;
 
     [ObservableProperty]
-    bool isEditing = false; // true si estamos editando, false si creando
+    public partial bool IsEditing { get; set; } = false; // true si estamos editando, false si creando
 
     public TaskCompletionSource<CoreSecretData?>? CompletionSource { get; set; }
     private CoreSecretData? _currentItem;

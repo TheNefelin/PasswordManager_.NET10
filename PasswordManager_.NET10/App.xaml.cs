@@ -17,8 +17,11 @@ public partial class App : Application
         _serviceProvider = serviceProvider;
         _themeService = themeService;
 
-        // Cargar tema guardado al iniciar
-        LoadSavedTheme();
+        // Aplicar Dark de forma inmediata para evitar el parpadeo blanco en el arranque
+        UserAppTheme = AppTheme.Dark;
+
+        // Cargar el tema guardado una sola vez (puede sobrescribir el valor por defecto)
+        _ = LoadSavedThemeAsync();
     }
 
     protected override Window CreateWindow(IActivationState? activationState)
@@ -28,7 +31,7 @@ public partial class App : Application
         return new Window(loginPage);
     }
 
-    private async void LoadSavedTheme()
+    private async Task LoadSavedThemeAsync()
     {
         await _themeService.LoadAndApplyThemeAsync();
     }

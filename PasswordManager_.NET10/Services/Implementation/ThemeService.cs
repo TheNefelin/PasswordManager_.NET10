@@ -7,7 +7,7 @@ public class ThemeService : IThemeService
 {
     private readonly ILogger<ThemeService> _logger;
     private const string THEME_KEY = "AppTheme";
-    private const string DEFAULT_THEME = "Auto";
+    private const string DEFAULT_THEME = "Dark";
 
     public ThemeService(ILogger<ThemeService> logger)
     {
@@ -61,7 +61,7 @@ public class ThemeService : IThemeService
                 {
                     "Light" => AppTheme.Light,
                     "Dark" => AppTheme.Dark,
-                    _ => AppTheme.Unspecified // Auto
+                    _ => AppTheme.Dark // Auto: tratar como Dark
                 };
             });
 

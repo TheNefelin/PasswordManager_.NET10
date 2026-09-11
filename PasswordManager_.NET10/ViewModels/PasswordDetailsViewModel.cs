@@ -22,16 +22,16 @@ public partial class PasswordDetailsViewModel : BaseViewModel
     // Propiedades que controlan solo la visualización
 
     [ObservableProperty]
-    bool isMenuOpen = false;
+    public partial bool IsMenuOpen { get; set; } = false;
 
     [ObservableProperty]
-    bool isLoading = false;
+    public partial bool IsLoading { get; set; } = false;
 
     [ObservableProperty]
-    string searchText = string.Empty;
+    public partial string SearchText { get; set; } = string.Empty;
 
     [ObservableProperty]
-    ObservableCollection<CoreSecretData> displayedPasswordItems = new();
+    public partial ObservableCollection<CoreSecretData> DisplayedPasswordItems { get; set; } = new();
 
     private List<CoreSecretData> passwordItems = new();
 

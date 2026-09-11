@@ -12,10 +12,10 @@ public partial class TestingViewModel : BaseViewModel
     private readonly ICoreDataService _coreDataService;
 
     [ObservableProperty]
-    private bool isLoading = false;
+    public partial bool IsLoading { get; set; } = false;
 
     [ObservableProperty]
-    private string resultText = "Presiona el botón";
+    public partial string ResultText { get; set; } = "Presiona el botón";
 
     public TestingViewModel(
         ILogger<TestingViewModel> logger,

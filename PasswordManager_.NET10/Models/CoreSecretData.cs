@@ -14,8 +14,8 @@ public partial class CoreSecretData : ObservableObject
     // UI State (no viene del servidor)
     [ObservableProperty]
     [JsonIgnore]
-    public bool isExpanded = false;
+    public partial bool IsExpanded { get; set; } = false;
     [ObservableProperty]
     [JsonIgnore]
-    public bool isPasswordVisible = true;
+    public partial bool IsPasswordVisible { get; set; } = true;
 }

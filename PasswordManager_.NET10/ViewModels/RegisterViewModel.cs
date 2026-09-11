@@ -14,22 +14,22 @@ public partial class RegisterViewModel : BaseViewModel
     private readonly IAuthService _authService;
 
     [ObservableProperty]
-    string email = string.Empty;
+    public partial string Email { get; set; } = string.Empty;
 
     [ObservableProperty]
-    string password = string.Empty;
+    public partial string Password { get; set; } = string.Empty;
 
     [ObservableProperty]
-    string confirmPassword = string.Empty;
+    public partial string ConfirmPassword { get; set; } = string.Empty;
 
     [ObservableProperty]
-    bool isLoading = false;
+    public partial bool IsLoading { get; set; } = false;
 
     [ObservableProperty]
-    string message = string.Empty;
+    public partial string Message { get; set; } = string.Empty;
 
     [ObservableProperty]
-    bool isPassword = true;
+    public partial bool IsPassword { get; set; } = true;
 
     public RegisterViewModel(
         ILogger<RegisterViewModel> logger,
@@ -51,7 +51,7 @@ public partial class RegisterViewModel : BaseViewModel
         try
         {
             IsLoading = true;
-            var result = await _authService.RegisterAsync(Email, Password, confirmPassword);
+            var result = await _authService.RegisterAsync(Email, Password, ConfirmPassword);
 
             if (!result)
             {

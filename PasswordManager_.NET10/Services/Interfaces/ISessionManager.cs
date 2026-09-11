@@ -4,9 +4,7 @@ public interface ISessionManager
 {
     Task LoginAsync(string email, string password);
     Task Logout(bool hasExpired);
-    void InitializeSession(int expireMinutes);
-    void UpdateSessionTime();
-    bool IsSessionExpired();
-    TimeSpan GetRemainingTime();
     Task PerformFullLogoutAsync(string? message = null);
+    Task<TimeSpan> GetRemainingTimeAsync();
+    Task<bool> IsSessionExpiredAsync();
 }
