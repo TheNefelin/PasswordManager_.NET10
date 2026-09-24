@@ -25,13 +25,19 @@ public partial class PasswordPromptCreateViewModel : BaseViewModel
 
     private readonly ILogger<PasswordPromptCreateViewModel> _logger;
     private readonly ICoreDataService _coreDataService;
+    private readonly INavigationService _navigationService;
+    private readonly IDialogService _dialogService;
 
     public PasswordPromptCreateViewModel(
         ILogger<PasswordPromptCreateViewModel> logger,
-        ICoreDataService coreDataService)
+        ICoreDataService coreDataService,
+        INavigationService navigationService,
+        IDialogService dialogService)
     {
         _logger = logger;
         _coreDataService = coreDataService;
+        _navigationService = navigationService;
+        _dialogService = dialogService;
     }
 
     [RelayCommand]
@@ -50,14 +56,13 @@ public partial class PasswordPromptCreateViewModel : BaseViewModel
             var coreUserIV = await _coreDataService.RegisterCorePasswordAsync(NewPassword);
             _logger.LogInformation("Nueva contraseña creada exitosamente desde PasswordPromptCreateViewModel.");
 
-            await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
-                "Aviso",
+            await _dialogService.ShowInfoAsync(
                 $"Contraseña creada correctamente, Id: {coreUserIV.IV}",
-                "OK"
+                "Aviso"
             );
 
             Message = "";
-            _ = Application.Current!.Windows[0].Page!.Navigation.PopAsync();
+            await _navigationService.PopAsync();
         }
         catch (Exception ex)
         {
@@ -77,7 +82,7 @@ public partial class PasswordPromptCreateViewModel : BaseViewModel
     {
         _logger.LogInformation("Cancelando nueva contraseña desde PasswordPromptCreateViewModel.");
 
-        _ = Application.Current!.Windows[0].Page!.Navigation.PopAsync();
+        await _navigationService.PopAsync();
 
         NewPassword = "";
         ConfirmPassword = "";

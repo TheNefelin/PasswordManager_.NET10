@@ -165,7 +165,7 @@ public partial class LoginViewModel : BaseViewModel
             // Limpiar campos
             Email = string.Empty;
             Password = string.Empty;
-            Message = string.Empty; //Message = "Login exitoso";
+            Message = string.Empty;
 
             await _navigationService.GoToAppShellAsync();
             _logger.LogInformation("[LoginViewModel-LoginAsync] Navigated to AppShell");

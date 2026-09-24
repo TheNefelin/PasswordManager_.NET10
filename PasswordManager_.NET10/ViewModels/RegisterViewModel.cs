@@ -12,6 +12,7 @@ public partial class RegisterViewModel : BaseViewModel
 {
     private readonly ILogger<RegisterViewModel> _logger;
     private readonly IAuthService _authService;
+    private readonly INavigationService _navigationService;
 
     [ObservableProperty]
     public partial string Email { get; set; } = string.Empty;
@@ -33,10 +34,12 @@ public partial class RegisterViewModel : BaseViewModel
 
     public RegisterViewModel(
         ILogger<RegisterViewModel> logger,
-        IAuthService authService)
+        IAuthService authService,
+        INavigationService navigationService)
     {
         _logger = logger;
         _authService = authService;
+        _navigationService = navigationService;
     }
 
     [RelayCommand]
@@ -65,7 +68,7 @@ public partial class RegisterViewModel : BaseViewModel
             WeakReferenceMessenger.Default.Send(new RegistrationCompletedMessage(Email));
 
             // Cerrar modal
-            await Application.Current!.Windows[0].Page!.Navigation.PopModalAsync();
+            await _navigationService.PopModalAsync();
         }
         catch (Exception ex)
         {
@@ -88,7 +91,7 @@ public partial class RegisterViewModel : BaseViewModel
         try
         {
             _logger.LogInformation("[RegisterViewModel-CancelAsync] User cancelled registration");
-            await Application.Current!.Windows[0].Page!.Navigation.PopModalAsync();
+            await _navigationService.PopModalAsync();
             ClearField();
         }
         catch (Exception ex)

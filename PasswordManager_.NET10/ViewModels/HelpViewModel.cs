@@ -1,15 +1,18 @@
 ﻿using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using PasswordManager_.NET10.Services.Interfaces;
 
 namespace PasswordManager_.NET10.ViewModels;
 
 public partial class HelpViewModel : BaseViewModel
 {
     private readonly ILogger<HelpViewModel> _logger;
+    private readonly INavigationService _navigationService;
 
-    public HelpViewModel(ILogger<HelpViewModel> logger)
+    public HelpViewModel(ILogger<HelpViewModel> logger, INavigationService navigationService)
     {
         _logger = logger;
+        _navigationService = navigationService;
     }
 
     [RelayCommand]
@@ -17,7 +20,7 @@ public partial class HelpViewModel : BaseViewModel
     {
         try
         {
-            await Application.Current!.Windows[0].Page!.Navigation.PopModalAsync();
+            await _navigationService.PopModalAsync();
         }
         catch (Exception ex)
         {

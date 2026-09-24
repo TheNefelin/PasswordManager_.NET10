@@ -49,7 +49,8 @@ public static class MauiProgram
             .AddSingleton<IApiService, ApiService>()
             .AddSingleton<IAuthService, AuthService>()
             .AddSingleton<ICoreDataService, CoreDataService>()
-            .AddSingleton<INavigationService, NavigationService>();
+            .AddSingleton<INavigationService, NavigationService>()
+            .AddSingleton<IDialogService, DialogService>();
 
         // ViewModels (Singleton para screens principales)
         builder.Services

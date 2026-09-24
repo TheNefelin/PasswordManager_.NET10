@@ -14,7 +14,9 @@ public partial class PasswordDetailsViewModel : BaseViewModel
     private readonly ILogger<PasswordDetailsViewModel> _logger;
     private readonly ICoreDataService _coreDataService;
     private readonly IEncryptionService _encryptionService;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly INavigationService _navigationService;
+    private readonly IDialogService _dialogService;
+    private readonly PasswordFormViewModel _passwordFormViewModel;
     private CancellationTokenSource? _searchCancellationTokenSource;
     private const int SEARCH_DEBOUNCE_MS = 300;
 
@@ -40,12 +42,16 @@ public partial class PasswordDetailsViewModel : BaseViewModel
         ILogger<PasswordDetailsViewModel> logger,
         ICoreDataService coreDataService,
         IEncryptionService encryptionService,
-        IServiceProvider serviceProvider)
+        INavigationService navigationService,
+        IDialogService dialogService,
+        PasswordFormViewModel passwordFormViewModel)
     {
         _logger = logger;
         _coreDataService = coreDataService;
         _encryptionService = encryptionService;
-        _serviceProvider = serviceProvider;
+        _navigationService = navigationService;
+        _dialogService = dialogService;
+        _passwordFormViewModel = passwordFormViewModel;
 
         Title = "Password Details";
 
@@ -102,11 +108,7 @@ public partial class PasswordDetailsViewModel : BaseViewModel
         catch (Exception ex)
         {
             // Mostrar error al usuario
-            await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
-                "Error",
-                ex.Message,
-                "OK"
-            );
+            await _dialogService.ShowErrorAsync(ex.Message);
             // Log para debugging
             _logger.LogError(ex, "[PasswordDetailsViewModel] Error downloading passwords");
         }
@@ -177,10 +179,9 @@ public partial class PasswordDetailsViewModel : BaseViewModel
 
             if (passwordItems.Count > 0 && !_encryptionService.IsEncrypted(passwordItems[0].Data01))
             {
-                await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
-                    "Información",
+                await _dialogService.ShowInfoAsync(
                     "Los datos ya están desencriptados",
-                    "OK"
+                    "Información"
                 );
                 return;
             }
@@ -214,7 +215,7 @@ public partial class PasswordDetailsViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            await Application.Current!.Windows[0].Page!.DisplayAlertAsync("Error", ex.Message, "OK");
+            await _dialogService.ShowErrorAsync(ex.Message);
         }
         finally
         {
@@ -232,7 +233,7 @@ public partial class PasswordDetailsViewModel : BaseViewModel
         // Pasar el TaskCompletionSource al page
         page.CompletionSource = tcs;
 
-        await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(page);
+        await _navigationService.PushModalAsync(page);
 
         // Esperar a que el usuario responda
         return await tcs.Task;
@@ -243,14 +244,13 @@ public partial class PasswordDetailsViewModel : BaseViewModel
     {
         try
         {
-            var page = _serviceProvider.GetRequiredService<PasswordPromptCreatePage>();
-            _ = Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(page);
+            _ = _navigationService.PushModalAsync<PasswordPromptCreatePage>();
 
             IsLoading = true;
         }
         catch (Exception ex)
         {
-            await Application.Current!.Windows[0].Page!.DisplayAlertAsync("Error", ex.Message, "OK");
+            await _dialogService.ShowErrorAsync(ex.Message);
         }
         finally
         {
@@ -270,12 +270,12 @@ public partial class PasswordDetailsViewModel : BaseViewModel
     public async Task CreateSecret()
     {
         var tcs = new TaskCompletionSource<CoreSecretData?>();
-        var viewModel = _serviceProvider.GetRequiredService<PasswordFormViewModel>();
+        var viewModel = _passwordFormViewModel;
         viewModel.CompletionSource = tcs;
         viewModel.InitializeCreate(Guid.Empty);
 
         var page = new PasswordFormPage(viewModel);
-        await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(page);
+        await _navigationService.PushModalAsync(page);
         var newItem = await tcs.Task;
 
         SearchText = string.Empty;
@@ -289,21 +289,20 @@ public partial class PasswordDetailsViewModel : BaseViewModel
     {
         if (_encryptionService.IsEncrypted(item.Data01))
         {
-            await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
-                "Información",
+            await _dialogService.ShowInfoAsync(
                 "Debes desencriptarlos antes de editar los datos",
-                "OK"
+                "Información"
             );
             return;
         };
 
         var tcs = new TaskCompletionSource<CoreSecretData?>();
-        var viewModel = _serviceProvider.GetRequiredService<PasswordFormViewModel>();
+        var viewModel = _passwordFormViewModel;
         viewModel.CompletionSource = tcs;
         viewModel.InitializeEdit(item);
 
         var page = new PasswordFormPage(viewModel);
-        await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(page);
+        await _navigationService.PushModalAsync(page);
         var updatedItem = await tcs.Task;
 
         SearchText = string.Empty;
@@ -319,18 +318,17 @@ public partial class PasswordDetailsViewModel : BaseViewModel
     {
         if (_encryptionService.IsEncrypted(item.Data01))
         {
-            await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
-                "Información",
+            await _dialogService.ShowInfoAsync(
                 "Debes desencriptarlos antes de eliminar los datos",
-                "OK"
+                "Información"
             );
             return;
         };
 
         // Confirmar eliminación
-        bool confirm = await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
-            "Confirmar eliminación",
+        bool confirm = await _dialogService.ShowConfirmAsync(
             $"¿Estás seguro de que deseas eliminar '{item.Data01}'?",
+            "Confirmar eliminación",
             "Sí, eliminar",
             "Cancelar"
         );
@@ -341,15 +339,11 @@ public partial class PasswordDetailsViewModel : BaseViewModel
         {
             var message = await _coreDataService.DeleteCoreDataAsync(item.Data_Id);
 
-            await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
-                "Éxito",
-                message,
-                "OK"
-            );
+            await _dialogService.ShowInfoAsync(message, "Éxito");
         }
         catch (Exception ex)
         {
-            await Application.Current!.Windows[0].Page!.DisplayAlertAsync("Error", ex.Message, "OK");
+            await _dialogService.ShowErrorAsync(ex.Message);
         }
     }
 

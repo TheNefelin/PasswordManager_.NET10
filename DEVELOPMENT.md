@@ -9,7 +9,7 @@ Solución (`PasswordManager_.NET10.slnx`) con **dos proyectos deployables indepe
 | Proyecto | Qué es | Estado |
 |---|---|---|
 | `WebApiCore` + capas (`Application`, `Domain`, `Infrastructure`) | **API** (ASP.NET Core, .NET 10) | Port a .NET 10 de la API `WebApiCore` del repo `D:\Repo\.NET\Projects_.NET9`. Reemplazo de la v9. Con mejoras de seguridad/calidad aplicadas (secciones 3 y 7). |
-| `PasswordManager_.NET10` | Cliente **MAUI** (net10.0-android/ios/maccatalyst/windows) | Versión v1 existente. `ANALISIS_V1.md` fue eliminado; auditoría v1→v2 pendiente de documentar si se retoma el MAUI. |
+| `PasswordManager_.NET10` | Cliente **MAUI** (net10.0-android/ios/maccatalyst/windows) | Evolución a nivel "senior" en curso (ítems A/B/C). Auditoría y refactor documentados en la sección 7. |
 
 Reglas de operación: `AGENTS.md` (mismas reglas generales que en `Projects_.NET9`).
 
@@ -93,10 +93,61 @@ El usuario gestiona `appsettings.json` (producción) y `appsettings.Development.
 - ⏳ Pendiente (decisión de contrato): **mover `SqlToken` de query string a un header** y renombrar `ApiKey`→`X-ApiKey` (capa 2 de seguridad; requiere cambio en el cliente MAUI). Dejado deliberadamente para el final de la solución.
 - ⏳ Pendiente (contrato de comportamiento): **política de contraseña** en register (hoy solo `MinLength(6)`); reforzarla puede rechazar registros que el MAUI permita → requiere coordinar la validación del cliente.
 - ✅ Descartado (falso positivo): tests unitarios de controllers — la cobertura HTTP con `WebApplicationFactory` ya ejercita los controllers por el pipeline completo; añadir `FrameworkReference` ASP.NET Core + mocks de `HttpContext` sería duplicación (sobreingeniería).
-- ⏳ Pendiente MAUI (v1→v2): auditoría y refactor no iniciados.
+- ⏳ Pendiente MAUI (budget deuda): ver sección "9. Estado del cliente MAUI" más abajo.
 - Git: `WebApiCore.Tests/` nuevo (untracked), `PasswordManager_.NET10.slnx` modificado (incluye el proyecto de tests), `ANALISIS_V1.md` eliminado.
 
-## 8. Referencias
+## 8. Estado del cliente MAUI (`PasswordManager_.NET10`)
+
+### 8.1 Contexto y objetivo
+
+MAUI multi-target (net10.0-android/ios/maccatalyst/windows). Objetivo en curso: eliminar deuda técnica para llegar a nivel "senior", tocando **solo el frontend** — el contrato con la API (`ApiResponse`, endpoints) no se modifica. `ApiResponse` (envelope) ya está alineado con el backend.
+
+### 8.2 Decisiones de diseño ya aplicadas (ítems A/B/C)
+
+- **SessionManager consolidado** (interfaz slim): `LoginAsync`, `Logout(bool)`, `PerformFullLogoutAsync(string? message)`, `GetRemainingTimeAsync()`, `IsSessionExpiredAsync()`. **Sin evento `SessionExpired`** (decisión del usuario: evita duplicar timers). Fuente única de verdad: `AuthService.GetCurrentUserAsync()` con caché en memoria (sin leer SecureStorage por segundo).
+- **HttpClient en DI**: se registra un único `HttpClient` configurado (BaseAddress `Constants.API_BASE_URL`, headers `ApiKey`/`User-Agent`, timeout 30 s, **bypass SSL SOLO en DEBUG**). `ApiService` consume el inyectado (antes creaba el suyo propio). Factory: `MauiProgram.CreateApiHttpClient()`.
+- **Navegación centralizada**: nuevo `INavigationService`/`NavigationService` (`GoToAppShellAsync`, `GoToLoginAsync`, `PushModalAsync<T>`, `PushModalAsync(Page)`, `PopModalAsync`, `PopAsync`), registrado singleton. Nuevo `IDialogService`/`DialogService` (`ShowErrorAsync`, `ShowInfoAsync`, `ShowConfirmAsync`) que reemplaza a `Exceptions/AlertExtensions.cs` (eliminado, estaba sin uso). **Todos los ViewModels** (Login, Settings, SessionManager, Help, Register, PasswordPromptCreate, PasswordForm, PasswordDetails) usan hoy solo estos servicios; `IServiceProvider` eliminado de los VMs (p.ej. `PasswordDetailsViewModel` ahora inyecta `PasswordFormViewModel` resolviendo registros transient del DI). `Application.Current.Windows[0].Page` queda solo en `NavigationService`, `DialogService` y el caso defensivo de `SessionManager`. **Aplica a todos los VMs; la migración está completa.**
+- **Tema sin "Auto"**: solo Light/Dark. `DEFAULT_THEME = "Dark"`, `ApplyTheme` mapea todo lo que no sea `"Light"` a Dark. La primera ejecución queda en dark sin flash blanco (`App` aplica `UserAppTheme = Dark` síncrono y carga el guardado una sola vez vía `_ = LoadSavedThemeAsync()`).
+- **Timeouts/sesiones**: `SettingsViewModel` usa un timer de 1 s **solo para refrescar la UI**; la expiración real la decide `ISessionManager`. Tras logout manual, `RefreshSessionTimeAsync` verifica `IsAuthenticatedAsync()` antes de mostrar el diálogo de expiración (evita diálogo espurio).
+- **Idioma/estado**: strings de UI en español; `Constants.APP_VERSION = "Beta 1.0.1"` mostrado en Ajustes.
+- **Warnings corregidos**: `ExpandedToArrowConverter` (`object?`, CS8767), catch con log en `LoginViewModel.OpenUrl` (CS0168), `ILogger<PasswordFormViewModel>` tipado correcto, `AppShell.xaml.cs` sin bloque comentado muerto, `MauiProgram` sin doble `;;`.
+
+### 8.3 Verificación
+
+- `dotnet build` del cliente MAUI: **0 advertencias, 0 errores** (verificado tras cada ítem A/B/C).
+- Sin tests funcionales ejecutados (política de seguridad de datos); verificación runtime en emulador pendiente (logout, login, navegación a Register/Help).
+
+### 8.4 Deuda técnica pendiente (orden de ejecución)
+
+1. ✅ **Navegación restante**: completada. Todos los VMs usan `INavigationService`/`IDialogService`; `Application.Current.Windows[0].Page` solo en los servicios centralizados y el caso defensivo de `SessionManager`.
+2. ✅ **Limpiar muerto**: completada. Eliminados comentarios "NUEVOS MÉTODOS..." en `ISecureStorageService.cs`, `//Message = "Login exitoso";` y línea comentada en `PasswordFormViewModel`; eliminado `Exceptions/AlertExtensions.cs` (sin uso).
+3. **Tests**: cliente MAUI sin tests todavía — plan definido en la sección 8.6.
+4. **Secretos en `Constants.cs`** (`BIOMETRIC_KEY`, `BIOMETRIC_IV`, `API_KEY`, `API_BASE_URL`): migrar a KeyChain/SecureStorage. **Dejado deliberadamente para el final** (decisión del usuario).
+5. **Testing en producción**: `TestingViewModel`/`TestingPage` y pestaña "Testing" en `AppShell.xaml` se mantienen tal cual (decisión explícita del usuario).
+
+### 8.5 Notas de entorno
+
+- `API_BASE_URL = "https://10.0.2.2:7286"` (correcto para emulador Android). El bypass SSL en DEBUG es necesario porque el certificado local no es de confianza.
+- El error "no se conecta" reportado por el usuario era la **BD SQL Server apagada**, no el código.
+- `README.md`: sección Docker con comandos del usuario + referencia a `SqlServer.sql`.
+
+### 8.6 Plan de tests del cliente MAUI (propuesta pendiente de aprobación)
+
+**Problema**: el cliente MAUI no tiene un solo test; la lógica de VMs y servicios está sin verificar.
+
+**Objetivo**: cubrir con tests unitarios la lógica que hoya es testable, sin tocar UI, sin BD y sin dependencias nuevas. Patrón de fakes manuales (sin Moq), consistente con `WebApiCore.Tests`.
+
+**Alcance propuesto**:
+- Nuevo proyecto `PasswordManager_.NET10.Tests` (xunit, al estilo `WebApiCore.Tests`).
+- Referenciar el proyecto MAUI para instanciar VMs y servicios reales con fakes del resto.
+
+**Detalle**: `ISessionManager` (login/logout/remaining/expired con fakes de `IAuthService`/`INavigationService`), `NavigationService`. Pasar a `SettingsViewModel` con fakes probando `SessionTimeRemaining` y el guard de `IsAuthenticatedAsync` tras logout.
+
+**Fuera de alcance**: tests de UI (MAUI UI tests), biometría real, SecureStorage real, integración con la API (ya cubierto por `WebApiCore.Tests`). Solo tests sin BD (seguro según política de datos).
+
+**Solicitud**: confirmación para crear el proyecto de tests y los primeros casos.
+
+## 9. Referencias
 
 - `README.md` — manual de usuario del cliente MAUI.
 - `D:\Repo\.NET\Projects_.NET9` — repo fuente de la API v9 (`WebApiCore`); referencia de comparación y paridad.

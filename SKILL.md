@@ -459,15 +459,469 @@ Las mismas reglas de C# y seguridad aplican al frontend MAUI. Anti-patrones que 
 | `HttpClientHandler` manual con SSL bypass | MITM → fuga de credenciales | Configuración de trust del SO, nunca `ServerCertificateCustomValidationCallback = (_) => true` |
 | `System.Random` para contraseñas/IDs | Predictible, inseguro | `RandomNumberGenerator` |
 | Columnas `Data01`/`Data02` en BD | Sin semántica, imposible de mantener | Nombres de dominio reales |
-| `System.Timers.Timer` tocando la UI desde otro hilo | Race conditions / crashes de UI | `Dispatcher`/`MainThread.InvokeOnMainThreadAsync` |
-| ViewModel Singleton con estado global compartido | Estado corrupto entre páginas | ViewModel por página, servicios como singletons |
+| `System.Timers.Timer` tocando la UI desde otro hilo | Race conditions / crashes de UI | `PeriodicTimer` (async) o `MainThread.InvokeOnMainThreadAsync` |
+| ViewModel Singleton con estado global compartido | Estado corrupto entre páginas | ViewModel Transiente, servicios como singletons |
+| DataTriggers para estado visual binario | No revierten estilo base en MAUI | `IValueConverter` con Binding directo |
+| Clicks rápidos en navegación crean múltiples instancias | Re-entrancy en `PushAsync` | Guard `IsBusy` + `InvertedBoolConverter` en `IsEnabled` de botones |
+| `async void OnNavigatedTo` con `await` de sensores | Crash al navegar fuera durante el `await` | `OnNavigatedTo` síncrono + fire-and-forget seguro con try/catch |
+| Suscripciones duplicadas a eventos de sensores Singleton | Event handlers apuntando a VMs destruidas → crash | Unsubscribe antes de Subscribe + antes de Stop() en cleanup |
 
 ### Reglas MAUI senior
-- **MVVM**: ViewModel por página, propiedades `ObservableProperty`, `[RelayCommand]`.
+- **MVVM**: ViewModel por página, `partial properties` con `[ObservableProperty]` (requiere `<LangVersion>preview</LangVersion>` en csproj), `[RelayCommand]`.
 - **Inyección de dependencias** (DI nativa de MAUI): servicios en `MauiProgram`, páginas/VM resueltas por DI.
 - **Nunca** lógica de negocio en `code-behind`; solo eventos de UI delegando a comandos.
 - **HttpClient singleton + auth** con handlers que agregan JWT/ApiKey.
 - Tratar la migración/refactor como un **proyecto de auditoría**: leer el análisis previo (por ejemplo `ANALISIS_V1.md`) y corregir los hallazgos uno a uno con aprobación del usuario (regla de issues).
+- Localización por resx + markup `{extensions:Translate}` (§11.9), versionado solo en `.csproj` (§11.10), audio elegido por caso de uso (§11.11), colores con `AppThemeBinding` (§11.12), permisos Android por mínimo privilegio con APIs sin permisos protegidos (§11.13) y empaquetado Android por `RuntimeIdentifiers` (§11.14).
+
+### 11.1 Lifecycle de MAUI Shell
+
+El orden de vida de una Page en MAUI Shell es:
+
+```
+Constructor → OnNavigatedTo → OnAppearing
+        ↑                         ↓
+        |                   (page visible)
+        |                         ↓
+        ←←←←←←←← OnDisappearing (page hidden)
+```
+
+**Regla crítica**: `OnAppearing` se ejecuta DESPUÉS de `OnNavigatedTo`. Cualquier lógica que dependa del BindingContext debe ir en `OnNavigatedTo`, no en `OnAppearing`.
+
+```csharp
+// CORRECTO
+protected override void OnNavigatedTo(NavigatedToEventArgs args)
+{
+    base.OnNavigatedTo(args);
+    BindingContext = _serviceProvider.GetRequiredService<MyViewModel>();
+    // Inicializar servicios aquí, donde BindingContext ya existe
+}
+
+// INCORRECTO — BindingContext puede ser null
+protected override void OnAppearing()
+{
+    base.OnAppearing();
+    if (BindingContext is MyViewModel vm)
+    {
+        vm.Initialize(); // BindingContext no seteado aún
+    }
+}
+```
+
+### 11.2 Singleton vs Transient en DI
+
+| Componente | Lifetime correcto | Justificación |
+|------------|-------------------|---------------|
+| **Services stateless** (wrappers de APIs de plataforma, sensores, idioma) | Singleton | Sin estado mutable persistente; seguros de compartir |
+| **Services con estado por instancia** (audio de instrumentos, metrónomo) | Transient | Estado aislado por ViewModel/página; evita estado residual entre navegaciones |
+| **ViewModels** | Transient | Fresh instance en cada navegación, sin estado residual |
+| **Pages** | Singleton (Shell) | Shell cachea las ShellContent pages |
+| **AppShell** | Singleton | Shell infrastructure |
+
+```csharp
+// En MauiProgram.cs
+builder.Services
+    // Services sin estado — Singleton
+    .AddSingleton<ILanguageService, LanguageService>()
+    .AddSingleton<IThemeService, ThemeService>()
+    .AddSingleton<IAppInfoService, AppInfoService>()
+    .AddSingleton<ILauncherService, LauncherService>()
+    // Services con estado por instancia — Transient
+    .AddTransient<IMetronomeService, MetronomeService>()
+    // ViewModels — Transient
+    .AddTransient<HomeViewModel>()
+    .AddTransient<SettingsViewModel>()
+    // Pages — Singleton (Shell)
+    .AddSingleton<HomePage>()
+    .AddSingleton<SettingsPage>();
+```
+
+**Por qué Singleton en Pages**: Shell crea y cachea las ShellContent pages. Si la Page fuera Transiente, Shell la crearía de nuevo en cada navegación, lo cual es innecesario y rompe el estado de la UI.
+
+**Por qué Transient en ViewModels**: Un ViewModel Singleton mantiene estado entre navegaciones (valores de sliders, campos de formulario, lecturas de sensores). Transient garantiza estado limpio cada vez que el usuario navega a una página.
+
+### 11.3 Shell navigation: ShellContent vs Pushed pages
+
+MAUI Shell tiene dos tipos de navegación con comportamientos diferentes:
+
+**ShellContent pages** (tabs, páginas raíz):
+```xml
+<!-- En AppShell.xaml -->
+<TabBar>
+    <ShellContent
+        ContentTemplate="{DataTemplate pages:HomePage}"
+        Route="HomePage" />
+    <ShellContent
+        ContentTemplate="{DataTemplate pages:SettingsPage}"
+        Route="SettingsPage" />
+</TabBar>
+```
+- Shell las crea una vez y las cachea
+- `OnNavigatedTo` solo fires la primera vez
+- VM se resuelve en el constructor
+
+**Pushed pages** (navegación detallada):
+```csharp
+// Desde un ViewModel o code-behind
+var page = _serviceProvider.GetRequiredService<DetailPage>();
+await Shell.Current.Navigation.PushAsync(page);
+```
+- Shell crea una nueva instancia en cada PushAsync
+- `OnNavigatedTo` fires en cada navegación
+- VM se resuelve en `OnNavigatedTo`
+
+```csharp
+// ShellContent page — VM en constructor
+public partial class HomePage : ContentPage
+{
+    public HomePage(IServiceProvider serviceProvider)
+    {
+        InitializeComponent();
+        BindingContext = serviceProvider.GetRequiredService<HomeViewModel>();
+    }
+}
+
+// Pushed page — VM en OnNavigatedTo
+public partial class DetailPage : ContentPage
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public DetailPage(IServiceProvider serviceProvider)
+    {
+        InitializeComponent();
+        _serviceProvider = serviceProvider;
+    }
+
+    protected override void OnNavigatedTo(NavigatedToEventArgs args)
+    {
+        base.OnNavigatedTo(args);
+        BindingContext = _serviceProvider.GetRequiredService<DetailViewModel>();
+        // Inicializar servicios aquí
+    }
+}
+```
+
+### 11.4 DI en Pages: IServiceProvider pattern vs Constructor DI
+
+**Opción A — IServiceProvider pattern** (cuando el VM es Transient y la Page es Singleton):
+
+```csharp
+public partial class MyPage : ContentPage
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public MyPage(IServiceProvider serviceProvider)
+    {
+        InitializeComponent();
+        _serviceProvider = serviceProvider;
+    }
+
+    protected override void OnNavigatedTo(NavigatedToEventArgs args)
+    {
+        base.OnNavigatedTo(args);
+        BindingContext = _serviceProvider.GetRequiredService<MyViewModel>();
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        if (BindingContext is MyViewModel vm)
+        {
+            vm.Cleanup();
+        }
+    }
+}
+```
+
+**Opción B — Constructor DI** (cuando el VM se crea una vez y se reusa, o cuando el VM usa state services que persisten):
+
+```csharp
+public partial class MyPage : ContentPage
+{
+    public MyPage(MyViewModel viewModel)
+    {
+        InitializeComponent();
+        BindingContext = viewModel;
+    }
+}
+```
+
+**Opción B es válida cuando** el VM delega estado a un servicio Singleton (como `IStateService`) que persiste entre recreaciones de VM. El VM sigue siendo Transient, pero su estado sobrevive en el servicio. El estado mutable de dominio que debe sobrevivir a la navegación (p. ej. marcas de cronómetro, lecturas de sensores) vive en el servicio Singleton; el VM Transient lo refleja en su `Initialize()`.
+
+**Regla**: si el VM necesita Cleanup() al salir, usar Opción A. Si el estado vive en un servicio Singleton, Opción B es suficiente.
+
+### 11.5 BindableProperty para components
+
+Cuando un `ContentView` necesita dependencias (servicios), no puede usar DI por constructor. Usar `BindableProperty`:
+
+```csharp
+public partial class MyComponent : ContentView
+{
+    private IMyService _service;
+
+    public static readonly BindableProperty ServiceProperty =
+        BindableProperty.Create(nameof(Service), typeof(IMyService),
+            typeof(MyComponent), null, propertyChanged: OnServiceChanged);
+
+    public IMyService Service
+    {
+        get => (IMyService)GetValue(ServiceProperty);
+        set => SetValue(ServiceProperty, value);
+    }
+
+    private static void OnServiceChanged(BindableObject bindable,
+        object oldValue, object newValue)
+    {
+        if (bindable is MyComponent component && newValue is IMyService service)
+        {
+            component._service = service;
+        }
+    }
+}
+```
+
+En XAML, bindear desde el Page:
+```xml
+<components:MyComponent
+    Service="{Binding Source={x:Reference MyPage}, Path=BindingContext.MyService}" />
+```
+
+**Regla**: nunca usar `IPlatformApplication.Current.Services.GetService<>()` directamente en un ContentView. Siempre BindableProperty + binding desde el Page.
+
+### 11.6 Core + MAUI: separación de responsabilidades (transversal)
+
+Aplica a CUALQUIER app MAUI nueva — una app de notas, un password manager, un toolkit. Dividir siempre en dos proyectos:
+
+```
+MiApp.Core/                   # Class Library (net10.0, sin MAUI)
+├── Interfaces/               # Contratos de servicios (testables)
+├── Models/                   # Modelos de dominio
+├── Services/                 # Servicios puros (sin APIs de plataforma)
+└── ViewModels/               # Todas las VMs (testables con xUnit)
+
+MiApp/                        # Proyecto MAUI
+├── Services/
+│   └── Implementations/      # Implementaciones con APIs de plataforma
+│       ├── LanguageService.cs
+│       ├── ThemeService.cs
+│       ├── AppInfoService.cs
+│       └── ... (una por interfaz; SOLO estas conocen Microsoft.Maui)
+└── Pages/                    # Páginas y Views
+```
+
+**Va a Core**: interfaces, modelos, `BaseViewModel` y servicios que solo usan `System.*` y tipos standard.
+**Se queda en MAUI**: servicios que usan `Flashlight.Default`, `Compass.Default`, `MediaElement`, `Window.Attributes`, `AppInfo`, `Launcher`, `Preferences` u otras APIs de plataforma.
+
+**Regla**: si un servicio importa `Microsoft.Maui` o `CommunityToolkit.Maui`, se queda en MAUI. Si solo usa `System.*`, va a Core. La decisión no la da el tema de la app sino **la dependencia**.
+
+**Por qué dos proyectos**: las interfaces y VMs en Core se testean con xUnit sin inicializar MAUI (sin UI thread ni handlers de plataforma); el proyecto MAUI queda como adaptador de plataforma. La regla es idéntica en cualquier app.
+
+### 11.7 Timer moderno en MAUI
+
+`System.Timers.Timer` ejecuta en thread pool y requiere marshaling manual. Usar `PeriodicTimer` (.NET 6+):
+
+```csharp
+// MAL — thread pool, requiere MainThread.BeginInvokeOnMainThread
+private System.Timers.Timer _timer;
+_timer = new System.Timers.Timer(1000);
+_timer.Elapsed += (s, e) => UpdateUI(); // Crash: no es UI thread
+
+// BIEN — async, aware del lifecycle
+private CancellationTokenSource _cts;
+
+public void Start()
+{
+    _cts = new CancellationTokenSource();
+    _ = RunTimerAsync(_cts.Token);
+}
+
+private async Task RunTimerAsync(CancellationToken ct)
+{
+    using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(1000));
+    try
+    {
+        while (await timer.WaitForNextTickAsync(ct))
+        {
+            MainThread.BeginInvokeOnMainThread(() => UpdateUI());
+        }
+    }
+    catch (OperationCanceledException) { }
+}
+
+public void Stop()
+{
+    _cts?.Cancel();
+    _cts?.Dispose();
+    _cts = null;
+}
+```
+
+**Ventajas de `PeriodicTimer`**: async-aware, cancellation nativo, sin threads adicionales, se detiene limpiamente con `CancellationToken`.
+
+**Matiz de precisión — NO compensa deriva**: `PeriodicTimer` espera el intervalo **desde que terminó el tick anterior**, por lo que la deriva se acumula (el delay se mide desde el fin de procesar cada tick, incluyendo marshaling). Para secuencias rítmicas que deben ser exactas (metrónomo, secuenciadores) no basta: programar contra **tiempos absolutos** con reloj monotónico:
+
+```csharp
+var sw = Stopwatch.StartNew();
+long intervalTicks = TimeSpan.FromMilliseconds(60000.0 / bpm).Ticks;
+long next = sw.Elapsed.Ticks;
+
+while (!ct.IsCancellationRequested)
+{
+    next += intervalTicks;
+    var remaining = TimeSpan.FromTicks(next - sw.Elapsed.Ticks);
+    if (remaining > TimeSpan.Zero)
+        await Task.Delay(remaining, ct);
+
+    // ejecutar el beat — SIN esperar la duración de la reproducción
+    PlayBeat();
+}
+```
+
+Cada tick se programa contra el inicio absoluto (`sw.Elapsed`), eliminando deriva acumulada. El jitter por tick restante depende del motor de playback: ver §11.11.
+
+### 11.8 Convertidores para estado visual
+
+Para estado visual binario (on/off, active/inactive), usar `IValueConverter` con Binding directo en vez de DataTriggers:
+
+```xml
+<!-- INCORRECTO — DataTriggers no revierten estilo base en MAUI -->
+<Button.Triggers>
+    <DataTrigger TargetType="Button" Binding="{Binding IsOn}" Value="True">
+        <Setter Property="BackgroundColor" Value="{StaticResource MyAccent}" />
+    </DataTrigger>
+</Button.Triggers>
+
+<!-- CORRECTO — Binding directo con converter -->
+<Button BackgroundColor="{Binding IsOn, Converter={StaticResource OnOffConverter}}" />
+```
+
+**Regla**: los DataTriggers de MAUI tienen un bug conocido donde no revierten el estilo base correctamente al desactivarse. Usar `IValueConverter` con Binding directo es más confiable.
+
+### 11.9 Localización multi-idioma (resx)
+
+Patrón validado en el repo (ES/EN/SV):
+
+- **Recursos**: `AppResources.resx` (idioma base) + `AppResources.{culture}.resx` (p. ej. `.en`, `.sv`).
+- **Manager**: `LocalizationResourceManager` (singleton) expone un indexer por clave `[Clave]`; al cambiar de idioma notifica para re-enlazar los Bindings.
+- **Markup**: `TranslateExtension` (namespace propio, `IMarkupExtension<BindingBase>`) usado como `{extensions:Translate Clave}`.
+
+```csharp
+// Devuelve un Binding enlazado al indexer del manager.
+public BindingBase ProvideValue(IServiceProvider serviceProvider)
+{
+    return new Binding
+    {
+        Mode = BindingMode.OneWay,
+        Path = $"[{Name}]",
+        Source = LocalizationResourceManager.Instance
+    };
+}
+```
+
+**Gotcha verificada**: `TranslateExtension` devuelve un **`Binding`**. Usarlo SOLO en propiedades bindables (`Text`, `Title`, `ToolTip`, ...). En propiedades no enlazables (p. ej. valores estáticos, `Source`, colecciones) no aplica o falla silenciosamente.
+
+**Reglas**:
+- Un `View`/`Page` que muestre cadenas debe consumir las claves vía markup; nunca hardcodear textos visibles.
+- El cambio de idioma persiste (`Preferences`) y se aplica con `CultureInfo`; las claves nuevas se agregan a TODOS los idiomas a la vez.
+- Toda clave usada en XAML debe existir en el `.resx` base, o compilar con recursos conectados fallará la búsqueda en runtime.
+
+### 11.10 Versionado de app (.csproj)
+
+- **`ApplicationDisplayVersion`**: versión visible/marketing (`1.0.1`). Texto libre; Android/iOS aceptan `major.minor.patch`.
+- **`ApplicationVersion`**: número interno de build. Las tiendas lo usan para detectar actualizaciones; **subir en CADA publicación** (debe incrementar, nunca bajar/reciclar).
+- **Única fuente de verdad**: el `.csproj`. Leer en runtime con `AppInfo` (`AppInfo.Current.VersionString`/`BuildString`) vía un servicio wrapper (`IAppInfoService`) en Core + implementación en MAUI.
+- **Nunca** duplicar la versión en constantes o hardcoded en la UI (p. ej. "Beta: v1.0.0"): diverge del `.csproj`.
+
+### 11.11 Audio: efectos cortos vs música (baja latencia)
+
+`MediaElement` (ExoPlayer/AVPlayer) y plugins como `Plugin.Maui.Audio` son correctos para música/larga duración, pero tienen **latencia relevante para clics** (el issue jfversluis/Plugin.Maui.Audio#89 documenta 150-200 ms incluso con player precargado). Regla:
+
+| Caso de uso | Motor recomendado |
+|-------------|-------------------|
+| Música, reproducción larga, notas de instrumento | `MediaElement` |
+| Clics/efectos cortos precisos (metrónomo) | APIs nativas de baja latencia |
+
+APIs de baja latencia disponibles sin dependencias nuevas:
+
+- **Android**: `Android.Media.SoundPool` — decodifica PCM a memoria al cargar (sin CPU/latencia de decompresión por reproducción); `Play()` dispara rápido. Pensado para efectos cortos.
+- **iOS**: `AudioToolbox.SystemSound` — "sound plays immediately"; PCM/IMA4 `.wav` ≤ 30 s; para efectos de sonido.
+- **Windows**: `MediaElement` como fallback aceptable.
+
+**Patrón de implementación** (sin plugins):
+
+```csharp
+// Core
+public interface IMetronomeClickService
+{
+    void PlayClick(bool accent);
+}
+
+// MAUI (implementación única por TFM con #if)
+public partial class MetronomeClickService : IMetronomeClickService
+{
+    public void PlayClick(bool accent)
+    {
+#if ANDROID
+        _soundPool?.Play(accent ? _accentSoundId : _normalSoundId, 1f, 1f, 1, 0, 1f);
+#elif IOS || MACCATALYST
+        (accent ? _accentSound : _normalSound)?.PlaySystemSound();
+#else
+        // fallback MediaElement
+#endif
+    }
+}
+```
+
+**Reglas**: precargar la muestra UNA vez (no recargar por cada tick); el playback nunca debe esperarse dentro del loop del scheduler (§11.7); si el proyecto usa Core puro, la interfaz vive en Core y la implementación por plataforma en el proyecto MAUI.
+
+### 11.12 Reuso y convenciones para biblioteca de componentes
+
+- **Colores/estilos con `AppThemeBinding`** desde el origen: todo recurso visual declara variante claro/oscuro; nunca un color fijo para ambos temas.
+- **Converters centralizados** (`BoolToColorConverter`, `BoolToLocalizedStringConverter`, `InvertedBoolConverter`): estado visual binario por binding, no por DataTriggers (§11.8).
+- **Componentes autocontenidos** (1 control = 1 archivo + partial class si requiere código) con inyección por `BindableProperty` (§11.5), nunca Service Locator.
+- Si hay 3+ apps MAUI que comparten estilos/converters/localización/servicios wrapper, extraerlos a una **librería compartida** (`Toolkit.Core` maUI-free + `Toolkit.Maui`) consumida por referencia de proyecto; recién evaluar NuGet cuando la distribución lo justifique.
+
+### 11.13 Permisos Android: mínimo privilegio y APIs sin permisos protegidos
+
+- Declarar en el manifest **solo lo mínimo**; verificar siempre el manifest **fusionado** (`obj/.../AndroidManifest.xml`) porque NuGets inyectan permisos por su cuenta (p. ej. `CommunityToolkit.Maui` agrega `INTERNET`). Para permisos *normal* (no proteger la vida del usuario ni datos), no vale la pena pelear el merge de Gradle.
+- **Gotcha**: `Battery.Default` de MAUI exige en Android el permiso **`BATTERY_STATS`** (protegido `signature|privileged`, red flag en el review de Play y rechazado en políticas). No se re-agrega el permiso: se lee la API de plataforma que no lo requiere.
+- Patrón de lectura sin permisos (síncrono, API 21+, `#if ANDROID` + fallback MAUI en otras plataformas):
+
+```csharp
+public static int GetBatteryLevel(Android.Content.Context ctx) =>
+    ctx.GetSystemService(Android.Content.Context.BatteryService) is Android.OS.BatteryManager bm
+        ? bm.GetIntProperty((int)Android.OS.BatteryProperty.Capacity)
+        : -1;
+```
+
+  Compatibilidad: contra API obsoletas, el compilador suele sugerir el reemplazo (p. ej. `BatteryProperty` enum en vez de `BatteryManager.BatteryPropertyCapacity`).
+
+### 11.14 Empaquetado Android: ABIs con `RuntimeIdentifiers`
+
+- `AndroidSupportedAbis` quedó **obsoleta** en .NET 10 / Android SDK 36 (warning XA0036): no aplica los ABIs. Reemplazo: `RuntimeIdentifiers` (RID → ABI) limitados al target Android para no afectar Windows/MacCatalyst.
+
+```xml
+<PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+  <RuntimeIdentifiers>android-arm;android-arm64;android-x64</RuntimeIdentifiers>
+</PropertyGroup>
+```
+
+- RID → ABI: `android-arm` = `armeabi-v7a` (32-bit), `android-arm64` = `arm64-v8a`, `android-x64` = `x86_64`. Un single APK cubre todos los dispositivos; Play entrega AAB y genera el APK por dispositivo.
+- Validar en dispositivo real: `adb shell getprop ro.product.cpu.abi`. Dispositivos budget pueden correr **solo 32-bit** (caso real: Galaxy A11 `SM-A115M`, Android 12, `armeabi-v7a`); un APK sin ese ABI falla con "app no compatible" (`INSTALL_FAILED_NO_MATCHING_ABIS`).
+- Los builds **Debug** de MAUI apuntan a `x86_64` (emulador): no instalar en teléfonos reales; firmar y probar un APK **Release**.
+
+### 11.15 Firma, licencias y Release para Play Store
+
+**Firma de paquete (keystore)**:
+- Los secretos de firma **nunca van en el código ni en el `.csproj`**. Usar **Properties → Android Firma de Paquete** escribe `AndroidSigningKeyPass`/`AndroidSigningKeyStore` en el `.csproj`, que **se versiona** → contraseñas públicas. Preferir el flujo **Archive → Ad Hoc** de Visual Studio (perfil de firma fuera del proyecto) o pasar las properties por línea de comandos/CI (`-p:AndroidKeyStore=true -p:AndroidSigningKeyStore=... -p:AndroidSigningKeyAlias=... -p:AndroidSigningKeyPass=... -p:AndroidSigningStorePass=...`).
+- El keystore (`.keystore`/`.jks`/`.p12`) se guarda **fuera del repositorio**, con backup en otro disco o gestor de contraseñas. Perderlo = no poder actualizar la app en Play. `.gitignore` debe excluir `*.keystore`, `*.jks`, `*.p12`, `*.key`.
+- Validez: **mínimo 25 años** en `keytool` (`-validity 9125`); se recomienda 100 años (`36500`). El diálogo de VS pregunta validez en días.
+- **Contrato**: el keystore del APK de prueba debe ser el **mismo** que el del AAB final (si no, Play rechaza la actualización).
+- Play **no acepta APK**: se sube un **AAB** firmado (Release con `AndroidPackageFormat` aab por defecto; APK de prueba con `-p:AndroidPackageFormat=apk`). Activar **Play App Signing**: el keystore propio es solo la *upload key*; Google firma los APK finales.
+
+**Licencias de componentes comerciales (ej. Syncfusion)**:
+- La clave se **inyecta en build como `AssemblyMetadata`** (csproj `-p:SyncfusionLicenseKey=...` o variable de entorno de la máquina `SYNC_FUSION_LICENSE_KEY`) y se lee por reflexión en `MauiProgram.cs` solo si trae valor. **Nunca hardcodear ni versionar la clave**. Separar de la CI/CD cuando corresponda.
+- Diferenciar **Trial** (30 días, genera aviso en runtime) de la **Community License** gratuita definitiva (sin expirar si se cumplen condiciones: <US$1M ingresos, ≤5 desarrolladores, ≤10 empleados). Verificar el tipo en el panel de cuentas de Syncfusion; no publicar en producción con clave trial.
 
 ---
 
@@ -499,6 +953,20 @@ Las mismas reglas de C# y seguridad aplican al frontend MAUI. Anti-patrones que 
 - [ ] Tests de integración cubriendo los códigos del envelope.
 - [ ] Verificación real en runtime (navegador/Swagger) tras el deploy; no basta que compile.
 - [ ] Documentar decisiones relevantes en `DEVELOPMENT.md` del proyecto.
+- [ ] MAUI: ViewModels Transientes, Pages Singleton, VM resuelto en `OnNavigatedTo` o constructor DI con state service.
+- [ ] MAUI: Lógica de inicialización en `OnNavigatedTo`, no en `OnAppearing`.
+- [ ] MAUI: Components con BindableProperty, nunca Service Locator.
+- [ ] MAUI: `PeriodicTimer` en vez de `System.Timers.Timer`.
+- [ ] MAUI: `IValueConverter` con Binding directo en vez de DataTriggers para estado visual.
+- [ ] MAUI: Guard `IsBusy` en comandos de navegación para prevenir re-entrancy.
+- [ ] MAUI: `OnNavigatedTo` síncrono; fire-and-forget con try/catch si hay async, nunca `async void`.
+- [ ] MAUI: Unsubscribe de eventos de sensores antes de Stop() y en cleanup para evitar callbacks post-destrucción.
+- [ ] MAUI: Localización con resx + markup; una clave nueva se agrega en TODOS los idiomas a la vez.
+- [ ] MAUI: Versión solo en `.csproj` (Display + Build); leída con `AppInfo`; subir `ApplicationVersion` en cada publicación.
+- [ ] MAUI: Audio — efectos/clics por APIs de baja latencia (SoundPool/SystemSound); música por `MediaElement`.
+- [ ] MAUI: Colores y estilos con `AppThemeBinding` (claro/oscuro desde el origen).
+- [ ] MAUI: Permisos Android mínimos; usar APIs de plataforma sin permisos protegidos (batería con `BatteryManager`/`BatteryProperty`, no con `Battery.Default` + `BATTERY_STATS`); revisar el manifest fusionado.
+- [ ] MAUI: Empaquetado Android con `RuntimeIdentifiers` (`AndroidSupportedAbis` obsoleta en .NET 10); validar ABI en dispositivo real con `ro.product.cpu.abi` (cuidado con 32-bit).
 
 ---
 
@@ -514,6 +982,7 @@ Las mismas reglas de C# y seguridad aplican al frontend MAUI. Anti-patrones que 
 | `AllowAnyOrigin` / `SetIsOriginAllowed(_=>true)` | Allow-list explícita |
 | Hash sin salt o MD5/SHA para contraseñas | PBKDF2 con salt (KDF) |
 | Fire-and-forget / `async void` | `async Task` + manejo central |
+| `async void OnNavigatedTo` con await de sensores | Síncrono + fire-and-forget con try/catch |
 | `catch {}` vacío | Log + estado visible en UI |
 | `HttpClient` nuevo por llamada | Singleton inyectado |
 | SSL bypass en el cliente | Trust del SO; nunca `_ => true` |

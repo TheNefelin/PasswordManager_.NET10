@@ -11,6 +11,8 @@ public partial class PasswordFormViewModel : BaseViewModel
     private readonly ILogger<PasswordFormViewModel> _logger;
     private readonly ICoreDataService _coreDataService;
     private readonly IEncryptionService _encryptionService;
+    private readonly INavigationService _navigationService;
+    private readonly IDialogService _dialogService;
 
     // ==================== UI STATE ====================
     [ObservableProperty]
@@ -43,11 +45,15 @@ public partial class PasswordFormViewModel : BaseViewModel
     public PasswordFormViewModel(
         ILogger<PasswordFormViewModel> logger,
         ICoreDataService coreDataService,
-        IEncryptionService encryptionService)
+        IEncryptionService encryptionService,
+        INavigationService navigationService,
+        IDialogService dialogService)
     {
         _logger = logger;
         _coreDataService = coreDataService;
         _encryptionService = encryptionService;
+        _navigationService = navigationService;
+        _dialogService = dialogService;
 
         Title = "Nueva Contraseña";
     }
@@ -91,10 +97,9 @@ public partial class PasswordFormViewModel : BaseViewModel
                 string.IsNullOrWhiteSpace(Data03) ||
                 string.IsNullOrWhiteSpace(EncryptingPassword))
             {
-                await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
-                    "Validación",
+                await _dialogService.ShowInfoAsync(
                     "Todos los campos son obligatorios",
-                    "OK"
+                    "Validación"
                 );
                 return;
             }
@@ -122,11 +127,7 @@ public partial class PasswordFormViewModel : BaseViewModel
 
                 CompletionSource?.SetResult(returnItem);
 
-                await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
-                    "Éxito",
-                    "Contraseña actualizada correctamente",
-                    "OK"
-                );
+                await _dialogService.ShowInfoAsync("Contraseña actualizada correctamente", "Éxito");
             }
             else
             {
@@ -158,24 +159,15 @@ public partial class PasswordFormViewModel : BaseViewModel
 
                 CompletionSource?.SetResult(returnItem);
 
-                await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
-                    "Éxito",
-                    "Contraseña creada correctamente",
-                    "OK"
-                );
+                await _dialogService.ShowInfoAsync("Contraseña creada correctamente", "Éxito");
             }
 
             // Volver a la página anterior
-            //await Shell.Current.GoToAsync("..");
-            await Application.Current!.Windows[0].Page!.Navigation.PopModalAsync();
+            await _navigationService.PopModalAsync();
         }
         catch (Exception ex)
         {
-            await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
-                "Error",
-                ex.Message,
-                "OK"
-            );
+            await _dialogService.ShowErrorAsync(ex.Message);
             _logger.LogError(ex, "[PasswordFormViewModel] Error saving password");
         }
         finally
@@ -187,9 +179,8 @@ public partial class PasswordFormViewModel : BaseViewModel
     [RelayCommand]
     public async Task Cancel()
     {
-        await Shell.Current.GoToAsync("..");
+        await _navigationService.PopModalAsync();
         CompletionSource?.SetResult(null);
-        //await Application.Current!.Windows[0].Page!.Navigation.PopModalAsync();
     }
 
     [RelayCommand]

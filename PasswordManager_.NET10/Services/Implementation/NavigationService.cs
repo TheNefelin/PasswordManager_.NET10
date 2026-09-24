@@ -30,11 +30,21 @@ public class NavigationService : INavigationService
     public async Task PushModalAsync<T>() where T : Page
     {
         var page = _serviceProvider.GetRequiredService<T>();
+        await PushModalAsync(page);
+    }
+
+    public async Task PushModalAsync(Page page)
+    {
         await Application.Current!.Windows[0].Page!.Navigation.PushModalAsync(page);
     }
 
     public async Task PopModalAsync()
     {
         await Application.Current!.Windows[0].Page!.Navigation.PopModalAsync();
+    }
+
+    public async Task PopAsync()
+    {
+        await Application.Current!.Windows[0].Page!.Navigation.PopAsync();
     }
 }

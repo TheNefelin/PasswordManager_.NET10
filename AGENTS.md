@@ -20,9 +20,15 @@ Estas reglas priorizan:
 
 ## 2. Idioma
 
-- Toda comunicación con el usuario debe realizarse en español neutro latinoamericano.
+> **Regla de oro**: el idioma aplica a **TODO texto que se produzca o modifique**.
+
+- Toda comunicación con el usuario debe realizarse en español neutro latinoamericano, usando la forma **"tú"** (no "vos", no voseo).
 - Se puede utilizar vocabulario técnico en inglés cuando sea el término estándar de la tecnología.
 - El código, nombres de variables, clases, métodos, interfaces, archivos y APIs deben respetar las convenciones propias de la tecnología utilizada.
+- La regla de idioma aplica también a: documentación, guías, archivos `.md`, textos de UI, recursos `resx`, mensajes de commit y tests.
+- Ningún texto generado o modificado puede usar voseo ("Elegí", "Dibujá") ni modismos regionales no neutros.
+- No copiar un mal estilo existente solo porque ya estaba: la regla de idioma prevalece sobre el contenido preexistente.
+- Verificar siempre el idioma **antes** de dar una tarea por terminada.
 
 ---
 
@@ -198,6 +204,7 @@ Antes de informar que el trabajo está terminado:
 - Revisar nombres y consistencia.
 - Revisar manejo de errores.
 - Verificar que no se hayan introducido cambios fuera del alcance autorizado.
+- Verificar el idioma (regla de oro, sección 2): español neutro con "tú" en todo texto nuevo o modificado.
 
 ### Fase 7 — Verificación
 
@@ -271,6 +278,7 @@ Solo entonces puede modificar el proyecto dentro del alcance aprobado.
   4. Qué impacto puede tener agregarla.
   5. La versión recomendada, cuando corresponda.
 - Entregar los comandos exactos de instalación para que el usuario pueda ejecutarlos o autorizar su ejecución.
+- En este proyecto, la instalación, actualización, eliminación o modificación de paquetes/dependencias **la ejecuta siempre el usuario**, a menos que el usuario autorice explícitamente al agente a ejecutarla. El agente entrega los comandos exactos y **no los ejecuta** si no media esa autorización.
 - No ejecutar comandos como:
   - `npm install`
   - `npm add`
@@ -314,11 +322,17 @@ Las operaciones de solo lectura de Git pueden utilizarse cuando sean necesarias 
 
 ## 11. Mensajes de commit
 
-- Si el usuario solicita un mensaje de commit, generar únicamente el mensaje solicitado.
-- El mensaje debe reflejar fielmente los cambios realizados.
+- Generar siempre UN solo mensaje de commit, sin importar la extensión de los cambios.
+- El mensaje debe reflejar fielmente los cambios realizados (regla 27).
+- Formato: Conventional Commits con scope(s) ordenados por importancia:
+  `feat(pizarra, about, compass, stopwatch): resumen en español, imperativo`
+- Body obligatorio con bullets `-`, cada uno describiendo el cambio con detalle técnico y el archivo/área afectada.
+- Incluir SIEMPRE al final la línea de verificación con números reales:
+  `suite N/N tests, build 0/0` (valores del run ejecutado, nunca inventados).
+- Usar bullet final `- Eliminado X (sin uso)` cuando aplique.
 - No ejecutar `git commit`.
 - No ejecutar `git push`.
-- Solicitar o utilizar Conventional Commits cuando corresponda.
+- Uso de Conventional Commits: solicitado/exigido cuando corresponda.
 
 ---
 

@@ -15,6 +15,7 @@ public partial class SettingsViewModel : BaseViewModel
     private readonly IBiometricService _biometricService;
     private readonly ISessionManager _sessionManager;
     private readonly INavigationService _navigationService;
+    private readonly IDialogService _dialogService;
     private System.Timers.Timer? _sessionTimer;
 
     [ObservableProperty]
@@ -61,7 +62,8 @@ public partial class SettingsViewModel : BaseViewModel
         IThemeService themeService,
         IBiometricService biometricService,
         ISessionManager sessionManager,
-        INavigationService navigationService)
+        INavigationService navigationService,
+        IDialogService dialogService)
     {
         _logger = logger;
         _authService = authService;
@@ -69,6 +71,7 @@ public partial class SettingsViewModel : BaseViewModel
         _biometricService = biometricService;
         _sessionManager = sessionManager;
         _navigationService = navigationService;
+        _dialogService = dialogService;
 
         Title = "Settings";
     }
@@ -327,9 +330,9 @@ public partial class SettingsViewModel : BaseViewModel
 
             if (IsSavePasswordEnabled)
             {
-                bool confirmed = await Application.Current!.Windows[0].Page!.DisplayAlertAsync(
-                    "Guardar Contraseña",
+                bool confirmed = await _dialogService.ShowConfirmAsync(
                     "Para completar este proceso debes iniciar sesión nuevamente.\n\nLuego de esto, la autenticación por biometría estará habilitada para tu próximo login.",
+                    "Guardar Contraseña",
                     "Continuar",
                     "Cancelar"
                 );
@@ -376,7 +379,7 @@ public partial class SettingsViewModel : BaseViewModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "[SettingsViewModel-PerformLogoutForPasswordSave] Error during logout: {Message}", ex.Message);
-            await Application.Current!.Windows[0].Page!.DisplayAlertAsync("Error", "Ocurrió un error al procesar tu solicitud", "OK");
+            await _dialogService.ShowErrorAsync("Ocurrió un error al procesar tu solicitud");
         }
     }
 }
