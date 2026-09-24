@@ -114,14 +114,15 @@ MAUI multi-target (net10.0-android/ios/maccatalyst/windows). Objetivo en curso: 
 
 ### 8.3 Verificación
 
-- `dotnet build` del cliente MAUI: **0 advertencias, 0 errores** (verificado tras cada ítem A/B/C).
+- `dotnet build` del cliente MAUI: **0 advertencias, 0 errores** (verificado tras cada ítem A/B/C y tras agregar el proyecto de tests).
+- **Tests del cliente MAUI**: `dotnet test --project PasswordManager_.NET10.Tests\PasswordManager_.NET10.Tests.csproj` → **14/14 correctos** (sin BD, sin UI).
 - Sin tests funcionales ejecutados (política de seguridad de datos); verificación runtime en emulador pendiente (logout, login, navegación a Register/Help).
 
 ### 8.4 Deuda técnica pendiente (orden de ejecución)
 
 1. ✅ **Navegación restante**: completada. Todos los VMs usan `INavigationService`/`IDialogService`; `Application.Current.Windows[0].Page` solo en los servicios centralizados y el caso defensivo de `SessionManager`.
 2. ✅ **Limpiar muerto**: completada. Eliminados comentarios "NUEVOS MÉTODOS..." en `ISecureStorageService.cs`, `//Message = "Login exitoso";` y línea comentada en `PasswordFormViewModel`; eliminado `Exceptions/AlertExtensions.cs` (sin uso).
-3. **Tests**: cliente MAUI sin tests todavía — plan definido en la sección 8.6.
+3. ✅ **Tests**: completados — proyecto `PasswordManager_.NET10.Tests` creado (xunit v3 + MTP, fakes manuales sin Moq), 14/14 tests correctos. Detalle en la sección 8.6.
 4. **Secretos en `Constants.cs`** (`BIOMETRIC_KEY`, `BIOMETRIC_IV`, `API_KEY`, `API_BASE_URL`): migrar a KeyChain/SecureStorage. **Dejado deliberadamente para el final** (decisión del usuario).
 5. **Testing en producción**: `TestingViewModel`/`TestingPage` y pestaña "Testing" en `AppShell.xaml` se mantienen tal cual (decisión explícita del usuario).
 
@@ -131,21 +132,22 @@ MAUI multi-target (net10.0-android/ios/maccatalyst/windows). Objetivo en curso: 
 - El error "no se conecta" reportado por el usuario era la **BD SQL Server apagada**, no el código.
 - `README.md`: sección Docker con comandos del usuario + referencia a `SqlServer.sql`.
 
-### 8.6 Plan de tests del cliente MAUI (propuesta pendiente de aprobación)
+### 8.6 Tests del cliente MAUI (implementados)
 
-**Problema**: el cliente MAUI no tiene un solo test; la lógica de VMs y servicios está sin verificar.
+Cobertura de la lógica de VMs y servicios sin tocar UI, sin BD y sin dependencias nuevas. Patrón de fakes manuales (sin Moq), consistente con `WebApiCore.Tests`.
 
-**Objetivo**: cubrir con tests unitarios la lógica que hoya es testable, sin tocar UI, sin BD y sin dependencias nuevas. Patrón de fakes manuales (sin Moq), consistente con `WebApiCore.Tests`.
+**Proyecto**: `PasswordManager_.NET10.Tests` (net10.0, `xunit.v3` 4.0.1 + runner MTP, coverlet; mismas versiones que `WebApiCore.Tests`). Referencia el proyecto MAUI (por eso el csproj del MAUI tiene el target `net10.0` con `NoWarn CA1416` condicional). Agregado a `PasswordManager_.NET10.slnx`.
 
-**Alcance propuesto**:
-- Nuevo proyecto `PasswordManager_.NET10.Tests` (xunit, al estilo `WebApiCore.Tests`).
-- Referenciar el proyecto MAUI para instanciar VMs y servicios reales con fakes del resto.
+**Fakes**: `FakeAuthService`, `FakeNavigationService`, `FakeThemeService`, `FakeBiometricService`, `FakeDialogService`, `FakeSessionManager` — implementan las interfaces reales con estado interno para asserts (sin Moq).
 
-**Detalle**: `ISessionManager` (login/logout/remaining/expired con fakes de `IAuthService`/`INavigationService`), `NavigationService`. Pasar a `SettingsViewModel` con fakes probando `SessionTimeRemaining` y el guard de `IsAuthenticatedAsync` tras logout.
+**Casos** (14/14 correctos):
+- `SessionManagerTests` (12): tiempo restante (sin usuario / token futura / token expirada → `Zero`), expiración (null → true / futura → false / pasada → true), login con flag de guardar (guarda y limpia el flag / no guarda / no falla si el guardado lanza), logout (manual y por expiración: limpia sesión y navega a login; si `LogoutAsync` lanza, no propaga).
+- `SettingsViewModelTests` (2): `LoadSessionDataAsync` con sesión expirada (estado "Sesión expirada" + datos poblados) y sin usuario (sin populate, sin excepción).
 
-**Fuera de alcance**: tests de UI (MAUI UI tests), biometría real, SecureStorage real, integración con la API (ya cubierto por `WebApiCore.Tests`). Solo tests sin BD (seguro según política de datos).
-
-**Solicitud**: confirmación para crear el proyecto de tests y los primeros casos.
+**Fuera de alcance (documentado)**:
+- `NavigationService`: no testeable sin host MAUI (todo delega en `Application.Current.Windows[0].Page` y páginas del DI); cubrirlo sería un test vacío.
+- `SettingsViewModel`: flujos con timer real de 1 s y `MainThread.BeginInvokeOnMainThread` no son deterministas en unit tests (el guard de `IsAuthenticatedAsync` tras logout queda pendiente de verificación funcional).
+- UI tests, biometría real, SecureStorage real e integración con la API (ya cubierto por `WebApiCore.Tests`).
 
 ## 9. Referencias
 
