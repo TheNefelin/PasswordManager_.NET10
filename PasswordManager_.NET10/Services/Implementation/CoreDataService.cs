@@ -46,14 +46,7 @@ public class CoreDataService : ICoreDataService
                 Password = password,
                 CoreUser = coreUserRequest
             };
-            var response = await _apiService.PostAsync<CoreUserIV>(Constants.CORE_REGISTER_PASSWORD_ENDPOINT, coreUserIVRequest);
-
-            if (!response.IsSuccess || response.Data == null)
-            {
-                throw new Exception($"Failed to register core password. StatusCode: {response.StatusCode}, Message: {response.Message}");
-            }
-
-            return response.Data;
+            return await _apiService.PostAsync<CoreUserIV>(Constants.CORE_REGISTER_PASSWORD_ENDPOINT, coreUserIVRequest);
         }
         catch (Exception ex)
         {
@@ -74,14 +67,7 @@ public class CoreDataService : ICoreDataService
                 Password = password,
                 CoreUser = coreUserRequest
             };
-            var response = await _apiService.PostAsync<CoreUserIV>(Constants.CORE_GET_IV_ENDPOINT, coreUserIVRequest);
-
-            if (!response.IsSuccess || response.Data == null)
-            {
-                throw new Exception($"Failed to retrieve core user IV. StatusCode: {response.StatusCode}, Message: {response.Message}");
-            }
-
-            return response.Data;
+            return await _apiService.PostAsync<CoreUserIV>(Constants.CORE_GET_IV_ENDPOINT, coreUserIVRequest);
         }
         catch (Exception ex)
         {
@@ -97,14 +83,7 @@ public class CoreDataService : ICoreDataService
             _logger.LogInformation("[CoreDataService-GetAllCoreDataAsync] Retrieving core secret data.");
      
             var coreUserRequest =  await GetCoreUserData();            
-            var response = await _apiService.GetAsync<IEnumerable<CoreSecretData>>($"{Constants.CORE_CRUD_ENDPOINT}?User_Id={coreUserRequest.User_Id}&SqlToken={coreUserRequest.SqlToken}");
-
-            if (!response.IsSuccess || response.Data == null)
-            {
-                throw new Exception($"Failed to retrieve core secret data. StatusCode: {response.StatusCode}, Message: {response.Message}");
-            }
-
-            return response.Data;
+            return await _apiService.GetAsync<IEnumerable<CoreSecretData>>($"{Constants.CORE_CRUD_ENDPOINT}?User_Id={coreUserRequest.User_Id}&SqlToken={coreUserRequest.SqlToken}");
         } 
         catch (Exception ex)
         {
@@ -128,14 +107,7 @@ public class CoreDataService : ICoreDataService
                 Data03 =  coreSecretData.Data03,
                 CoreUser = coreUserRequest
             };
-            var response = await _apiService.PostAsync<CoreSecretData>(Constants.CORE_CRUD_ENDPOINT, coreDataRequest);
-
-            if (!response.IsSuccess || response.Data == null)
-            {
-                throw new Exception($"Failed to create core secret data. StatusCode: {response.StatusCode}, Message: {response.Message}");
-            }
-
-            return response.Data;
+            return await _apiService.PostAsync<CoreSecretData>(Constants.CORE_CRUD_ENDPOINT, coreDataRequest);
         }
         catch (Exception ex)
         {
@@ -159,14 +131,7 @@ public class CoreDataService : ICoreDataService
                 Data03 = coreSecretData.Data03,
                 CoreUser = coreUserRequest
             };
-            var response = await _apiService.PutAsync<CoreSecretData>(Constants.CORE_CRUD_ENDPOINT, coreDataRequest);
-
-            if (!response.IsSuccess || response.Data == null)
-            {
-                throw new Exception($"Failed to update core secret data. StatusCode: {response.StatusCode}, Message: {response.Message}");
-            }
-
-            return response.Data;
+            return await _apiService.PutAsync<CoreSecretData>(Constants.CORE_CRUD_ENDPOINT, coreDataRequest);
         }
         catch (Exception ex)
         {
@@ -175,7 +140,7 @@ public class CoreDataService : ICoreDataService
         }
     }
 
-    public async Task<string> DeleteCoreDataAsync(Guid dataId)
+    public async Task DeleteCoreDataAsync(Guid dataId)
     {
         try
         {
@@ -187,14 +152,7 @@ public class CoreDataService : ICoreDataService
                 Data_Id = dataId,
                 CoreUser = coreUserRequest
             };
-            var response = await _apiService.DeleteAsync<string>(Constants.CORE_CRUD_ENDPOINT, coreDataDeleteRequest);
-
-            if (!response.IsSuccess || response.Data == null)
-            {
-                throw new Exception($"Failed to delete core secret data. StatusCode: {response.StatusCode}, Message: {response.Message}");
-            }
-
-            return response.Data;
+            await _apiService.DeleteAsync(Constants.CORE_CRUD_ENDPOINT, coreDataDeleteRequest);
         }
         catch (Exception ex)
         {

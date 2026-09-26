@@ -44,7 +44,7 @@ public class CoreDataRepository : ICoreDataRepository
         return coreData;
     }
 
-    public async Task<CoreData> UpdateAsync(CoreData coreData, CancellationToken cancellationToken)
+    public async Task<bool> UpdateAsync(CoreData coreData, CancellationToken cancellationToken)
     {
         var commandDefinition = new CommandDefinition(
             cancellationToken: cancellationToken,
@@ -59,12 +59,13 @@ public class CoreDataRepository : ICoreDataRepository
             });
 
         using var connection = _dapper.CreateConnection();
-        await connection.ExecuteAsync(commandDefinition);
 
-        return coreData;
+        // false = el Data_Id no existe para ese usuario; la capa de aplicación
+        // decide el contrato HTTP (404). Ignorarlo devolvería un éxito falso.
+        return await connection.ExecuteAsync(commandDefinition) > 0;
     }
 
-    public async Task DeleteAsync(CoreData coreData, CancellationToken cancellationToken)
+    public async Task<bool> DeleteAsync(CoreData coreData, CancellationToken cancellationToken)
     {
         var commandDefinition = new CommandDefinition(
             cancellationToken: cancellationToken,
@@ -76,6 +77,7 @@ public class CoreDataRepository : ICoreDataRepository
             });
 
         using var connection = _dapper.CreateConnection();
-        await connection.ExecuteAsync(commandDefinition);
+
+        return await connection.ExecuteAsync(commandDefinition) > 0;
     }
 }

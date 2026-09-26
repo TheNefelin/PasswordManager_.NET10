@@ -1,10 +1,9 @@
-﻿using WebApiCore.Application.Common;
-using WebApiCore.Application.DTOs;
+﻿using WebApiCore.Application.DTOs;
 
 namespace WebApiCore.Application.Interfaces;
 
 public interface IAuthUserService
 {
-    Task<ApiResponse<AuthUserResponse>> RegisterAsync(AuthUserRegister authUserRegister, CancellationToken cancellationToken);
-    Task<ApiResponse<AuthUserLogged>> LoginAsync(AuthUserLogin authUserLogin, string ipAddress, CancellationToken cancellationToken);
+    Task<AuthUserResponse> RegisterAsync(AuthUserRegister authUserRegister, CancellationToken cancellationToken);
+    Task<AuthUserLogged> LoginAsync(AuthUserLogin authUserLogin, string ipAddress, CancellationToken cancellationToken);
 }

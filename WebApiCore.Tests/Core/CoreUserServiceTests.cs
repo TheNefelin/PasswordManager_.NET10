@@ -1,4 +1,5 @@
-﻿using WebApiCore.Application.DTOs;
+﻿using WebApiCore.Application.Common;
+using WebApiCore.Application.DTOs;
 using WebApiCore.Application.Services;
 using WebApiCore.Infrastructure.Repositories;
 using WebApiCore.Infrastructure.Security;
@@ -25,75 +26,61 @@ public class CoreUserServiceTests : IntegrationTestBase
             new CoreUserPassword { Password = "SecretPM", CoreUser = coreUser },
             CancellationToken.None);
 
-        Assert.True(registerResult.IsSuccess);
-        Assert.Equal(200, registerResult.StatusCode);
+        Assert.False(string.IsNullOrEmpty(registerResult.IV));
 
         var ivResult = await service.GetCoreUserIVAsync(
             userId,
             new CoreUserPassword { Password = "SecretPM", CoreUser = coreUser },
             CancellationToken.None);
 
-        Assert.True(ivResult.IsSuccess);
-        Assert.Equal(registerResult.Data!.IV, ivResult.Data!.IV);
+        Assert.Equal(registerResult.IV, ivResult.IV);
     }
 
     [Fact]
-    public async Task GetCoreUserIVAsync_WithInvalidSession_ReturnsUnauthorized()
+    public async Task GetCoreUserIVAsync_WithInvalidSession_ThrowsUserSessionInvalidException()
     {
         var service = CreateService();
 
-        var result = await service.GetCoreUserIVAsync(Guid.NewGuid(), new CoreUserPassword
+        await Assert.ThrowsAsync<UserSessionInvalidException>(() => service.GetCoreUserIVAsync(Guid.NewGuid(), new CoreUserPassword
         {
             Password = "SecretPM",
             CoreUser = new CoreUserRequest { User_Id = Guid.NewGuid(), SqlToken = Guid.NewGuid() }
-        }, CancellationToken.None);
-
-        Assert.Equal(401, result.StatusCode);
+        }, CancellationToken.None));
     }
 
     [Fact]
-    public async Task RegisterCoreUserPasswordAsync_Twice_ReturnsBadRequest()
+    public async Task RegisterCoreUserPasswordAsync_Twice_ThrowsCorePasswordAlreadyExistsException()
     {
         var (userId, sqlToken) = await CreateUserDirectAsync(NewEmail());
         var service = CreateService();
         var coreUser = new CoreUserRequest { User_Id = userId, SqlToken = sqlToken };
 
-        var first = await service.RegisterCoreUserPasswordAsync(
+        await service.RegisterCoreUserPasswordAsync(
             userId,
             new CoreUserPassword { Password = "SecretPM", CoreUser = coreUser },
             CancellationToken.None);
 
-        Assert.True(first.IsSuccess);
-
-        var second = await service.RegisterCoreUserPasswordAsync(
+        await Assert.ThrowsAsync<CorePasswordAlreadyExistsException>(() => service.RegisterCoreUserPasswordAsync(
             userId,
             new CoreUserPassword { Password = "SecretPM", CoreUser = coreUser },
-            CancellationToken.None);
-
-        Assert.False(second.IsSuccess);
-        Assert.Equal(400, second.StatusCode);
+            CancellationToken.None));
     }
 
     [Fact]
-    public async Task GetCoreUserIVAsync_WithWrongPassword_ReturnsUnauthorized()
+    public async Task GetCoreUserIVAsync_WithWrongPassword_ThrowsInvalidCredentialsException()
     {
         var (userId, sqlToken) = await CreateUserDirectAsync(NewEmail());
         var service = CreateService();
         var coreUser = new CoreUserRequest { User_Id = userId, SqlToken = sqlToken };
 
-        var registerResult = await service.RegisterCoreUserPasswordAsync(
+        await service.RegisterCoreUserPasswordAsync(
             userId,
             new CoreUserPassword { Password = "CorrectPassword", CoreUser = coreUser },
             CancellationToken.None);
 
-        Assert.True(registerResult.IsSuccess);
-
-        var ivResult = await service.GetCoreUserIVAsync(
+        await Assert.ThrowsAsync<InvalidCredentialsException>(() => service.GetCoreUserIVAsync(
             userId,
             new CoreUserPassword { Password = "WrongPassword", CoreUser = coreUser },
-            CancellationToken.None);
-
-        Assert.False(ivResult.IsSuccess);
-        Assert.Equal(401, ivResult.StatusCode);
+            CancellationToken.None));
     }
 }

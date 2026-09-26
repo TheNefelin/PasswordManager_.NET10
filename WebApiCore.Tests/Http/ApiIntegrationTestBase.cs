@@ -47,7 +47,7 @@ public abstract class ApiIntegrationTestBase : IClassFixture<ApiFactory>, IAsync
     protected async Task<Guid> ParseUserIdAsync(HttpResponseMessage response)
     {
         var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var userId = Guid.Parse(json.RootElement.GetProperty("data").GetProperty("user_Id").GetString()!);
+        var userId = Guid.Parse(json.RootElement.GetProperty("user_Id").GetString()!);
         TrackCreatedUser(userId);
         return userId;
     }
@@ -55,10 +55,9 @@ public abstract class ApiIntegrationTestBase : IClassFixture<ApiFactory>, IAsync
     protected static async Task<(Guid UserId, Guid SqlToken, string Jwt)> ParseLoginAsync(HttpResponseMessage response)
     {
         var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var data = json.RootElement.GetProperty("data");
         return (
-            Guid.Parse(data.GetProperty("user_Id").GetString()!),
-            Guid.Parse(data.GetProperty("sqlToken").GetString()!),
-            data.GetProperty("apiToken").GetString()!);
+            Guid.Parse(json.RootElement.GetProperty("user_Id").GetString()!),
+            Guid.Parse(json.RootElement.GetProperty("sqlToken").GetString()!),
+            json.RootElement.GetProperty("apiToken").GetString()!);
     }
 }

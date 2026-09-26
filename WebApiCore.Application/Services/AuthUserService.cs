@@ -3,38 +3,39 @@ using WebApiCore.Application.DTOs;
 using WebApiCore.Application.Interfaces;
 using WebApiCore.Domain.Entities;
 using WebApiCore.Domain.Interfaces;
+using WebApiCore.Domain.Models;
 
 namespace WebApiCore.Application.Services;
 
 public class AuthUserService : IAuthUserService
 {
-    private const string TooManyLoginAttempts = "Demasiados intentos fallidos de inicio de sesión. Intenta nuevamente más tarde.";
-
     private readonly IAuthUserRepository _authUserRepository;
+    private readonly IMaeConfigRepository _maeConfigRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IAuthTokenService _authTokenService;
     private readonly IIpLockoutService _loginLockoutService;
 
     public AuthUserService(
         IAuthUserRepository authUserRepository,
+        IMaeConfigRepository maeConfigRepository,
         IPasswordHasher passwordHasher,
         IAuthTokenService authTokenService,
         IIpLockoutService loginLockoutService)
     {
         _authUserRepository = authUserRepository;
+        _maeConfigRepository = maeConfigRepository;
         _passwordHasher = passwordHasher;
         _authTokenService = authTokenService;
         _loginLockoutService = loginLockoutService;
     }
 
-    public async Task<ApiResponse<AuthUserResponse>> RegisterAsync(AuthUserRegister authUserRegister, CancellationToken cancellationToken)
+    public async Task<AuthUserResponse> RegisterAsync(AuthUserRegister authUserRegister, CancellationToken cancellationToken)
     {
         if (!authUserRegister.Password1.Equals(authUserRegister.Password2))
-            return ApiResponse.Failure<AuthUserResponse>(400, "Las contraseñas no coinciden.");
+            throw new RequestValidationException("Las contraseñas no coinciden.");
 
-        var existingUser = await _authUserRepository.GetUserByEmailAsync(authUserRegister.Email, cancellationToken);
-        if (existingUser != null)
-            return ApiResponse.Failure<AuthUserResponse>(400, "Ya estás registrado.");
+        if (!await _maeConfigRepository.IsRegistrationEnabledAsync(cancellationToken))
+            throw new RegistrationDisabledException();
 
         var (hash, salt) = _passwordHasher.HashPassword(authUserRegister.Password1);
         var authUser = new AuthUser
@@ -46,35 +47,29 @@ public class AuthUserService : IAuthUserService
         };
 
         var result = await _authUserRepository.CreateUserAsync(authUser, cancellationToken);
+        if (result == UserCreationStatus.EmailAlreadyExists)
+            throw new DuplicateEmailException();
 
-        if (result == null || !result.IsSuccess)
-            return ApiResponse.Failure<AuthUserResponse>(
-                result?.StatusCode ?? 500,
-                result?.Message ?? "No se pudo registrar el usuario.");
-
-        return ApiResponse.Success(
-            new AuthUserResponse { User_Id = authUser.User_Id },
-            result.Message,
-            result.StatusCode);
+        return new AuthUserResponse { User_Id = authUser.User_Id };
     }
 
-    public async Task<ApiResponse<AuthUserLogged>> LoginAsync(AuthUserLogin authUserLogin, string ipAddress, CancellationToken cancellationToken)
+    public async Task<AuthUserLogged> LoginAsync(AuthUserLogin authUserLogin, string ipAddress, CancellationToken cancellationToken)
     {
         if (_loginLockoutService.IsBlocked(ipAddress))
-            return ApiResponse.Failure<AuthUserLogged>(429, TooManyLoginAttempts);
+            throw new TooManyLoginAttemptsException();
 
         var authUser = await _authUserRepository.GetUserByEmailAsync(authUserLogin.Email, cancellationToken);
 
         if (authUser == null)
         {
             _loginLockoutService.RegisterFailure(ipAddress);
-            return ApiResponse.Failure<AuthUserLogged>(401, "Usuario o contraseña incorrecta.");
+            throw new InvalidCredentialsException();
         }
 
         if (!_passwordHasher.VerifyPassword(authUserLogin.Password, authUser.HashLogin, authUser.SaltLogin))
         {
             _loginLockoutService.RegisterFailure(ipAddress);
-            return ApiResponse.Failure<AuthUserLogged>(401, "Usuario o contraseña incorrecta.");
+            throw new InvalidCredentialsException();
         }
 
         _loginLockoutService.Reset(ipAddress);
@@ -82,15 +77,13 @@ public class AuthUserService : IAuthUserService
         var sqlToken = await _authUserRepository.NewSqlToken(authUser.Email, cancellationToken);
         var token = _authTokenService.GenerateToken(authUser);
 
-        return ApiResponse.Success(
-            new AuthUserLogged
-            {
-                User_Id = authUser.User_Id,
-                SqlToken = sqlToken,
-                Role = authUser.Role ?? "USER",
-                ExpireMin = token.ExpireMin.ToString(),
-                ApiToken = token.Token
-            },
-            "Login exitoso.");
+        return new AuthUserLogged
+        {
+            User_Id = authUser.User_Id,
+            SqlToken = sqlToken,
+            Role = authUser.Role ?? "USER",
+            ExpireMin = token.ExpireMin.ToString(),
+            ApiToken = token.Token
+        };
     }
 }

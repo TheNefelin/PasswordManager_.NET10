@@ -1,12 +1,10 @@
-﻿using PasswordManager_.NET10.Models;
-
-namespace PasswordManager_.NET10.Services.Interfaces;
+﻿namespace PasswordManager_.NET10.Services.Interfaces;
 
 public interface IApiService
 {
     void SetAuthToken(string? token);
-    Task<ApiResponse<T>> GetAsync<T>(string endpoint);
-    Task<ApiResponse<T>> PostAsync<T>(string endpoint, object? data = null);
-    Task<ApiResponse<T>> PutAsync<T>(string endpoint, object? data = null);
-    Task<ApiResponse<T>> DeleteAsync<T>(string endpoint, object? data = null);
+    Task<T> GetAsync<T>(string endpoint, CancellationToken cancellationToken = default);
+    Task<T> PostAsync<T>(string endpoint, object? data = null, CancellationToken cancellationToken = default);
+    Task<T> PutAsync<T>(string endpoint, object? data = null, CancellationToken cancellationToken = default);
+    Task DeleteAsync(string endpoint, object? data = null, CancellationToken cancellationToken = default);
 }

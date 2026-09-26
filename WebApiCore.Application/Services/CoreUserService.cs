@@ -17,7 +17,7 @@ public class CoreUserService : ICoreUserService
         _passwordHasher = passwordHasher;
     }
 
-    public async Task<ApiResponse<CoreUserIV>> RegisterCoreUserPasswordAsync(Guid userId, CoreUserPassword coreUserPassword, CancellationToken cancellationToken)
+    public async Task<CoreUserIV> RegisterCoreUserPasswordAsync(Guid userId, CoreUserPassword coreUserPassword, CancellationToken cancellationToken)
     {
         var coreUser = await _coreUserRepository.GetCoreUserAsync(
             new CoreUser
@@ -28,10 +28,10 @@ public class CoreUserService : ICoreUserService
             cancellationToken);
 
         if (coreUser == null)
-            return ApiResponse.Failure<CoreUserIV>(401, "Debes iniciar sesión.");
+            throw new UserSessionInvalidException();
 
         if (!string.IsNullOrEmpty(coreUser.HashPM) && !string.IsNullOrEmpty(coreUser.SaltPM))
-            return ApiResponse.Failure<CoreUserIV>(400, "Ya tienes una clave de encriptación creada.");
+            throw new CorePasswordAlreadyExistsException();
 
         var (hash, salt) = _passwordHasher.HashPassword(coreUserPassword.Password);
         coreUser.HashPM = hash;
@@ -39,12 +39,10 @@ public class CoreUserService : ICoreUserService
 
         await _coreUserRepository.RegisterCoreUserPasswordAsync(coreUser, cancellationToken);
 
-        return ApiResponse.Success(
-            new CoreUserIV { IV = salt },
-            "Clave de encriptación creada correctamente.");
+        return new CoreUserIV { IV = salt };
     }
 
-    public async Task<ApiResponse<CoreUserIV>> GetCoreUserIVAsync(Guid userId, CoreUserPassword coreUserPassword, CancellationToken cancellationToken)
+    public async Task<CoreUserIV> GetCoreUserIVAsync(Guid userId, CoreUserPassword coreUserPassword, CancellationToken cancellationToken)
     {
         var coreUser = await _coreUserRepository.GetCoreUserAsync(
             new CoreUser
@@ -55,16 +53,14 @@ public class CoreUserService : ICoreUserService
             cancellationToken);
 
         if (coreUser == null)
-            return ApiResponse.Failure<CoreUserIV>(401, "Debes iniciar sesión.");
+            throw new UserSessionInvalidException();
 
         if (string.IsNullOrEmpty(coreUser.HashPM) || string.IsNullOrEmpty(coreUser.SaltPM))
-            return ApiResponse.Failure<CoreUserIV>(401, "Debes crear una clave de encriptación.");
+            throw new CorePasswordNotConfiguredException();
 
         if (!_passwordHasher.VerifyPassword(coreUserPassword.Password, coreUser.HashPM, coreUser.SaltPM))
-            return ApiResponse.Failure<CoreUserIV>(401, "Usuario o contraseña incorrecta.");
+            throw new InvalidCredentialsException();
 
-        return ApiResponse.Success(
-            new CoreUserIV { IV = coreUser.SaltPM },
-            "Autenticación exitosa.");
+        return new CoreUserIV { IV = coreUser.SaltPM };
     }
 }

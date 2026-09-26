@@ -8,9 +8,6 @@ namespace WebApiCore.Application.Services;
 
 public class CoreDataService : ICoreDataService
 {
-    private const int UnauthorizedStatusCode = 401;
-    private const string UnauthorizedMessage = "Debes iniciar sesión.";
-
     private readonly ICoreDataRepository _coreDataRepository;
     private readonly ICoreUserRepository _coreUserRepository;
 
@@ -20,17 +17,17 @@ public class CoreDataService : ICoreDataService
         _coreUserRepository = coreUserRepository;
     }
 
-    public async Task<ApiResponse<IEnumerable<CoreDataResponse>>> GetAllAsync(Guid userId, CoreUserRequest coreUserRequest, CancellationToken cancellationToken)
+    public async Task<IEnumerable<CoreDataResponse>> GetAllAsync(Guid userId, CoreUserRequest coreUserRequest, CancellationToken cancellationToken)
     {
         var coreUser = await GetValidSessionAsync(userId, coreUserRequest.SqlToken, cancellationToken);
         if (coreUser == null)
-            return ApiResponse.Failure<IEnumerable<CoreDataResponse>>(UnauthorizedStatusCode, UnauthorizedMessage);
+            throw new UserSessionInvalidException();
 
         var coreDatas = await _coreDataRepository.GetAllAsync(
             new CoreData { User_Id = coreUser.User_Id },
             cancellationToken);
 
-        var response = coreDatas.Select(c => new CoreDataResponse
+        return coreDatas.Select(c => new CoreDataResponse
         {
             Data_Id = c.Data_Id,
             Data01 = c.Data01,
@@ -38,47 +35,43 @@ public class CoreDataService : ICoreDataService
             Data03 = c.Data03,
             User_Id = c.User_Id
         });
-
-        return ApiResponse.Success(response, "Ok");
     }
 
-    public async Task<ApiResponse<CoreDataResponse>> InsertAsync(Guid userId, CoreDataRequest coreDataRequest, CancellationToken cancellationToken)
+    public async Task<CoreDataResponse> InsertAsync(Guid userId, CoreDataRequest coreDataRequest, CancellationToken cancellationToken)
     {
         var coreUser = await GetValidSessionAsync(userId, coreDataRequest.CoreUser.SqlToken, cancellationToken);
         if (coreUser == null)
-            return ApiResponse.Failure<CoreDataResponse>(UnauthorizedStatusCode, UnauthorizedMessage);
+            throw new UserSessionInvalidException();
 
         var coreData = await _coreDataRepository.InsertAsync(
             ToEntity(coreDataRequest, coreUser.User_Id),
             cancellationToken);
 
-        return ApiResponse.Success(ToDTO(coreData), "Se ha creado correctamente", 201);
+        return ToDTO(coreData);
     }
 
-    public async Task<ApiResponse<CoreDataResponse>> UpdateAsync(Guid userId, CoreDataRequest coreDataRequest, CancellationToken cancellationToken)
+    public async Task<CoreDataResponse> UpdateAsync(Guid userId, CoreDataRequest coreDataRequest, CancellationToken cancellationToken)
     {
         var coreUser = await GetValidSessionAsync(userId, coreDataRequest.CoreUser.SqlToken, cancellationToken);
         if (coreUser == null)
-            return ApiResponse.Failure<CoreDataResponse>(UnauthorizedStatusCode, UnauthorizedMessage);
+            throw new UserSessionInvalidException();
 
-        var coreData = await _coreDataRepository.UpdateAsync(
-            ToEntity(coreDataRequest, coreUser.User_Id),
-            cancellationToken);
+        var coreData = ToEntity(coreDataRequest, coreUser.User_Id);
 
-        return ApiResponse.Success(ToDTO(coreData), "Ok");
+        if (!await _coreDataRepository.UpdateAsync(coreData, cancellationToken))
+            throw new KeyNotFoundException();
+
+        return ToDTO(coreData);
     }
 
-    public async Task<ApiResponse<object>> DeleteAsync(Guid userId, CoreDataDelete coreDataDelete, CancellationToken cancellationToken)
+    public async Task DeleteAsync(Guid userId, CoreDataDelete coreDataDelete, CancellationToken cancellationToken)
     {
         var coreUser = await GetValidSessionAsync(userId, coreDataDelete.CoreUser.SqlToken, cancellationToken);
         if (coreUser == null)
-            return ApiResponse.Failure<object>(UnauthorizedStatusCode, UnauthorizedMessage);
+            throw new UserSessionInvalidException();
 
-        await _coreDataRepository.DeleteAsync(
-            ToEntity(coreDataDelete, coreUser.User_Id),
-            cancellationToken);
-
-        return ApiResponse.Success<object>(null!, "Se ha eliminado correctamente");
+        if (!await _coreDataRepository.DeleteAsync(ToEntity(coreDataDelete, coreUser.User_Id), cancellationToken))
+            throw new KeyNotFoundException();
     }
 
     private async Task<CoreUser?> GetValidSessionAsync(Guid userId, Guid sqlToken, CancellationToken cancellationToken)

@@ -40,13 +40,7 @@ public class AuthService : IAuthService
                 Password2 = confirmPassword
             };
 
-            var response = await _apiService.PostAsync<RegisterResponse>(Constants.REGISTER_ENDPOINT, registerRequest);
-
-            if (!response.IsSuccess)
-            {
-                _logger.LogWarning("[AuthService-RegisterAsync] Registration failed: {Message}", response.Message);
-                throw new Exception($"Failed to register user. StatusCode: {response.StatusCode}, Message: {response.Message}");
-            }
+            await _apiService.PostAsync<RegisterResponse>(Constants.REGISTER_ENDPOINT, registerRequest);
 
             _logger.LogInformation("[AuthService-RegisterAsync] Registration successful for email: {Email}", email);
             return true;
@@ -76,22 +70,16 @@ public class AuthService : IAuthService
 
             var response = await _apiService.PostAsync<LoginResponse>(Constants.LOGIN_ENDPOINT, loginRequest);
 
-            if (!response.IsSuccess || response.Data == null)
-            {
-                _logger.LogWarning("[AuthService-LoginAsync] Login failed: {Message}", response.Message);
-                throw new Exception($"No se pudo iniciar sesión. StatusCode: {response.StatusCode}, Message: {response.Message}");
-            }
-
-            var expirationTime = DateTime.UtcNow.AddMinutes(int.Parse(response.Data.ExpireMin));
+            var expirationTime = DateTime.UtcNow.AddMinutes(int.Parse(response.ExpireMin));
 
             // Crear modelo User
             var user = new User
             {
-                UserId = response.Data.UserId,
+                UserId = response.UserId,
                 Email = email,
-                Role = response.Data.Role,
-                ApiToken = response.Data.ApiToken,
-                SqlToken = response.Data.SqlToken.ToString(),
+                Role = response.Role,
+                ApiToken = response.ApiToken,
+                SqlToken = response.SqlToken.ToString(),
                 TokenExpiry = expirationTime,
                 IsAuthenticated = true
             };
@@ -103,7 +91,7 @@ public class AuthService : IAuthService
                 Email = email,
                 SqlToken = user.SqlToken,
                 Role = user.Role,
-                ExpireMin = response.Data.ExpireMin,
+                ExpireMin = response.ExpireMin,
                 ApiToken = user.ApiToken,
                 ExpirationTime = expirationTime
             };

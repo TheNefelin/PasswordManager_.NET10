@@ -1,4 +1,5 @@
 ﻿using WebApiCore.Domain.Entities;
+using WebApiCore.Domain.Models;
 using WebApiCore.Infrastructure.Repositories;
 using WebApiCore.Tests.Helpers;
 
@@ -21,8 +22,7 @@ public class AuthRepositoryTests : IntegrationTestBase
 
         var result = await repository.CreateUserAsync(user, CancellationToken.None);
 
-        Assert.NotNull(result);
-        Assert.True(result.IsSuccess);
+        Assert.Equal(UserCreationStatus.Created, result);
         TrackCreatedUser(user.User_Id);
     }
 

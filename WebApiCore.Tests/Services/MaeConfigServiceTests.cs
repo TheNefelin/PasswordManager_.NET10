@@ -80,6 +80,8 @@ public class MaeConfigServiceTests
         }
 
         public Task<string?> GetApiKeyAsync(CancellationToken cancellationToken) => Task.FromResult(_apiKey);
+
+        public Task<bool> IsRegistrationEnabledAsync(CancellationToken cancellationToken) => Task.FromResult(true);
     }
 
     private sealed class CountingStubMaeConfigRepository : IMaeConfigRepository
@@ -98,6 +100,8 @@ public class MaeConfigServiceTests
             GetApiKeyCalls++;
             return Task.FromResult(_apiKey);
         }
+
+        public Task<bool> IsRegistrationEnabledAsync(CancellationToken cancellationToken) => Task.FromResult(true);
     }
 
     private sealed class MutableStubMaeConfigRepository : IMaeConfigRepository
@@ -110,6 +114,8 @@ public class MaeConfigServiceTests
         public string? ApiKey { get; set; }
 
         public Task<string?> GetApiKeyAsync(CancellationToken cancellationToken) => Task.FromResult(ApiKey);
+
+        public Task<bool> IsRegistrationEnabledAsync(CancellationToken cancellationToken) => Task.FromResult(true);
     }
 
     private sealed class StubTimeProvider : TimeProvider

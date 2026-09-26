@@ -337,9 +337,9 @@ public partial class PasswordDetailsViewModel : BaseViewModel
 
         try
         {
-            var message = await _coreDataService.DeleteCoreDataAsync(item.Data_Id);
+            await _coreDataService.DeleteCoreDataAsync(item.Data_Id);
 
-            await _dialogService.ShowInfoAsync(message, "Éxito");
+            await _dialogService.ShowInfoAsync("Se ha eliminado correctamente", "Éxito");
         }
         catch (Exception ex)
         {

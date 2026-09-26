@@ -1,4 +1,5 @@
-﻿using WebApiCore.Application.DTOs;
+﻿using WebApiCore.Application.Common;
+using WebApiCore.Application.DTOs;
 using WebApiCore.Application.Services;
 using WebApiCore.Infrastructure.Repositories;
 using WebApiCore.Tests.Helpers;
@@ -27,26 +28,20 @@ public class CoreDataServiceTests : IntegrationTestBase
             CoreUser = coreUser
         }, CancellationToken.None);
 
-        Assert.True(insertResult.IsSuccess);
-        Assert.Equal(201, insertResult.StatusCode);
-
         var getAllResult = await service.GetAllAsync(userId, coreUser, CancellationToken.None);
 
-        Assert.True(getAllResult.IsSuccess);
-        Assert.Contains(getAllResult.Data!, x => x.Data_Id == insertResult.Data!.Data_Id);
+        Assert.Contains(getAllResult, x => x.Data_Id == insertResult.Data_Id);
     }
 
     [Fact]
-    public async Task GetAllAsync_WithInvalidSession_ReturnsUnauthorized()
+    public async Task GetAllAsync_WithInvalidSession_ThrowsUserSessionInvalidException()
     {
         var service = CreateService();
 
-        var result = await service.GetAllAsync(
+        await Assert.ThrowsAsync<UserSessionInvalidException>(() => service.GetAllAsync(
             Guid.NewGuid(),
             new CoreUserRequest { User_Id = Guid.NewGuid(), SqlToken = Guid.NewGuid() },
-            CancellationToken.None);
-
-        Assert.Equal(401, result.StatusCode);
+            CancellationToken.None));
     }
 
     [Fact]
@@ -66,17 +61,17 @@ public class CoreDataServiceTests : IntegrationTestBase
 
         var updateResult = await service.UpdateAsync(userId, new CoreDataRequest
         {
-            Data_Id = insertResult.Data!.Data_Id,
+            Data_Id = insertResult.Data_Id,
             Data01 = "x",
             Data02 = "y",
             Data03 = "z",
             CoreUser = coreUser
         }, CancellationToken.None);
 
-        Assert.True(updateResult.IsSuccess);
+        Assert.Equal(insertResult.Data_Id, updateResult.Data_Id);
 
         var getAllResult = await service.GetAllAsync(userId, coreUser, CancellationToken.None);
-        Assert.Contains(getAllResult.Data!, x => x.Data_Id == insertResult.Data.Data_Id && x.Data01 == "x");
+        Assert.Contains(getAllResult, x => x.Data_Id == insertResult.Data_Id && x.Data01 == "x");
     }
 
     [Fact]
@@ -94,15 +89,44 @@ public class CoreDataServiceTests : IntegrationTestBase
             CoreUser = coreUser
         }, CancellationToken.None);
 
-        var deleteResult = await service.DeleteAsync(userId, new CoreDataDelete
+        await service.DeleteAsync(userId, new CoreDataDelete
         {
-            Data_Id = insertResult.Data!.Data_Id,
+            Data_Id = insertResult.Data_Id,
             CoreUser = coreUser
         }, CancellationToken.None);
 
-        Assert.True(deleteResult.IsSuccess);
-
         var getAllResult = await service.GetAllAsync(userId, coreUser, CancellationToken.None);
-        Assert.DoesNotContain(getAllResult.Data!, x => x.Data_Id == insertResult.Data.Data_Id);
+        Assert.DoesNotContain(getAllResult, x => x.Data_Id == insertResult.Data_Id);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WithNonExistentDataId_ThrowsKeyNotFoundException()
+    {
+        var (userId, sqlToken) = await CreateUserDirectAsync(NewEmail());
+        var service = CreateService();
+        var coreUser = new CoreUserRequest { User_Id = userId, SqlToken = sqlToken };
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => service.UpdateAsync(userId, new CoreDataRequest
+        {
+            Data_Id = Guid.NewGuid(),
+            Data01 = "x",
+            Data02 = "y",
+            Data03 = "z",
+            CoreUser = coreUser
+        }, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WithNonExistentDataId_ThrowsKeyNotFoundException()
+    {
+        var (userId, sqlToken) = await CreateUserDirectAsync(NewEmail());
+        var service = CreateService();
+        var coreUser = new CoreUserRequest { User_Id = userId, SqlToken = sqlToken };
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => service.DeleteAsync(userId, new CoreDataDelete
+        {
+            Data_Id = Guid.NewGuid(),
+            CoreUser = coreUser
+        }, CancellationToken.None));
     }
 }

@@ -9,5 +9,5 @@ public interface ICoreDataService
     Task<IEnumerable<CoreSecretData>> GetAllCoreDataAsync();
     Task<CoreSecretData> CreateCoreDataAsync(CoreSecretData coreSecretData);
     Task<CoreSecretData> UpdateCoreDataAsync(CoreSecretData coreSecretData);
-    Task<string> DeleteCoreDataAsync(Guid dataId);
+    Task DeleteCoreDataAsync(Guid dataId);
 }

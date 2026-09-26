@@ -232,7 +232,7 @@ GO
 ```
 
 - Ejecutar el script del esquema
-> El esquema completo (tablas, seed y stored procedures) está en el archivo **`SqlServer.sql`** en la raíz del repositorio (`D:\Repo\.NET\PasswordManager_.NET10\SqlServer.sql`). Ejecútalo contra `db_testing` (en SSMS, Management Studio del contenedor o `sqlcmd`).
+> El esquema completo (tablas y seed) está en el archivo **`SqlServer.sql`** en la raíz del repositorio (`D:\Repo\.NET\PasswordManager_.NET10\SqlServer.sql`). Ejecútalo contra `db_testing` (en SSMS, Management Studio del contenedor o `sqlcmd`).
 
 ```sh
 # Ejemplo con sqlcmd dentro del contenedor
@@ -267,9 +267,11 @@ PasswordManager_.NET10/
 │   │   ├── CoreDataRequest.cs
 │   │   ├── CoreUserIVRequest.cs
 │   │   ├── CoreUserRequest.cs
-│   │   └── LoginRequest.cs
+│   │   ├── LoginRequest.cs
+│   │   └── RegisterRequest.cs
 │   └── Response/
-│       └── LoginResponse.cs
+│       ├── LoginResponse.cs
+│       └── RegisterResponse.cs
 │
 ├── 📁 Exceptions/
 │   └── ApiException.cs
@@ -279,7 +281,7 @@ PasswordManager_.NET10/
 │   └── Constants_demo.cs
 │
 ├── 📁 Models/
-│   ├── ApiResponse.cs
+│   ├── ApiProblemDetails.cs
 │   ├── CoreSecretData.cs
 │   ├── CoreUserIV.cs
 │   ├── SessionData.cs

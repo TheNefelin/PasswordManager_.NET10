@@ -1,6 +1,7 @@
 ﻿using PasswordManager_.NET10.Exceptions;
 using PasswordManager_.NET10.Models;
 using PasswordManager_.NET10.Services.Interfaces;
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -9,28 +10,19 @@ namespace PasswordManager_.NET10.Services.Implementation;
 public class ApiService : IApiService
 {
     private readonly HttpClient _httpClient;
-    private string? _currentApiToken;
     private readonly JsonSerializerOptions _jsonOptions;
 
     public ApiService(HttpClient httpClient)
     {
         _httpClient = httpClient;
-
-        // Configurar opciones JSON
-        _jsonOptions = new JsonSerializerOptions
+        _jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
         {
-            PropertyNameCaseInsensitive = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            PropertyNameCaseInsensitive = true
         };
     }
 
-    /// <summary>
-    /// Establece el token API para request autenticados
-    /// </summary>
     public void SetAuthToken(string? token)
     {
-        _currentApiToken = token;
-
         if (!string.IsNullOrEmpty(token))
         {
             _httpClient.DefaultRequestHeaders.Authorization =
@@ -42,178 +34,116 @@ public class ApiService : IApiService
         }
     }
 
-    /// <summary>
-    /// Deserializa respuesta JSON
-    /// </summary>
-    private async Task<ApiResponse<T>> DeserializeResponseAsync<T>(HttpContent content)
+    public async Task<T> GetAsync<T>(string endpoint, CancellationToken cancellationToken = default)
     {
-        var json = await content.ReadAsStringAsync();
-        return JsonSerializer.Deserialize<ApiResponse<T>>(json, _jsonOptions)
-            ?? throw new ApiException("No se pudo deserializar la respuesta");
+        using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+        return await SendAsync<T>(request, "GET", cancellationToken);
     }
 
-    /// <summary>
-    /// GET genérico
-    /// </summary>
-    public async Task<ApiResponse<T>> GetAsync<T>(string endpoint)
+    public async Task<T> PostAsync<T>(
+        string endpoint,
+        object? data = null,
+        CancellationToken cancellationToken = default)
     {
-        try
+        using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
         {
-            var response = await _httpClient.GetAsync(endpoint);
-            var content = await DeserializeResponseAsync<T>(response.Content);
+            Content = data is null ? null : JsonContent.Create(data, options: _jsonOptions)
+        };
 
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new ApiException(
-                    content?.Message ?? "Error en GET",
-                    (int)response.StatusCode
-                );
-            }
-
-            return content;
-        }
-        catch (ApiException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            throw new ApiException($"Error GET: {ex.Message}");
-        }
+        return await SendAsync<T>(request, "POST", cancellationToken);
     }
 
-    /// <summary>
-    /// POST genérico
-    /// </summary>
-    public async Task<ApiResponse<T>> PostAsync<T>(string endpoint, object? data = null)
+    public async Task<T> PutAsync<T>(
+        string endpoint,
+        object? data = null,
+        CancellationToken cancellationToken = default)
     {
-        try
+        using var request = new HttpRequestMessage(HttpMethod.Put, endpoint)
         {
-            var response = data == null
-                ? await _httpClient.PostAsync(endpoint, null)
-                : await _httpClient.PostAsJsonAsync(endpoint, data);
+            Content = data is null ? null : JsonContent.Create(data, options: _jsonOptions)
+        };
 
-            var content = await DeserializeResponseAsync<T>(response.Content);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new ApiException(
-                    content?.Message ?? "Error en POST",
-                    (int)response.StatusCode
-                );
-            }
-
-            return content;
-        }
-        catch (ApiException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            throw new ApiException($"Error POST: {ex.Message}");
-        }
+        return await SendAsync<T>(request, "PUT", cancellationToken);
     }
 
-    /// <summary>
-    /// PUT genérico
-    /// </summary>
-    public async Task<ApiResponse<T>> PutAsync<T>(string endpoint, object? data = null)
+    public async Task DeleteAsync(
+        string endpoint,
+        object? data = null,
+        CancellationToken cancellationToken = default)
     {
+        using var request = new HttpRequestMessage(HttpMethod.Delete, endpoint)
+        {
+            Content = data is null ? null : JsonContent.Create(data, options: _jsonOptions)
+        };
+
+        await SendAsync<object>(request, "DELETE", cancellationToken);
+    }
+
+    private async Task<T> SendAsync<T>(
+        HttpRequestMessage request,
+        string method,
+        CancellationToken cancellationToken)
+    {
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+            throw await CreateApiExceptionAsync(response, method, cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NoContent)
+            return default!;
+
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(content))
+            return default!;
+
         try
         {
-            var response = data == null
-                ? await _httpClient.PutAsync(endpoint, null)
-                : await _httpClient.PutAsJsonAsync(endpoint, data);
-
-            var content = await DeserializeResponseAsync<T>(response.Content);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new ApiException(
-                    content?.Message ?? "Error en PUT",
-                    (int)response.StatusCode
-                );
-            }
-
-            return content;
+            return JsonSerializer.Deserialize<T>(content, _jsonOptions)
+                ?? throw new ApiException(
+                    $"No se pudo deserializar la respuesta de {method}.",
+                    (int)response.StatusCode);
         }
-        catch (ApiException)
+        catch (JsonException ex)
         {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            throw new ApiException($"Error PUT: {ex.Message}");
+            throw new ApiException(
+                $"No se pudo deserializar la respuesta de {method}.",
+                (int)response.StatusCode,
+                ex.Message);
         }
     }
 
-    /// <summary>
-    /// DELETE genérico
-    /// </summary>
-    //public async Task<ApiResponse<bool>> DeleteAsync(string endpoint)
-    //{
-    //    try
-    //    {
-    //        var response = await _httpClient.DeleteAsync(endpoint);
-    //        var content = await DeserializeResponseAsync<bool>(response.Content);
-
-    //        if (!response.IsSuccessStatusCode)
-    //        {
-    //            throw new ApiException(
-    //                content?.Message ?? "Error en DELETE",
-    //                (int)response.StatusCode
-    //            );
-    //        }
-
-    //        return content;
-    //    }
-    //    catch (ApiException)
-    //    {
-    //        throw;
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        throw new ApiException($"Error DELETE: {ex.Message}");
-    //    }
-    //}
-
-    public async Task<ApiResponse<T>> DeleteAsync<T>(string endpoint, object? data = null)
+    private async Task<ApiException> CreateApiExceptionAsync(
+        HttpResponseMessage response,
+        string method,
+        CancellationToken cancellationToken)
     {
-        try
+        ApiProblemDetails? problem = null;
+        var content = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(content))
         {
-            HttpResponseMessage response;
-
-            if (data == null)
+            try
             {
-                response = await _httpClient.DeleteAsync(endpoint);
+                problem = JsonSerializer.Deserialize<ApiProblemDetails>(content, _jsonOptions);
             }
-            else
+            catch (JsonException)
             {
-                var request = new HttpRequestMessage(HttpMethod.Delete, endpoint);
-                request.Content = JsonContent.Create(data);
-                response = await _httpClient.SendAsync(request);
             }
-
-            var content = await DeserializeResponseAsync<T>(response.Content);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new ApiException(
-                    content?.Message ?? "Error en DELETE",
-                    (int)response.StatusCode
-                );
-            }
-
-            return content;
         }
-        catch (ApiException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            throw new ApiException($"Error DELETE: {ex.Message}");
-        }
+
+        var detail = problem?.Detail;
+        var title = problem?.Title;
+        var message = !string.IsNullOrWhiteSpace(detail)
+            ? detail
+            : !string.IsNullOrWhiteSpace(title)
+                ? title
+                : $"Error en {method}.";
+
+        return new ApiException(
+            message,
+            (int)response.StatusCode,
+            title,
+            problem?.TraceId,
+            problem?.Errors);
     }
 }

@@ -24,6 +24,42 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
     }
 
     [Fact]
+    public async Task Register_WithMismatchedPasswords_Returns400ProblemDetails()
+    {
+        var client = CreateClient();
+
+        var response = await client.PostAsJsonAsync("/api/auth/register",
+            new { email = NewEmail(), password1 = "Password123", password2 = "Password456" },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(400, problem.RootElement.GetProperty("status").GetInt32());
+        Assert.Equal("Solicitud incorrecta", problem.RootElement.GetProperty("title").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(problem.RootElement.GetProperty("traceId").GetString()));
+    }
+
+    [Fact]
+    public async Task Register_WithDuplicateEmail_Returns409ProblemDetails()
+    {
+        var client = CreateClient();
+        var email = NewEmail();
+        var firstResponse = await RegisterAsync(client, email);
+        Assert.Equal(HttpStatusCode.Created, firstResponse.StatusCode);
+        await ParseUserIdAsync(firstResponse);
+
+        var response = await RegisterAsync(client, email);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(409, problem.RootElement.GetProperty("status").GetInt32());
+        Assert.Equal("Conflicto", problem.RootElement.GetProperty("title").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(problem.RootElement.GetProperty("traceId").GetString()));
+    }
+
+    [Fact]
     public async Task Login_WithValidCredentials_Returns200AndTokens()
     {
         var client = CreateClient();
@@ -69,6 +105,11 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
         var response = await client.GetAsync("/api/core", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(401, problem.RootElement.GetProperty("status").GetInt32());
+        Assert.Equal("No autorizado", problem.RootElement.GetProperty("title").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(problem.RootElement.GetProperty("traceId").GetString()));
     }
 
     [Fact]
@@ -177,20 +218,20 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
     }
 
     [Fact]
-    public async Task UnknownRoute_Returns404_WithUniformEnvelope()
+    public async Task UnknownRoute_Returns404_WithProblemDetails()
     {
         var client = CreateClient();
 
         var response = await client.GetAsync("/api/does-not-exist", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        Assert.False(json.RootElement.GetProperty("isSuccess").GetBoolean());
-        Assert.Equal(404, json.RootElement.GetProperty("statusCode").GetInt32());
+        Assert.Equal(404, json.RootElement.GetProperty("status").GetInt32());
     }
 
     [Fact]
-    public async Task SecurityHeaders_PresentOnApiResponse()
+    public async Task SecurityHeaders_PresentOnApiRoute()
     {
         var client = CreateClient();
 

@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using WebApiCore.Application.Common;
 using WebApiCore.Application.DTOs;
 using WebApiCore.Application.Services;
 using WebApiCore.Infrastructure.Repositories;
@@ -14,6 +15,7 @@ public class AuthUserServiceTests : IntegrationTestBase
 
     private static AuthUserService CreateService() => new(
         new AuthUserRepository(TestDb.CreateContext()),
+        new MaeConfigRepository(TestDb.CreateContext()),
         new PasswordHasher(),
         new JwtTokenUtil(TestJwtOptions.Create()),
         new IpLockoutService(LoginLockoutOptions()));
@@ -37,44 +39,36 @@ public class AuthUserServiceTests : IntegrationTestBase
             Password2 = "Password123"
         }, CancellationToken.None);
 
-        Assert.True(result.IsSuccess);
-        Assert.Equal(201, result.StatusCode);
-        Assert.NotEqual(Guid.Empty, result.Data!.User_Id);
-        TrackCreatedUser(result.Data.User_Id);
+        Assert.NotEqual(Guid.Empty, result.User_Id);
+        TrackCreatedUser(result.User_Id);
     }
 
     [Fact]
-    public async Task RegisterAsync_WithMismatchedPasswords_ReturnsBadRequest()
+    public async Task RegisterAsync_WithMismatchedPasswords_ThrowsRequestValidationException()
     {
         var service = CreateService();
 
-        var result = await service.RegisterAsync(new AuthUserRegister
+        await Assert.ThrowsAsync<RequestValidationException>(() => service.RegisterAsync(new AuthUserRegister
         {
             Email = NewEmail(),
             Password1 = "Password123",
             Password2 = "Password456"
-        }, CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(400, result.StatusCode);
+        }, CancellationToken.None));
     }
 
     [Fact]
-    public async Task RegisterAsync_DuplicateEmail_ReturnsBadRequest()
+    public async Task RegisterAsync_DuplicateEmail_ThrowsDuplicateEmailException()
     {
         var email = NewEmail();
         await CreateUserDirectAsync(email);
         var service = CreateService();
 
-        var result = await service.RegisterAsync(new AuthUserRegister
+        await Assert.ThrowsAsync<DuplicateEmailException>(() => service.RegisterAsync(new AuthUserRegister
         {
             Email = email,
             Password1 = "Password123",
             Password2 = "Password123"
-        }, CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(400, result.StatusCode);
+        }, CancellationToken.None));
     }
 
     [Fact]
@@ -90,47 +84,39 @@ public class AuthUserServiceTests : IntegrationTestBase
             Password = "Password123"
         }, TestIp, CancellationToken.None);
 
-        Assert.True(result.IsSuccess);
-        Assert.Equal(200, result.StatusCode);
-        Assert.False(string.IsNullOrEmpty(result.Data!.ApiToken));
-        Assert.NotEqual(Guid.Empty, result.Data.SqlToken);
-        Assert.Equal("USER", result.Data.Role);
+        Assert.False(string.IsNullOrEmpty(result.ApiToken));
+        Assert.NotEqual(Guid.Empty, result.SqlToken);
+        Assert.Equal("USER", result.Role);
     }
 
     [Fact]
-    public async Task LoginAsync_WithInvalidPassword_ReturnsUnauthorized()
+    public async Task LoginAsync_WithInvalidPassword_ThrowsInvalidCredentialsException()
     {
         var email = NewEmail();
         await CreateUserDirectAsync(email);
         var service = CreateService();
 
-        var result = await service.LoginAsync(new AuthUserLogin
+        await Assert.ThrowsAsync<InvalidCredentialsException>(() => service.LoginAsync(new AuthUserLogin
         {
             Email = email,
             Password = "WrongPassword"
-        }, TestIp, CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(401, result.StatusCode);
+        }, TestIp, CancellationToken.None));
     }
 
     [Fact]
-    public async Task LoginAsync_WithNonexistentUser_ReturnsUnauthorized()
+    public async Task LoginAsync_WithNonexistentUser_ThrowsInvalidCredentialsException()
     {
         var service = CreateService();
 
-        var result = await service.LoginAsync(new AuthUserLogin
+        await Assert.ThrowsAsync<InvalidCredentialsException>(() => service.LoginAsync(new AuthUserLogin
         {
             Email = NewEmail(),
             Password = "Password123"
-        }, TestIp, CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(401, result.StatusCode);
+        }, TestIp, CancellationToken.None));
     }
 
     [Fact]
-    public async Task RegisterAsync_WhenRegistrationDisabled_ReturnsForbidden()
+    public async Task RegisterAsync_WhenRegistrationDisabled_ThrowsRegistrationDisabledException()
     {
         var service = CreateService();
 
@@ -139,15 +125,12 @@ public class AuthUserServiceTests : IntegrationTestBase
 
         try
         {
-            var result = await service.RegisterAsync(new AuthUserRegister
+            await Assert.ThrowsAsync<RegistrationDisabledException>(() => service.RegisterAsync(new AuthUserRegister
             {
                 Email = NewEmail(),
                 Password1 = "Password123",
                 Password2 = "Password123"
-            }, CancellationToken.None);
-
-            Assert.False(result.IsSuccess);
-            Assert.Equal(403, result.StatusCode);
+            }, CancellationToken.None));
         }
         finally
         {
@@ -164,23 +147,18 @@ public class AuthUserServiceTests : IntegrationTestBase
 
         for (var i = 0; i < 5; i++)
         {
-            var failed = await service.LoginAsync(new AuthUserLogin
+            await Assert.ThrowsAsync<InvalidCredentialsException>(() => service.LoginAsync(new AuthUserLogin
             {
                 Email = email,
                 Password = "WrongPassword"
-            }, TestIp, CancellationToken.None);
-
-            Assert.Equal(401, failed.StatusCode);
+            }, TestIp, CancellationToken.None));
         }
 
-        var blocked = await service.LoginAsync(new AuthUserLogin
+        await Assert.ThrowsAsync<TooManyLoginAttemptsException>(() => service.LoginAsync(new AuthUserLogin
         {
             Email = email,
             Password = "Password123"
-        }, TestIp, CancellationToken.None);
-
-        Assert.False(blocked.IsSuccess);
-        Assert.Equal(429, blocked.StatusCode);
+        }, TestIp, CancellationToken.None));
     }
 
     [Fact]
@@ -192,21 +170,18 @@ public class AuthUserServiceTests : IntegrationTestBase
 
         for (var i = 0; i < 5; i++)
         {
-            await service.LoginAsync(new AuthUserLogin
+            await Assert.ThrowsAsync<InvalidCredentialsException>(() => service.LoginAsync(new AuthUserLogin
             {
                 Email = email,
                 Password = "WrongPassword"
-            }, TestIp, CancellationToken.None);
+            }, TestIp, CancellationToken.None));
         }
 
-        var result = await service.LoginAsync(new AuthUserLogin
+        await Assert.ThrowsAsync<TooManyLoginAttemptsException>(() => service.LoginAsync(new AuthUserLogin
         {
             Email = email,
             Password = "Password123"
-        }, TestIp, CancellationToken.None);
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(429, result.StatusCode);
+        }, TestIp, CancellationToken.None));
     }
 
     [Fact]
@@ -218,11 +193,11 @@ public class AuthUserServiceTests : IntegrationTestBase
 
         for (var i = 0; i < 4; i++)
         {
-            await service.LoginAsync(new AuthUserLogin
+            await Assert.ThrowsAsync<InvalidCredentialsException>(() => service.LoginAsync(new AuthUserLogin
             {
                 Email = email,
                 Password = "WrongPassword"
-            }, TestIp, CancellationToken.None);
+            }, TestIp, CancellationToken.None));
         }
 
         var success = await service.LoginAsync(new AuthUserLogin
@@ -230,13 +205,12 @@ public class AuthUserServiceTests : IntegrationTestBase
             Email = email,
             Password = "Password123"
         }, TestIp, CancellationToken.None);
-        Assert.True(success.IsSuccess);
+        Assert.False(string.IsNullOrEmpty(success.ApiToken));
 
-        var afterReset = await service.LoginAsync(new AuthUserLogin
+        await Assert.ThrowsAsync<InvalidCredentialsException>(() => service.LoginAsync(new AuthUserLogin
         {
             Email = email,
             Password = "WrongPassword"
-        }, TestIp, CancellationToken.None);
-        Assert.Equal(401, afterReset.StatusCode);
+        }, TestIp, CancellationToken.None));
     }
 }

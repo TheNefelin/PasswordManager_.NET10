@@ -21,8 +21,6 @@
 -- =====================================================================
 
 -- Drops (reconstrucción limpia) ---------------------------------------
-IF OBJECT_ID('dbo.Auth_Register', 'P') IS NOT NULL DROP PROCEDURE dbo.Auth_Register;
-GO
 IF OBJECT_ID('dbo.PM_CoreData', 'U') IS NOT NULL DROP TABLE dbo.PM_CoreData;
 GO
 IF OBJECT_ID('dbo.Auth_Users', 'U') IS NOT NULL DROP TABLE dbo.Auth_Users;
@@ -81,39 +79,4 @@ GO
 SET IDENTITY_INSERT dbo.Mae_Config ON;
 INSERT INTO dbo.Mae_Config (Config_Id, ApiKey, IsEnableRegister) VALUES (1, 'Testing-777', 1);
 SET IDENTITY_INSERT dbo.Mae_Config OFF;
-GO
-
--- Stored Procedures ----------------------------------------------------------
-
-CREATE PROCEDURE dbo.Auth_Register
-    @User_Id UNIQUEIDENTIFIER,
-    @Email VARCHAR(100),
-    @HashLogin VARCHAR(256),
-    @SaltLogin VARCHAR(256)
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    IF 0 = (SELECT ISNULL(IsEnableRegister, 0) FROM dbo.Mae_Config WHERE Config_Id = 1)
-    BEGIN
-        SELECT 0 AS IsSuccess, 403 AS StatusCode, 'El Servicio de Registro No Esta Disponible' AS Message
-        RETURN
-    END
-
-    IF EXISTS (SELECT User_Id FROM dbo.Auth_Users WHERE Email = @Email)
-    BEGIN
-        SELECT 0 AS IsSuccess, 400 AS StatusCode, 'El Usuario ya Existe' AS Message
-        RETURN
-    END
-
-    BEGIN TRY
-        INSERT INTO dbo.Auth_Users (User_Id, Email, HashLogin, SaltLogin, Profile_Id)
-        VALUES (@User_Id, @Email, @HashLogin, @SaltLogin, 2)
-
-        SELECT 1 AS IsSuccess, 201 AS StatusCode, 'Usuario Registrado Correctamente' AS Message
-    END TRY
-    BEGIN CATCH
-        SELECT 0 AS IsSuccess, 500 AS StatusCode, ERROR_MESSAGE() AS Message
-    END CATCH
-END
 GO

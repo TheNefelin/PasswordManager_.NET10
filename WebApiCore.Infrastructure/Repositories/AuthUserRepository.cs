@@ -1,5 +1,5 @@
 ﻿using Dapper;
-using System.Data;
+using Microsoft.Data.SqlClient;
 using WebApiCore.Domain.Entities;
 using WebApiCore.Domain.Interfaces;
 using WebApiCore.Domain.Models;
@@ -16,11 +16,14 @@ public class AuthUserRepository : IAuthUserRepository
         _dapper = dapper;
     }
 
-    public async Task<SqlResponse?> CreateUserAsync(AuthUser authUser, CancellationToken cancellationToken)
+    public async Task<UserCreationStatus> CreateUserAsync(AuthUser authUser, CancellationToken cancellationToken)
     {
         var commandDefinition = new CommandDefinition(
-            commandType: CommandType.StoredProcedure,
-            commandText: "Auth_Register",
+            commandText: @"
+                INSERT INTO Auth_Users
+                    (User_Id, Email, HashLogin, SaltLogin, Profile_Id)
+                VALUES
+                    (@User_Id, @Email, @HashLogin, @SaltLogin, 2)",
             parameters: new
             {
                 authUser.User_Id,
@@ -28,11 +31,19 @@ public class AuthUserRepository : IAuthUserRepository
                 authUser.HashLogin,
                 authUser.SaltLogin
             },
-            transaction: default,
             cancellationToken: cancellationToken);
 
         using var connection = _dapper.CreateConnection();
-        return await connection.QueryFirstOrDefaultAsync<SqlResponse>(commandDefinition);
+
+        try
+        {
+            await connection.ExecuteAsync(commandDefinition);
+            return UserCreationStatus.Created;
+        }
+        catch (SqlException exception) when (exception.Number is 2601 or 2627)
+        {
+            return UserCreationStatus.EmailAlreadyExists;
+        }
     }
 
     public async Task<AuthUser?> GetUserByEmailAsync(string email, CancellationToken cancellationToken)
