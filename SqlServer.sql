@@ -5,8 +5,11 @@
 --      producción en el hosting). El script reconstruye el esquema desde
 --      cero (DROP + CREATE), por lo que es seguro ejecutarlo de nuevo.
 --
+-- ATENCIÓN: este script BORRA las tablas. Solo usarlo para una instalación
+--      limpia; nunca contra una base que ya tenga datos.
+--
 -- NOTA: no incluye CREATE DATABASE / LOGIN porque son específicos del
--- entorno. Para recrear db_testing en local:
+--      entorno. Para recrear db_testing en local:
 --
 --   CREATE LOGIN testing WITH PASSWORD = 'testing', CHECK_POLICY = OFF;
 --   GO
@@ -52,7 +55,10 @@ CREATE TABLE dbo.Auth_Users (
     SaltLogin VARCHAR(256) NOT NULL,
     HashPM VARCHAR(256),
     SaltPM VARCHAR(256),
-    SqlToken UNIQUEIDENTIFIER,
+    -- Token de sesión (SqlToken). Se guarda SOLO su SHA-256 en hexadecimal
+    -- (64 chars); el token crudo nunca se persiste. Se genera en C# al
+    -- iniciar sesión.
+    SqlTokenHash VARCHAR(64),
     Profile_Id INT NOT NULL,
     FOREIGN KEY (Profile_Id) REFERENCES dbo.Auth_Profiles(Profile_Id)
 );

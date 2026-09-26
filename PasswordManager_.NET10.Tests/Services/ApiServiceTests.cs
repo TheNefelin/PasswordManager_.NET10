@@ -25,7 +25,7 @@ public class ApiServiceTests
         using var client = CreateClient(handler);
         var service = new ApiService(client);
 
-        var result = await service.GetAsync<LoginResponse>("/api/login-response", TestContext.Current.CancellationToken);
+        var result = await service.GetAsync<LoginResponse>("/api/login-response", cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(Guid.Parse("11111111-1111-1111-1111-111111111111"), result.UserId);
         Assert.Equal("USER", result.Role);
@@ -88,7 +88,7 @@ public class ApiServiceTests
         var service = new ApiService(client);
 
         var exception = await Assert.ThrowsAsync<ApiException>(
-            () => service.GetAsync<LoginResponse>("/api/login-response", TestContext.Current.CancellationToken));
+            () => service.GetAsync<LoginResponse>("/api/login-response", cancellationToken: TestContext.Current.CancellationToken));
 
         Assert.Equal(400, exception.StatusCode);
         Assert.Equal("Los datos no son válidos.", exception.Message);
@@ -109,10 +109,33 @@ public class ApiServiceTests
         var service = new ApiService(client);
 
         var exception = await Assert.ThrowsAsync<ApiException>(
-            () => service.GetAsync<LoginResponse>("/api/login-response", TestContext.Current.CancellationToken));
+            () => service.GetAsync<LoginResponse>("/api/login-response", cancellationToken: TestContext.Current.CancellationToken));
 
         Assert.Equal(502, exception.StatusCode);
         Assert.Equal("Error en GET.", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetAsync_WithHeaders_SendsThemAndKeepsTokenOutOfTheUrl()
+    {
+        HttpRequestMessage? captured = null;
+        var handler = new FakeHttpMessageHandler(request =>
+        {
+            captured = request;
+            return JsonResponse(HttpStatusCode.OK, "[]");
+        });
+        using var client = CreateClient(handler);
+        var service = new ApiService(client);
+        var sqlToken = Guid.NewGuid();
+        var headers = new Dictionary<string, string> { ["SqlToken"] = sqlToken.ToString() };
+
+        await service.GetAsync<List<LoginResponse>>("/api/core", headers, TestContext.Current.CancellationToken);
+
+        Assert.NotNull(captured);
+        Assert.Equal(sqlToken.ToString(), captured!.Headers.GetValues("SqlToken").Single());
+        // El token de sesión no debe viajar en la query string: queda expuesto
+        // en logs del servidor, proxies e historial.
+        Assert.DoesNotContain(sqlToken.ToString(), captured.RequestUri!.Query);
     }
 
     private static HttpClient CreateClient(HttpMessageHandler handler)

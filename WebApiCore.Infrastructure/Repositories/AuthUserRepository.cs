@@ -4,6 +4,7 @@ using WebApiCore.Domain.Entities;
 using WebApiCore.Domain.Interfaces;
 using WebApiCore.Domain.Models;
 using WebApiCore.Infrastructure.Data;
+using WebApiCore.Infrastructure.Security;
 
 namespace WebApiCore.Infrastructure.Repositories;
 
@@ -57,7 +58,7 @@ public class AuthUserRepository : IAuthUserRepository
                     a.SaltLogin,
                     a.HashPM,
                     a.SaltPM,
-                    a.SqlToken,
+                    a.SqlTokenHash,
                     b.Name AS Role
                 FROM Auth_Users a
                     INNER JOIN Auth_Profiles b ON a.Profile_Id = b.Profile_Id
@@ -71,12 +72,18 @@ public class AuthUserRepository : IAuthUserRepository
 
     public async Task<Guid> NewSqlToken(string email, CancellationToken cancellationToken)
     {
+        // El token se genera en C# y solo se persiste su SHA-256: si alguien
+        // lee la base no obtiene un token de sesión reutilizable.
+        var sqlToken = Guid.NewGuid();
+
         var commandDefinition = new CommandDefinition(
-            commandText: "UPDATE Auth_Users SET SqlToken = NEWID() OUTPUT inserted.SqlToken WHERE Email = @Email",
-            parameters: new { Email = email },
+            commandText: "UPDATE Auth_Users SET SqlTokenHash = @SqlTokenHash WHERE Email = @Email",
+            parameters: new { SqlTokenHash = SqlTokenHasher.Hash(sqlToken), Email = email },
             cancellationToken: cancellationToken);
 
         using var connection = _dapper.CreateConnection();
-        return await connection.QueryFirstOrDefaultAsync<Guid>(commandDefinition);
+        await connection.ExecuteAsync(commandDefinition);
+
+        return sqlToken;
     }
 }

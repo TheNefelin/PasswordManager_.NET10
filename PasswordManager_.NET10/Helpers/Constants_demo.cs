@@ -12,6 +12,9 @@ public static class Constants_demo
 
     public const string API_KEY = "your-api-key-here";
 
+    // Header que transporta el token de sesión en los GET (nunca en la URL).
+    public const string SQL_TOKEN_HEADER = "SqlToken";
+
     // Endpoints
     public const string REGISTER_ENDPOINT = "/api/auth/register";
     public const string LOGIN_ENDPOINT = "/api/auth/login";

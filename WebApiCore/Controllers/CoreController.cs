@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
+using WebApiCore.Application.Common;
 using WebApiCore.Application.DTOs;
 using WebApiCore.Application.Interfaces;
 using WebApiCore.Filters;
@@ -15,6 +16,8 @@ namespace WebApiCore.Controllers;
 [EnableRateLimiting("client_25_per_minute")]
 public class CoreController : ControllerBase
 {
+    private const string SqlTokenHeaderName = "SqlToken";
+
     private readonly ICoreDataService _coreService;
     private readonly ICoreUserService _coreUserService;
 
@@ -45,12 +48,19 @@ public class CoreController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<CoreDataResponse>>> GetAllCore([FromQuery] CoreUserRequest coreUserRequest, CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<CoreDataResponse>>> GetAllCore(
+        [FromHeader(Name = SqlTokenHeaderName)] string? sqlToken,
+        CancellationToken cancellationToken)
     {
         if (TryGetUserId(out var userId) is ActionResult unauthorized)
             return unauthorized;
 
-        var response = await _coreService.GetAllAsync(userId, coreUserRequest, cancellationToken);
+        // El token de sesión viaja en el header, nunca en la query string: en la
+        // URL quedaba expuesto en logs, proxies e historial del navegador.
+        if (!Guid.TryParse(sqlToken, out var sqlTokenValue))
+            throw new UserSessionInvalidException();
+
+        var response = await _coreService.GetAllAsync(userId, sqlTokenValue, cancellationToken);
         return Ok(response);
     }
 

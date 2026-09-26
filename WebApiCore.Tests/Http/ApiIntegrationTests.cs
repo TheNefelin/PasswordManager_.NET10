@@ -121,8 +121,9 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
         var (userId, sqlToken, jwt) = await ParseLoginAsync(await LoginAsync(client, email, "Password123"));
         TrackCreatedUser(userId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+        client.DefaultRequestHeaders.Add("SqlToken", sqlToken.ToString());
 
-        var response = await client.GetAsync($"/api/core?User_Id={userId}&SqlToken={sqlToken}", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync("/api/core", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -136,8 +137,43 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
         var (userId, _, jwt) = await ParseLoginAsync(await LoginAsync(client, email, "Password123"));
         TrackCreatedUser(userId);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+        client.DefaultRequestHeaders.Add("SqlToken", Guid.NewGuid().ToString());
 
-        var response = await client.GetAsync($"/api/core?User_Id={userId}&SqlToken={Guid.NewGuid()}", TestContext.Current.CancellationToken);
+        var response = await client.GetAsync("/api/core", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Core_WithoutSqlTokenHeader_Returns401()
+    {
+        var client = CreateClient();
+        var email = NewEmail();
+        await ParseUserIdAsync(await RegisterAsync(client, email));
+        var (userId, _, jwt) = await ParseLoginAsync(await LoginAsync(client, email, "Password123"));
+        TrackCreatedUser(userId);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+
+        var response = await client.GetAsync("/api/core", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Core_SqlTokenInQueryString_IsNotAccepted()
+    {
+        // El token de sesión ya no se acepta en la URL: queda expuesto en logs,
+        // proxies e historial. Aunque se envíe, la API lo ignora.
+        var client = CreateClient();
+        var email = NewEmail();
+        await ParseUserIdAsync(await RegisterAsync(client, email));
+        var (userId, sqlToken, jwt) = await ParseLoginAsync(await LoginAsync(client, email, "Password123"));
+        TrackCreatedUser(userId);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+
+        var response = await client.GetAsync(
+            $"/api/core?User_Id={userId}&SqlToken={sqlToken}",
+            TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }

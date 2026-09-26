@@ -82,8 +82,18 @@ public class CoreDataService : ICoreDataService
         {
             _logger.LogInformation("[CoreDataService-GetAllCoreDataAsync] Retrieving core secret data.");
      
-            var coreUserRequest =  await GetCoreUserData();            
-            return await _apiService.GetAsync<IEnumerable<CoreSecretData>>($"{Constants.CORE_CRUD_ENDPOINT}?User_Id={coreUserRequest.User_Id}&SqlToken={coreUserRequest.SqlToken}");
+            var coreUserRequest =  await GetCoreUserData();
+
+            // El SqlToken viaja en el header y no en la URL: en la query string
+            // quedaba expuesto en logs del servidor, proxies e historial.
+            var headers = new Dictionary<string, string>
+            {
+                [Constants.SQL_TOKEN_HEADER] = coreUserRequest.SqlToken.ToString()
+            };
+
+            return await _apiService.GetAsync<IEnumerable<CoreSecretData>>(
+                Constants.CORE_CRUD_ENDPOINT,
+                headers);
         } 
         catch (Exception ex)
         {

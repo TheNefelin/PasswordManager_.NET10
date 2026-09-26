@@ -17,9 +17,9 @@ public class CoreDataService : ICoreDataService
         _coreUserRepository = coreUserRepository;
     }
 
-    public async Task<IEnumerable<CoreDataResponse>> GetAllAsync(Guid userId, CoreUserRequest coreUserRequest, CancellationToken cancellationToken)
+    public async Task<IEnumerable<CoreDataResponse>> GetAllAsync(Guid userId, Guid sqlToken, CancellationToken cancellationToken)
     {
-        var coreUser = await GetValidSessionAsync(userId, coreUserRequest.SqlToken, cancellationToken);
+        var coreUser = await GetValidSessionAsync(userId, sqlToken, cancellationToken);
         if (coreUser == null)
             throw new UserSessionInvalidException();
 
@@ -27,14 +27,7 @@ public class CoreDataService : ICoreDataService
             new CoreData { User_Id = coreUser.User_Id },
             cancellationToken);
 
-        return coreDatas.Select(c => new CoreDataResponse
-        {
-            Data_Id = c.Data_Id,
-            Data01 = c.Data01,
-            Data02 = c.Data02,
-            Data03 = c.Data03,
-            User_Id = c.User_Id
-        });
+        return coreDatas.Select(ToDTO);
     }
 
     public async Task<CoreDataResponse> InsertAsync(Guid userId, CoreDataRequest coreDataRequest, CancellationToken cancellationToken)

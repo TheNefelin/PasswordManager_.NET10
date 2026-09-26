@@ -28,8 +28,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
         using var connection = Context.CreateConnection();
         await connection.ExecuteAsync(
-            "INSERT INTO Auth_Users (User_Id, Email, HashLogin, SaltLogin, SqlToken, Profile_Id) VALUES (@UserId, @Email, @HashLogin, @SaltLogin, @SqlToken, 2)",
-            new { UserId = userId, Email = email, HashLogin = hash, SaltLogin = salt, SqlToken = sqlToken });
+            "INSERT INTO Auth_Users (User_Id, Email, HashLogin, SaltLogin, SqlTokenHash, Profile_Id) VALUES (@UserId, @Email, @HashLogin, @SaltLogin, @SqlTokenHash, 2)",
+            new { UserId = userId, Email = email, HashLogin = hash, SaltLogin = salt, SqlTokenHash = SqlTokenHasher.Hash(sqlToken) });
 
         _createdUserIds.Add(userId);
         return (userId, sqlToken);

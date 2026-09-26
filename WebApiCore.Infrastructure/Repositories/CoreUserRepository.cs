@@ -2,6 +2,7 @@
 using WebApiCore.Domain.Entities;
 using WebApiCore.Domain.Interfaces;
 using WebApiCore.Infrastructure.Data;
+using WebApiCore.Infrastructure.Security;
 
 namespace WebApiCore.Infrastructure.Repositories;
 
@@ -18,8 +19,8 @@ public class CoreUserRepository : ICoreUserRepository
     {
         var commandDefinition = new CommandDefinition(
             cancellationToken: cancellationToken,
-            commandText: "SELECT User_Id, HashPM, SaltPM, SqlToken FROM Auth_Users WHERE User_Id = @User_Id AND SqlToken = @SqlToken",
-            parameters: new { coreUser.User_Id, coreUser.SqlToken });
+            commandText: "SELECT User_Id, HashPM, SaltPM FROM Auth_Users WHERE User_Id = @User_Id AND SqlTokenHash = @SqlTokenHash",
+            parameters: new { coreUser.User_Id, SqlTokenHash = SqlTokenHasher.Hash(coreUser.SqlToken) });
 
         using var connection = _dapper.CreateConnection();
         return await connection.QueryFirstOrDefaultAsync<CoreUser>(commandDefinition);
@@ -27,13 +28,16 @@ public class CoreUserRepository : ICoreUserRepository
 
     public async Task RegisterCoreUserPasswordAsync(CoreUser coreUser, CancellationToken cancellationToken)
     {
+        // El WHERE va solo por User_Id a propósito: la sesión ya la validó el
+        // servicio con GetCoreUserAsync, y el CoreUser que devuelve ese SELECT
+        // ya no trae el token crudo (en BD solo queda su hash), por lo que
+        // revalidar el hash aquí nunca coincidiría.
         var commandDefinition = new CommandDefinition(
             cancellationToken: cancellationToken,
-            commandText: "UPDATE Auth_Users SET HashPM = @HashPM, SaltPM = @SaltPM WHERE User_Id = @User_Id AND SqlToken = @SqlToken",
+            commandText: "UPDATE Auth_Users SET HashPM = @HashPM, SaltPM = @SaltPM WHERE User_Id = @User_Id",
             parameters: new
             {
                 coreUser.User_Id,
-                coreUser.SqlToken,
                 coreUser.HashPM,
                 coreUser.SaltPM
             });

@@ -28,7 +28,7 @@ public class CoreDataServiceTests : IntegrationTestBase
             CoreUser = coreUser
         }, CancellationToken.None);
 
-        var getAllResult = await service.GetAllAsync(userId, coreUser, CancellationToken.None);
+        var getAllResult = await service.GetAllAsync(userId, sqlToken, CancellationToken.None);
 
         Assert.Contains(getAllResult, x => x.Data_Id == insertResult.Data_Id);
     }
@@ -40,7 +40,7 @@ public class CoreDataServiceTests : IntegrationTestBase
 
         await Assert.ThrowsAsync<UserSessionInvalidException>(() => service.GetAllAsync(
             Guid.NewGuid(),
-            new CoreUserRequest { User_Id = Guid.NewGuid(), SqlToken = Guid.NewGuid() },
+            Guid.NewGuid(),
             CancellationToken.None));
     }
 
@@ -70,7 +70,7 @@ public class CoreDataServiceTests : IntegrationTestBase
 
         Assert.Equal(insertResult.Data_Id, updateResult.Data_Id);
 
-        var getAllResult = await service.GetAllAsync(userId, coreUser, CancellationToken.None);
+        var getAllResult = await service.GetAllAsync(userId, sqlToken, CancellationToken.None);
         Assert.Contains(getAllResult, x => x.Data_Id == insertResult.Data_Id && x.Data01 == "x");
     }
 
@@ -95,7 +95,7 @@ public class CoreDataServiceTests : IntegrationTestBase
             CoreUser = coreUser
         }, CancellationToken.None);
 
-        var getAllResult = await service.GetAllAsync(userId, coreUser, CancellationToken.None);
+        var getAllResult = await service.GetAllAsync(userId, sqlToken, CancellationToken.None);
         Assert.DoesNotContain(getAllResult, x => x.Data_Id == insertResult.Data_Id);
     }
 

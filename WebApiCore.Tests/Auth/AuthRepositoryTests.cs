@@ -1,6 +1,8 @@
-﻿using WebApiCore.Domain.Entities;
+﻿using Dapper;
+using WebApiCore.Domain.Entities;
 using WebApiCore.Domain.Models;
 using WebApiCore.Infrastructure.Repositories;
+using WebApiCore.Infrastructure.Security;
 using WebApiCore.Tests.Helpers;
 
 namespace WebApiCore.Tests.Auth;
@@ -51,7 +53,32 @@ public class AuthRepositoryTests : IntegrationTestBase
 
         Assert.NotEqual(Guid.Empty, token);
 
+        // El token crudo no se persiste: en la base solo queda su SHA-256.
         var user = await repository.GetUserByEmailAsync(email, CancellationToken.None);
-        Assert.Equal(token, user!.SqlToken);
+        Assert.Equal(SqlTokenHasher.Hash(token), user!.SqlTokenHash);
+    }
+
+    [Fact]
+    public async Task NewSqlToken_DoesNotStoreTheRawToken()
+    {
+        var email = NewEmail();
+        await CreateUserDirectAsync(email);
+
+        var repository = new AuthUserRepository(Context);
+        var token = await repository.NewSqlToken(email, CancellationToken.None);
+
+        var storedHash = await ReadStoredHashAsync(email);
+        Assert.NotNull(storedHash);
+        Assert.NotEqual(token.ToString(), storedHash);
+        Assert.Equal(64, storedHash.Length);
+    }
+
+    private async Task<string?> ReadStoredHashAsync(string email)
+    {
+        using var connection = Context.CreateConnection();
+
+        return await connection.QuerySingleAsync<string?>(
+            "SELECT SqlTokenHash FROM Auth_Users WHERE Email = @Email",
+            new { Email = email });
     }
 }

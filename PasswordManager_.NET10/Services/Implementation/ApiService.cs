@@ -34,9 +34,19 @@ public class ApiService : IApiService
         }
     }
 
-    public async Task<T> GetAsync<T>(string endpoint, CancellationToken cancellationToken = default)
+    public async Task<T> GetAsync<T>(
+        string endpoint,
+        IReadOnlyDictionary<string, string>? headers = null,
+        CancellationToken cancellationToken = default)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+
+        if (headers is not null)
+        {
+            foreach (var header in headers)
+                request.Headers.TryAddWithoutValidation(header.Key, header.Value);
+        }
+
         return await SendAsync<T>(request, "GET", cancellationToken);
     }
 

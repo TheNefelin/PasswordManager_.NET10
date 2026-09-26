@@ -91,11 +91,7 @@ builder.Services.AddTransient<IAuthUserService, AuthUserService>();
 
 builder.Services.AddTransient<IMaeConfigService>(sp =>
     new MaeConfigService(
-        sp.GetRequiredService<IMaeConfigRepository>(),
-        TimeSpan.FromSeconds(
-            builder.Configuration.GetValue(
-                "ApiKeyCache:ExpirationSeconds",
-                30))));
+        sp.GetRequiredService<IMaeConfigRepository>()));
 
 builder.Services.AddTransient<ICoreUserService, CoreUserService>();
 builder.Services.AddTransient<ICoreDataService, CoreDataService>();
@@ -346,7 +342,7 @@ builder.Services.AddRateLimiter(options =>
 //     /openapi/v1.json
 //
 // Swagger UI:
-//     /swagger
+//     /            (raíz: RoutePrefix vacío)
 //
 // Transformers:
 //     - BearerSecuritySchemeTransformer
@@ -382,21 +378,25 @@ app.UseRateLimiter();
 // ======================================================================
 // OpenAPI + Swagger UI
 // ======================================================================
+// Solo en Development: en producción el mapa completo de la API sería
+// público (no requiere ApiKey) y le sirve al atacante la lista de
+// endpoints, headers y esquemas.
 //
-// OpenAPI nativo de ASP.NET Core 10:
-//     /openapi/v1.json
+//   /openapi/v1.json
+//   /            (Swagger UI, RoutePrefix vacío)
 //
-// Swagger UI:
-//     /swagger
 // ======================================================================
-app.MapOpenApi();
-
-app.UseSwaggerUI(options =>
+if (app.Environment.IsDevelopment())
 {
-    options.RoutePrefix = string.Empty;
-    options.SwaggerEndpoint("/openapi/v1.json", "WebApiCore API v1");
-    options.DisplayRequestDuration();
-});
+    app.MapOpenApi();
+
+    app.UseSwaggerUI(options =>
+    {
+        options.RoutePrefix = string.Empty;
+        options.SwaggerEndpoint("/openapi/v1.json", "WebApiCore API v1");
+        options.DisplayRequestDuration();
+    });
+}
 
 // ======================================================================
 // CORS
