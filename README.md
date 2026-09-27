@@ -117,7 +117,9 @@ Bienvenido a **Password Manager**, tu aplicación segura para guardar y gestiona
 1. Ve a Settings
 2. Busca "BIOMETRÍA"
 3. Activa el toggle "Huella dactilar"
-4. Esta opción solo recordará tu nombre de usuario, por razones de seguridad, tu contraseña no se guarda, por lo que deberás ingresarla manualmente.
+4. La biometría solo recuerda tu nombre de usuario. La contraseña no se guarda de forma automática: mientras "Guardar contraseña" esté desactivado, deberás ingresarla manualmente.
+
+> La opción **Guardar contraseña** de Settings es independiente y viene desactivada. Si la activas, la contraseña se almacena cifrada en el almacenamiento seguro del dispositivo. Al desactivar la biometría, esa opción se apaga automáticamente y se elimina la contraseña guardada.
 
 <div align="center">
   <img src="img/doc15.jpg" alt="doc15" width="250"/>
@@ -154,8 +156,8 @@ En Settings, busca "TEMA" y selecciona:
 ## 🔒 Consejos de Seguridad
 
 ### ✅ HACER:
-- Usar contraseña fuerte (mínimo 8 caracteres)
-- Usar números, mayúsculas y símbolos
+- Usar contraseña fuerte (la app exige 6 caracteres, pero conviene más larga)
+- Agregar números, mayúsculas y símbolos si te ayuda a recordarla
 - Activar biometría
 - Cambiar contraseña regularmente
 - Usar diferentes contraseñas por cuenta
@@ -258,6 +260,7 @@ PasswordManager_.NET10/
 │       └── MenuAnimationBehavior.cs
 │
 ├── 📁 Converters/
+│   ├── ExpandedToArrowConverter.cs
 │   ├── InvertedBoolConverter.cs
 │   └── StringNotEmptyToBoolConverter.cs
 │
@@ -280,6 +283,9 @@ PasswordManager_.NET10/
 │   ├── Constants.cs
 │   └── Constants_demo.cs
 │
+├── 📁 Messages/
+│   └── RegistrationCompletedMessage.cs
+│
 ├── 📁 Models/
 │   ├── ApiProblemDetails.cs
 │   ├── CoreSecretData.cs
@@ -287,46 +293,79 @@ PasswordManager_.NET10/
 │   ├── SessionData.cs
 │   └── User.cs
 │
+├── 📁 Platforms/
+│   ├── Android/
+│   │   ├── MainActivity.cs
+│   │   └── MainApplication.cs
+│   ├── iOS/
+│   │   ├── AppDelegate.cs
+│   │   └── Program.cs
+│   ├── MacCatalyst/
+│   │   ├── AppDelegate.cs
+│   │   └── Program.cs
+│   └── Windows/
+│       ├── App.xaml
+│       └── App.xaml.cs
+│
+├── 📁 Resources/
+│   └── Styles/
+│       ├── Colors.xaml
+│       └── Styles.xaml
+│
 ├── 📁 Services/
 │   ├── Implementation/
 │   │   ├── ApiService.cs
+│   │   ├── AppInfoService.cs
 │   │   ├── AuthService.cs
+│   │   ├── BiometricService.cs
 │   │   ├── CoreDataService.cs
+│   │   ├── DialogService.cs
 │   │   ├── EncryptionService.cs
+│   │   ├── NavigationService.cs
 │   │   ├── SecureStorageService.cs
+│   │   ├── SessionManager.cs
 │   │   └── ThemeService.cs
 │   │
 │   └── Interfaces/
 │       ├── IApiService.cs
+│       ├── IAppInfoService.cs
 │       ├── IAuthService.cs
+│       ├── IBiometricService.cs
 │       ├── ICoreDataService.cs
+│       ├── IDialogService.cs
 │       ├── IEncryptionService.cs
+│       ├── INavigationService.cs
 │       ├── ISecureStorageService.cs
+│       ├── ISessionManager.cs
 │       └── IThemeService.cs
 │
 ├── 📁 ViewModels/
 │   ├── BaseViewModel.cs
+│   ├── HelpViewModel.cs
 │   ├── LoginViewModel.cs
 │   ├── PasswordDetailsViewModel.cs
 │   ├── PasswordFormViewModel.cs
+│   ├── PasswordPromptCreateViewModel.cs
+│   ├── RegisterViewModel.cs
 │   ├── SettingsViewModel.cs
 │   └── TestingViewModel.cs
 │
 ├── 📁 Views/
 │   ├── Authentication/
-│   │   └── LoginPage.xaml(.cs)
+│   │   ├── LoginPage.xaml(.cs)
+│   │   └── RegisterPage.xaml(.cs)
 │   │
 │   ├── Components/
+│   │   ├── LoadingPage.xaml(.cs)
 │   │   └── TestingPage.xaml(.cs)
 │   │
 │   └── Main/
-│       ├── PasswordDetailsPage.xaml
-│       ├── PasswordFormPage.xaml
-│       ├── PasswordPromptPage.xaml
-│       └── SettingsPage.xaml
-│
-├── 📁 Extensions/
-│   └── #NADA AUN
+│       ├── HelpPage.xaml(.cs)
+│       ├── PasswordDetailsPage.xaml(.cs)
+│       ├── PasswordFormPage.xaml(.cs)
+│       ├── PasswordPromptCreatePage.xaml(.cs)
+│       ├── PasswordPromptPage.xaml(.cs)
+│       └── SettingsPage.xaml(.cs)
 │
 ├── App.xaml
 ├── App.xaml.cs
@@ -334,7 +373,7 @@ PasswordManager_.NET10/
 ├── AppShell.xaml.cs
 ├── MauiProgram.cs
 │
-└── PasswordManager.Maui.csproj
+└── PasswordManager_.NET10.csproj
 ```
 
 ## Compatility
