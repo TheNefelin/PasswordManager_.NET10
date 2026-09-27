@@ -14,6 +14,14 @@ public class ApiService : IApiService
 
     public ApiService(HttpClient httpClient)
     {
+        // HttpClient resuelve el endpoint contra BaseAddress con la regla de rutas
+        // relativas: sin barra final, "auth/login" reemplaza el último segmento y
+        // el prefijo /api de API_BASE_URL se pierde en silencio (mismo resultado con
+        // "/auth/login", que es raíz-relativa). Se normaliza acá para que el prefijo
+        // no dependa de cómo se escribió la constante, que además está en .gitignore.
+        if (httpClient.BaseAddress is Uri baseAddress && !baseAddress.AbsoluteUri.EndsWith('/'))
+            httpClient.BaseAddress = new Uri(baseAddress.AbsoluteUri + '/');
+
         _httpClient = httpClient;
         _jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
         {

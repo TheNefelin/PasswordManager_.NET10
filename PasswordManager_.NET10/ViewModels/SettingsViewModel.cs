@@ -46,7 +46,7 @@ public partial class SettingsViewModel : BaseViewModel
     public partial bool IsBiometricAvailable { get; set; }
 
     [ObservableProperty]
-    public partial string AppVersion { get; set; } = Constants.APP_VERSION;
+    public partial string AppVersion { get; set; }
 
     [ObservableProperty]
     public partial string SelectedTheme { get; set; } = "Dark";
@@ -63,7 +63,8 @@ public partial class SettingsViewModel : BaseViewModel
         IBiometricService biometricService,
         ISessionManager sessionManager,
         INavigationService navigationService,
-        IDialogService dialogService)
+        IDialogService dialogService,
+        IAppInfoService appInfoService)
     {
         _logger = logger;
         _authService = authService;
@@ -72,6 +73,8 @@ public partial class SettingsViewModel : BaseViewModel
         _sessionManager = sessionManager;
         _navigationService = navigationService;
         _dialogService = dialogService;
+
+        AppVersion = $"v{appInfoService.Version} (build {appInfoService.Build})";
 
         Title = "Settings";
     }

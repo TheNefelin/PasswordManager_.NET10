@@ -138,6 +138,29 @@ public class ApiServiceTests
         Assert.DoesNotContain(sqlToken.ToString(), captured.RequestUri!.Query);
     }
 
+    [Fact]
+    public async Task Constructor_AppendsTrailingSlashToBaseAddress_WithoutIt()
+    {
+        HttpRequestMessage? captured = null;
+        var handler = new FakeHttpMessageHandler(request =>
+        {
+            captured = request;
+            return JsonResponse(HttpStatusCode.OK, "[]");
+        });
+        // API_BASE_URL incluye el prefijo /api. Sin la barra final, HttpClient
+        // resolvería "auth/login" como https://host/auth/login y perdería /api.
+        using var client = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://localhost/api")
+        };
+        var service = new ApiService(client);
+
+        await service.GetAsync<List<LoginResponse>>("auth/login", cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.NotNull(captured);
+        Assert.Equal("https://localhost/api/auth/login", captured!.RequestUri!.AbsoluteUri);
+    }
+
     private static HttpClient CreateClient(HttpMessageHandler handler)
         => new(handler)
         {

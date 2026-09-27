@@ -13,6 +13,7 @@ public class SettingsViewModelTests
     private readonly FakeSessionManager _sessionManager = new();
     private readonly FakeNavigationService _navigationService = new();
     private readonly FakeDialogService _dialogService = new();
+    private readonly FakeAppInfoService _appInfoService = new();
 
     private SettingsViewModel CreateViewModel() => new(
         NullLogger<SettingsViewModel>.Instance,
@@ -21,7 +22,8 @@ public class SettingsViewModelTests
         _biometricService,
         _sessionManager,
         _navigationService,
-        _dialogService);
+        _dialogService,
+        _appInfoService);
 
     private static User CreateExpiredUser() => new()
     {
@@ -66,5 +68,16 @@ public class SettingsViewModelTests
         Assert.False(vm.IsSessionExpired);
         Assert.Equal(string.Empty, vm.SessionTimeRemaining);
         Assert.False(vm.IsLoading);
+    }
+
+    [Fact]
+    public void AppVersion_UsesAppInfoVersionAndBuild()
+    {
+        _appInfoService.Version = "1.2.3";
+        _appInfoService.Build = "42";
+
+        var vm = CreateViewModel();
+
+        Assert.Equal("v1.2.3 (build 42)", vm.AppVersion);
     }
 }

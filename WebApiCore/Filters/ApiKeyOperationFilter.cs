@@ -8,7 +8,7 @@ namespace WebApiCore.Filters;
 
 public sealed class ApiKeyOperationFilter : IOpenApiOperationTransformer
 {
-    private const string ApiKeyHeaderName = "ApiKey";
+    private const string ApiKeyHeaderName = "X-ApiKey";
 
     public Task TransformAsync(
         OpenApiOperation operation,

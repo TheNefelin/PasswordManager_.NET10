@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using PasswordManager_.NET10.DTOs.Request;
 using PasswordManager_.NET10.DTOs.Response;
-using PasswordManager_.NET10.Helpers;
 using PasswordManager_.NET10.Models;
 using PasswordManager_.NET10.Services.Interfaces;
 
@@ -9,6 +8,10 @@ namespace PasswordManager_.NET10.Services.Implementation;
 
 public class AuthService : IAuthService
 {
+    // Rutas relativas a Constants.API_BASE_URL, que ya termina en /api.
+    private const string REGISTER_ENDPOINT = "auth/register";
+    private const string LOGIN_ENDPOINT = "auth/login";
+
     private readonly ILogger<AuthService> _logger;
     private readonly IApiService _apiService;
     private readonly ISecureStorageService _secureStorageService;
@@ -40,7 +43,7 @@ public class AuthService : IAuthService
                 Password2 = confirmPassword
             };
 
-            await _apiService.PostAsync<RegisterResponse>(Constants.REGISTER_ENDPOINT, registerRequest);
+            await _apiService.PostAsync<RegisterResponse>(REGISTER_ENDPOINT, registerRequest);
 
             _logger.LogInformation("[AuthService-RegisterAsync] Registration successful for email: {Email}", email);
             return true;
@@ -68,7 +71,7 @@ public class AuthService : IAuthService
                 Password = password
             };
 
-            var response = await _apiService.PostAsync<LoginResponse>(Constants.LOGIN_ENDPOINT, loginRequest);
+            var response = await _apiService.PostAsync<LoginResponse>(LOGIN_ENDPOINT, loginRequest);
 
             var expirationTime = DateTime.UtcNow.AddMinutes(int.Parse(response.ExpireMin));
 

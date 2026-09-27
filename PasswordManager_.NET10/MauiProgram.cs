@@ -50,7 +50,8 @@ public static class MauiProgram
             .AddSingleton<IAuthService, AuthService>()
             .AddSingleton<ICoreDataService, CoreDataService>()
             .AddSingleton<INavigationService, NavigationService>()
-            .AddSingleton<IDialogService, DialogService>();
+            .AddSingleton<IDialogService, DialogService>()
+    .AddSingleton<IAppInfoService, AppInfoService>();
 
         // ViewModels (Singleton para screens principales)
         builder.Services
@@ -105,7 +106,7 @@ public static class MauiProgram
             Timeout = TimeSpan.FromSeconds(30)
         };
 
-        client.DefaultRequestHeaders.Add("ApiKey", Constants.API_KEY);
+        client.DefaultRequestHeaders.Add("X-ApiKey", Constants.API_KEY);
         client.DefaultRequestHeaders.Add("User-Agent", "PasswordManager-MAUI/1.0");
 
         return client;

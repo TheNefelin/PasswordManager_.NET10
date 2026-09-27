@@ -9,7 +9,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
     public HttpClient CreateClientWithApiKey(string ip)
     {
         var client = CreateClient();
-        client.DefaultRequestHeaders.Add("ApiKey", ApiKey);
+        client.DefaultRequestHeaders.Add("X-ApiKey", ApiKey);
         client.DefaultRequestHeaders.Add("X-Forwarded-For", ip);
         return client;
     }

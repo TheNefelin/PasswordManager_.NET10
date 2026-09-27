@@ -24,6 +24,37 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
     }
 
     [Fact]
+    public async Task Register_WithPasswordShorterThanPolicy_Returns400()
+    {
+        var client = CreateClient();
+
+        // 5 caracteres: por debajo del mínimo de 6 de la política de registro.
+        var response = await client.PostAsJsonAsync("/api/auth/register",
+            new { email = NewEmail(), password1 = "Pass1", password2 = "Pass1" },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var problem = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(400, problem.RootElement.GetProperty("status").GetInt32());
+        Assert.NotEmpty(problem.RootElement.GetProperty("errors").EnumerateObject());
+    }
+
+    [Fact]
+    public async Task Register_WithPasswordAtPolicyMinimum_Returns201()
+    {
+        var client = CreateClient();
+
+        // 6 caracteres: el mínimo exacto de la política, debe aceptarse.
+        var response = await client.PostAsJsonAsync("/api/auth/register",
+            new { email = NewEmail(), password1 = "Pass123", password2 = "Pass123" },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var userId = await ParseUserIdAsync(response);
+        Assert.NotEqual(Guid.Empty, userId);
+    }
+
+    [Fact]
     public async Task Register_WithMismatchedPasswords_Returns400ProblemDetails()
     {
         var client = CreateClient();
@@ -244,8 +275,8 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
     public async Task WrongApiKey_Returns401()
     {
         var client = CreateClient();
-        client.DefaultRequestHeaders.Remove("ApiKey");
-        client.DefaultRequestHeaders.Add("ApiKey", "Wrong-Key");
+        client.DefaultRequestHeaders.Remove("X-ApiKey");
+        client.DefaultRequestHeaders.Add("X-ApiKey", "Wrong-Key");
 
         var response = await client.PostAsJsonAsync("/api/auth/login",
             new { email = NewEmail(), password = "Password123" }, TestContext.Current.CancellationToken);

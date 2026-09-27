@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using PasswordManager_.NET10.DTOs.Request;
-using PasswordManager_.NET10.Helpers;
 using PasswordManager_.NET10.Models;
 using PasswordManager_.NET10.Services.Interfaces;
 
@@ -8,6 +7,12 @@ namespace PasswordManager_.NET10.Services.Implementation;
 
 public class CoreDataService : ICoreDataService
 {
+    // Rutas relativas a Constants.API_BASE_URL, que ya termina en /api.
+    private const string CORE_REGISTER_PASSWORD_ENDPOINT = "core/register-password";
+    private const string CORE_GET_IV_ENDPOINT = "core/get-iv";
+    private const string CORE_ENDPOINT = "core";
+    private const string SQL_TOKEN_HEADER = "SqlToken";
+
     private readonly ILogger<CoreDataService> _logger;
     private readonly IApiService _apiService;
     private readonly ISecureStorageService _secureStorageService;
@@ -46,7 +51,7 @@ public class CoreDataService : ICoreDataService
                 Password = password,
                 CoreUser = coreUserRequest
             };
-            return await _apiService.PostAsync<CoreUserIV>(Constants.CORE_REGISTER_PASSWORD_ENDPOINT, coreUserIVRequest);
+            return await _apiService.PostAsync<CoreUserIV>(CORE_REGISTER_PASSWORD_ENDPOINT, coreUserIVRequest);
         }
         catch (Exception ex)
         {
@@ -67,7 +72,7 @@ public class CoreDataService : ICoreDataService
                 Password = password,
                 CoreUser = coreUserRequest
             };
-            return await _apiService.PostAsync<CoreUserIV>(Constants.CORE_GET_IV_ENDPOINT, coreUserIVRequest);
+            return await _apiService.PostAsync<CoreUserIV>(CORE_GET_IV_ENDPOINT, coreUserIVRequest);
         }
         catch (Exception ex)
         {
@@ -88,11 +93,11 @@ public class CoreDataService : ICoreDataService
             // quedaba expuesto en logs del servidor, proxies e historial.
             var headers = new Dictionary<string, string>
             {
-                [Constants.SQL_TOKEN_HEADER] = coreUserRequest.SqlToken.ToString()
+                [SQL_TOKEN_HEADER] = coreUserRequest.SqlToken.ToString()
             };
 
             return await _apiService.GetAsync<IEnumerable<CoreSecretData>>(
-                Constants.CORE_CRUD_ENDPOINT,
+                CORE_ENDPOINT,
                 headers);
         } 
         catch (Exception ex)
@@ -117,7 +122,7 @@ public class CoreDataService : ICoreDataService
                 Data03 =  coreSecretData.Data03,
                 CoreUser = coreUserRequest
             };
-            return await _apiService.PostAsync<CoreSecretData>(Constants.CORE_CRUD_ENDPOINT, coreDataRequest);
+            return await _apiService.PostAsync<CoreSecretData>(CORE_ENDPOINT, coreDataRequest);
         }
         catch (Exception ex)
         {
@@ -141,7 +146,7 @@ public class CoreDataService : ICoreDataService
                 Data03 = coreSecretData.Data03,
                 CoreUser = coreUserRequest
             };
-            return await _apiService.PutAsync<CoreSecretData>(Constants.CORE_CRUD_ENDPOINT, coreDataRequest);
+            return await _apiService.PutAsync<CoreSecretData>(CORE_ENDPOINT, coreDataRequest);
         }
         catch (Exception ex)
         {
@@ -162,7 +167,7 @@ public class CoreDataService : ICoreDataService
                 Data_Id = dataId,
                 CoreUser = coreUserRequest
             };
-            await _apiService.DeleteAsync(Constants.CORE_CRUD_ENDPOINT, coreDataDeleteRequest);
+            await _apiService.DeleteAsync(CORE_ENDPOINT, coreDataDeleteRequest);
         }
         catch (Exception ex)
         {

@@ -2,23 +2,17 @@
 
 public static class Constants_demo
 {
+    // La versión de la app NO va acá: vive solo en el .csproj
+    // (ApplicationDisplayVersion / ApplicationVersion) y la lee IAppInfoService.
+
     // Biometric Encryption Configuration
     public const string BIOMETRIC_KEY = "YourFixedKeyHere1234567890123456";
     public const string BIOMETRIC_IV = "YoutIVKeyHere123";
-
-    // API Configuration
-    public const string API_BASE_URL = "https://api.yourapp.com";
-    //public const string API_BASE_URL = "https://10.0.2.2:7286";
-
     public const string API_KEY = "your-api-key-here";
-
-    // Header que transporta el token de sesión en los GET (nunca en la URL).
-    public const string SQL_TOKEN_HEADER = "SqlToken";
-
-    // Endpoints
-    public const string REGISTER_ENDPOINT = "/api/auth/register";
-    public const string LOGIN_ENDPOINT = "/api/auth/login";
-    public const string CORE_REGISTER_PASSWORD_ENDPOINT = "/api/core/register-password";
-    public const string CORE_GET_IV_ENDPOINT = "/api/core/get-iv";
-    public const string CORE_CRUD_ENDPOINT = "/api/core";
+    public const string API_BASE_URL = "https://10.0.2.2:7286/api";
+    //public const string API_BASE_URL = "https://api.yourapp.com/api";
+    // API Configuration
+    // La URL base incluye el prefijo /api y los endpoints son relativos a ella
+    // (ej. "auth/login"). No hace falta barra final: ApiService la normaliza,
+    // porque sin ella HttpClient perdería el prefijo al resolver la ruta.
 }
