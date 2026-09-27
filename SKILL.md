@@ -1037,6 +1037,49 @@ public static int GetBatteryLevel(Android.Content.Context ctx) =>
 - La clave se **inyecta en build como `AssemblyMetadata`** (csproj `-p:SyncfusionLicenseKey=...` o variable de entorno de la máquina `SYNC_FUSION_LICENSE_KEY`) y se lee por reflexión en `MauiProgram.cs` solo si trae valor. **Nunca hardcodear ni versionar la clave**. Separar de la CI/CD cuando corresponda.
 - Diferenciar **Trial** (30 días, genera aviso en runtime) de la **Community License** gratuita definitiva (sin expirar si se cumplen condiciones: <US$1M ingresos, ≤5 desarrolladores, ≤10 empleados). Verificar el tipo en el panel de cuentas de Syncfusion; no publicar en producción con clave trial.
 
+### 11.16 Manual de usuario en Markdown embebido en la app
+
+Patrón validado en `PasswordManager_.NET10` (guía compartida por la app y el repo):
+
+- **Una sola fuente de verdad**: el manual es un `.md` en el repo, la app lo carga y lo muestra. No se mantiene una copia en XAML.
+- **Ubicación**: `Resources/Raw/guide/USER_GUIDE.md`, con las imágenes como archivos hermanos en la misma carpeta.
+- **`MauiAsset`**: solo para `Resources/Raw`; sin `LogicalName`, MAUI conserva el prefijo de carpeta y la ruta de runtime no coincide con la del proyecto.
+
+```xml
+<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+```
+
+| Concepto | Ruta en el proyecto | Ruta en runtime |
+|----------|----------------------|-----------------|
+| Manual | `Resources/Raw/guide/USER_GUIDE.md` | `guide/USER_GUIDE.md` |
+| Imagen | `Resources/Raw/guide/doc01.jpg` | `guide/doc01.jpg` |
+
+- **Lectura**: `FileSystem.OpenAppPackageFileAsync("guide/USER_GUIDE.md")` usa el `LogicalName`, no la ruta del proyecto. Abrirlo como `Stream` y decodificar explícitamente (ver 11.17).
+- **Render**: Markdig a HTML + `WebView` con `HtmlWebViewSource`. Un `Label` muestra el Markdown crudo y no es una alternativa.
+- **Imágenes**: dentro del WebView una ruta suelta **no resuelve** (`src="doc01.jpg"` queda roto). Convertir cada imagen a **data URI** (`data:image/png;base64,...`) sustituyendo el `src` del HTML generado. El pipeline es `Markdown → HTML → reemplazo de src → data URIs`.
+- **Tema**: pasarlo **desde la app** al generar el HTML. La app tiene su propio Light/Dark/Auto que puede no coincidir con el del dispositivo, así que `prefers-color-scheme` no es la fuente. `Auto` se resuelve en C#, no por media query.
+- **`<Image Source>` no lee assets de `Resources/Raw`**: en el build de Windows ni siquiera se enlazan como `MauiImage`. Mientras una página hardcodeada use `Resources/Images`, **copiar** las imágenes; moverlas rompe esa página.
+
+**Gotcha verificado**: `MarkdownPipelineBuilder().UseAdvancedExtensions()` agrega identificadores automáticos, así que los encabezados salen como `<h1 id="titulo">Titulo</h1>`. Los tests del conversor **no** deben comparar el tag completo; afirmar el contenido, no el `id`.
+
+**Anti-patrón**: mantener el manual hardcodeado en un `HelpPage.xaml` mientras el `.md` evoluciona. Es una fuente duplicada que diverge en silencio (mismo problema que un `ApiResponse` propio junto al contrato v2). Cuando coexistan por migración, el hardcodeado es **temporal y removible**, y la fecha de remoción queda anotada.
+
+**Verificación sin dispositivo**:
+- `dotnet msbuild -getItem:MauiAsset` para confirmar el `LogicalName` de cada asset.
+- Test del conversor Markdown → HTML (función pura, sin device ni assets). Es la forma barata de detectar expectativas equivocadas, como los `id` automáticos.
+- La confirmación real de imágenes requiere runtime en dispositivo.
+
+### 11.17 Encoding de archivos
+
+- **UTF-8 sin BOM** en `.md`, `.cs`, `.xaml` y `.csproj`. Nunca agregar BOM: se pega como `\ufeff` al primer `using` y ensucia diffs.
+- **Decodificación explícita** al leer: `new StreamReader(stream, Encoding.UTF8)` es BOM-agnóstico y no depende de la heurística del sistema.
+- **No usar PowerShell 5.1 para editar contenido de archivos**:
+  - `Get-Content -Raw` decodifica UTF-8 como ANSI y **mangla los acentos** (el `-replace` deja de coincidir).
+  - `Set-Content -Encoding UTF8` escribe **con BOM**, al contrario de lo que espera el SDK.
+  - PowerShell sí sirve para inspeccionar bytes (`[System.IO.File]::ReadAllBytes`) o contar coincidencias.
+- El proyecto puede tener archivos con y sin BOM si nadie fijó la regla: no asumir convención, verificar.
+- Fijar la regla con `.editorconfig` (`charset = utf-8`) si se quiere eliminar la ambigüedad de forma permanente.
+
 ---
 
 ## 12. Tests
@@ -1047,6 +1090,46 @@ public static int GetBatteryLevel(Android.Content.Context ctx) =>
 - Los servicios se testean por **excepción esperada** (`await Assert.ThrowsAsync<InvalidCredentialsException>(...)`) cuando el camino de error es una excepción de Application; por enum/valor devuelto cuando el caso es del repositorio.
 - No mockear repositorios para probar la API: el valor está en el flujo real.
 - Comando: `dotnet test` (no ejecutar sin autorización del usuario según las reglas del repo).
+
+**Suite partida por proyecto, con perfiles de riesgo distintos:**
+
+Las suites de este repo **no** son equivalentes en seguridad y no se reportan como un único número:
+
+| Suite | Cubre | Toca BD real | Riesgo |
+|-------|-------|--------------|--------|
+| `WebApiCore.Tests` | API: contrato, auth, repositorios | Sí | **Alto**: puede ejecutar `DROP`/`DELETE` sobre datos compartidos |
+| `PasswordManager_.NET10.Tests` | Lógica de app y ViewModels | No | Bajo |
+
+- **La suite de la app no está en la solución.** `PasswordManager_.NET10.slnx` solo referencia `WebApiCore.Tests` como proyecto de test. Un `dotnet test` a nivel solución corre únicamente la suite de la API y **nunca descubre** los tests de la app.
+- Ejecutar siempre por proyecto: `dotnet test --project ".\<proj>.csproj"`. Mezclar suites con perfiles de riesgo distintos en una sola corrida impide atribuir un fallo.
+- Antes de correr la suite que toca BD: identificar la base, las operaciones de setup/teardown y confirmar que la limpieza es **aislada** (transacciones, IDs únicos, fixtures propios, base de testing). Si no se puede garantizar, no se ejecuta.
+
+**Un bloqueo de plataforma no es un test fallido:**
+
+Con **WDAC** (Windows Defender Application Control) activo, `dotnet test` puede abortar al **cargar el ensamblado**, antes de ejecutar una sola aserción:
+
+```
+System.IO.FileLoadException: Una directiva de Control de aplicaciones bloqueó este archivo. (0x800711C7)
+```
+
+- Si el error es de carga de `.dll` y no hay `Assert` fallando, **no se ejecutó ningún test**: el conteo es `0/N`, no `N-1/N`.
+- Es un bloqueo del entorno, no del código: reintentar sin cambios no sirve. Se reporta como bloqueo con su causa, nunca como regresión ni como fallo de la suite.
+
+**Reporte de verificación honesto:**
+
+- Un conteo es **histórico**: pertenece a un commit concreto. "73/73" dejó de ser cierto en cuanto el código cambió; se reporta como "última corrida completa antes de *&lt;cambio&gt;*".
+- **Nunca sumar suites no ejecutadas.** El total se reporta por suite, con la causa de cada bloqueo.
+- **Compilar no es probar**: `dotnet build` con 0 errores dice nada sobre aserciones. Son dos verificaciones distintas y se reportan por separado.
+- **La verificación en runtime es evidencia aparte**: la hace el usuario en dispositivo o app real, y no reemplaza ni se suma a la cobertura automática.
+- La línea de verificación del mensaje de commit lleva **números reales del run ejecutado**.
+
+**Escribir un test: verificar el valor real antes de fijar la expectativa:**
+
+- No escribir la expectativa de memoria: volcar el valor real primero y comparar contra él. Una expectativa inventada produce un test que "falla" y esconde el comportamiento correcto.
+- Preferir aserciones de **contenido** sobre las de estructura exacta: `Assert.Contains(">Título</h1>", html)` en lugar de `Assert.Contains("<h1>Título</h1>", html)`. Markdig con `UseAdvancedExtensions()` agrega identificadores automáticos y rompe la comparación del tag completo.
+- Aislar la falla para diagnosticarla: `dotnet test --filter "FullyQualifiedName~<TestName>"`.
+- Al leer un fallo, extraer el mensaje real del runner (`String:` / `Not found:`) antes de tocar código o expectativas.
+- No inspeccionar ni editar archivos de test con PowerShell: la trampa de encoding de 11.17 mangla los acentos y hace que un `-replace` no coincida.
 
 ---
 
@@ -1080,6 +1163,9 @@ public static int GetBatteryLevel(Android.Content.Context ctx) =>
 - [ ] MAUI: Versión solo en `.csproj` (Display + Build); leída con `AppInfo`; subir `ApplicationVersion` en cada publicación.
 - [ ] MAUI: Audio — efectos/clics por APIs de baja latencia (SoundPool/SystemSound); música por `MediaElement`.
 - [ ] MAUI: Colores y estilos con `AppThemeBinding` (claro/oscuro desde el origen).
+- [ ] MAUI: Manual en `.md` bajo `Resources/Raw` con `MauiAsset` y `LogicalName`; imágenes como data URIs, nunca rutas sueltas en el WebView.
+- [ ] MAUI: Tema del manual pasado desde la app, no desde `prefers-color-scheme`.
+- [ ] Archivos en UTF-8 sin BOM; lectura con `Encoding.UTF8` explícito.
 - [ ] MAUI: Permisos Android mínimos; usar APIs de plataforma sin permisos protegidos (batería con `BatteryManager`/`BatteryProperty`, no con `Battery.Default` + `BATTERY_STATS`); revisar el manifest fusionado.
 - [ ] MAUI: Empaquetado Android con `RuntimeIdentifiers` (`AndroidSupportedAbis` obsoleta en .NET 10); validar ABI en dispositivo real con `ro.product.cpu.abi` (cuidado con 32-bit).
 
@@ -1103,6 +1189,8 @@ public static int GetBatteryLevel(Android.Content.Context ctx) =>
 | `catch {}` vacío | Log + estado visible en UI |
 | `HttpClient` nuevo por llamada | Singleton inyectado |
 | SSL bypass en el cliente | Trust del SO; nunca `_ => true` |
+| Manual duplicado en XAML y en `.md` | Una sola fuente: el `.md` cargado por la app |
+| `src="doc01.jpg"` dentro de un WebView | Data URIs; una ruta suelta no resuelve |
 | Migrar de versión sin revisar breaking changes | Verificar matriz de versiones (p.ej. OpenApi 2.x) antes del upgrade |
 
 ---

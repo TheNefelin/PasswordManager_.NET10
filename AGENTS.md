@@ -68,7 +68,7 @@ Cuando existan, revisar según corresponda:
 
 - `README.md`
 - `DEVELOPMENT.md`
-- `SKILL_*.md`
+- `SKILL.md`
 - documentación técnica del proyecto
 - configuración relevante del proyecto
 
@@ -113,31 +113,26 @@ Su objetivo principal es evitar que el contexto técnico importante tenga que se
 
 Si una tarea implica una decisión técnica importante que deba quedar registrada, proponer actualizar `DEVELOPMENT.md`.
 
-### 5.4 SKILL_*.md
+### 5.4 SKILL.md
 
-Los archivos `SKILL_*.md` contienen criterios específicos para desarrollar con una determinada tecnología dentro del proyecto.
+`SKILL.md` contiene los criterios de implementación de este proyecto: patrones .NET/C# transversales (API y MAUI) validados en producción. Es el único archivo de skills del proyecto.
 
-Ejemplos:
+Si el proyecto crece y aparece una tecnología cuyos criterios no encajan en el archivo transversal, se separan en `SKILL_<TECNOLOGIA>.md` (por ejemplo `SKILL_DOTNET.md`). Ese archivo no existe; no crearlo salvo autorización explícita.
 
-- `SKILL_ANGULAR.md`
-- `SKILL_DOTNET.md`
-- `SKILL_PYTHON.md`
-- `SKILL_ASTRO.md`
+Cuando una tarea involucre una tecnología cubierta por un SKILL:
 
-Cuando una tarea involucre una tecnología que tenga un `SKILL_*.md` correspondiente:
-
-1. Identificar el archivo.
+1. Identificar el archivo. En este proyecto es `SKILL.md`.
 2. Leerlo antes de modificar código.
 3. Aplicar sus criterios y checklist.
 4. Si existe una contradicción entre las reglas generales y el SKILL, señalarla antes de implementar.
 
-Si no existe un SKILL para una tecnología relevante, no crearlo automáticamente. Proponerlo y esperar autorización.
+Si un criterio aplicable no está documentado, agregarlo al final de la sección correspondiente del `SKILL.md` existente (por ejemplo, criterios de MAUI al final de la sección 11) en lugar de crear un archivo nuevo. Proponerlo y esperar autorización antes de escribir.
 
 ### 5.5 Uso eficiente del contexto
 
 - No leer indiscriminadamente todo el repositorio si no es necesario.
 - Priorizar primero los archivos directamente relacionados con la tarea.
-- Utilizar `README.md`, `DEVELOPMENT.md` y `SKILL_*.md` como contexto cuando sean relevantes.
+- Utilizar `README.md`, `DEVELOPMENT.md` y `SKILL.md` como contexto cuando sean relevantes.
 - Evitar consumir tokens analizando archivos que no tengan relación con la tarea.
 - Si se necesita ampliar el contexto, hacerlo de forma incremental.
 

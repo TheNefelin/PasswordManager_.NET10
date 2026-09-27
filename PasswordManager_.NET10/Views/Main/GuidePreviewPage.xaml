@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="PasswordManager_.NET10.Views.Main.GuidePreviewPage"
+             Title="GuidePage">
+
+    <Grid RowDefinitions="Auto,*" Padding="0">
+
+        <!-- Header -->
+        <Grid Grid.Row="0"
+              Padding="20,15"
+              ColumnDefinitions="*,Auto"
+              BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2F2F2F}">
+            <Label Grid.Column="0"
+                   Text="📖 Guía"
+                   FontSize="20"
+                   FontAttributes="Bold"
+                   VerticalOptions="Center"/>
+            <Button Grid.Column="1"
+                    Text="✕"
+                    FontSize="20"
+                    Padding="10"
+                    BackgroundColor="Transparent"
+                    TextColor="{AppThemeBinding Light=Black, Dark=White}"
+                    Command="{Binding CloseCommand}"/>
+        </Grid>
+
+        <Grid Grid.Row="1">
+
+            <WebView>
+                <WebView.Source>
+                    <HtmlWebViewSource Html="{Binding HtmlContent}" />
+                </WebView.Source>
+            </WebView>
+
+            <!-- Loading Overlay -->
+            <VerticalStackLayout IsVisible="{Binding IsBusy}"
+                                Spacing="20"
+                                VerticalOptions="Center"
+                                HorizontalOptions="Center"
+                                BackgroundColor="#80000000"
+                                Padding="20">
+                <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                  IsVisible="{Binding IsBusy}"
+                                  Scale="1.5"/>
+                <Label Text="Cargando guía..."
+                       HorizontalOptions="Center"
+                       FontSize="14"/>
+            </VerticalStackLayout>
+
+            <!-- Error -->
+            <VerticalStackLayout IsVisible="{Binding ErrorMessage, Converter={StaticResource StringNotEmptyToBoolConverter}}"
+                                VerticalOptions="Center"
+                                HorizontalOptions="Center"
+                                Padding="20"
+                                Spacing="10">
+                <Label Text="{Binding ErrorMessage}"
+                       FontSize="13"
+                       TextColor="Red"
+                       HorizontalTextAlignment="Center"/>
+            </VerticalStackLayout>
+
+        </Grid>
+
+    </Grid>
+
+</ContentPage>

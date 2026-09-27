@@ -196,6 +196,10 @@
                         <Label Text="{Binding AppVersion}" FontSize="12"/>
                     </VerticalStackLayout>
 
+                    <!-- TEMPORAL: guía en Markdown, se elimina cuando reemplace al manual hardcodeado -->
+                    <Button Text="📖 Guía (Markdown)"
+                            Command="{Binding OpenGuidePreviewCommand}"/>
+
                 </VerticalStackLayout>
 
             </VerticalStackLayout>

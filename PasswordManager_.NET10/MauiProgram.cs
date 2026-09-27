@@ -51,7 +51,9 @@ public static class MauiProgram
             .AddSingleton<ICoreDataService, CoreDataService>()
             .AddSingleton<INavigationService, NavigationService>()
             .AddSingleton<IDialogService, DialogService>()
-    .AddSingleton<IAppInfoService, AppInfoService>();
+            .AddSingleton<IGuideService, GuideService>()
+            .AddSingleton<IMarkdownToHtmlConverter, MarkdownToHtmlConverter>()
+            .AddSingleton<IAppInfoService, AppInfoService>();
 
         // ViewModels (Singleton para screens principales)
         builder.Services
@@ -61,7 +63,8 @@ public static class MauiProgram
             .AddTransient<PasswordDetailsViewModel>()
             .AddTransient<PasswordFormViewModel>()
             .AddTransient<PasswordPromptCreateViewModel>()
-            .AddTransient<HelpViewModel>();
+            .AddTransient<HelpViewModel>()
+            .AddTransient<GuidePreviewViewModel>();
 
         // Views/Pages
         builder.Services
@@ -72,7 +75,8 @@ public static class MauiProgram
             .AddTransient<PasswordDetailsPage>()
             .AddTransient<PasswordFormPage>()
             .AddTransient<PasswordPromptCreatePage>()
-            .AddTransient<HelpPage>();
+            .AddTransient<HelpPage>()
+            .AddTransient<GuidePreviewPage>();
 
         // Test
         builder.Services
