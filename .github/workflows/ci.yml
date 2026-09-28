@@ -1,0 +1,59 @@
+name: CI
+
+# Compila y corre los tests del cliente en cada push a master (y a mano).
+# La app necesita Constants.cs, que está en .gitignore por contener secretos;
+# para que el runner compile se genera desde Constants_demo.cs con los MISMOS
+# dos pasos que documenta el README: copiar y renombrar la clase. La clave del
+# demo es válida (32 y 16 caracteres), así que el build y los round-trip de
+# cifrado pasan igual: el cifrado es simétrico y no depende de la clave real.
+#
+# WebApiCore.Tests NO se corren en CI: requieren un SQL Server real
+# (TEST_CONNECTION_STRING) que el runner no tiene.
+on:
+  push:
+    branches: [master]
+    paths-ignore:
+      - 'README.md'
+      - 'PasswordManager_.NET10/Resources/Raw/guide/**'
+      - '.github/workflows/sync-manual.yml'
+      - '.github/scripts/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Compilar y probar el cliente
+    runs-on: windows-latest
+
+    steps:
+      - name: Obtener el codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar el SDK de .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Preparar Constants.cs desde el demo
+        shell: pwsh
+        run: |
+          $demo = 'PasswordManager_.NET10/Helpers/Constants_demo.cs'
+          $dest = 'PasswordManager_.NET10/Helpers/Constants.cs'
+          $content = Get-Content -Raw $demo
+          $content = $content -replace 'class Constants_demo', 'class Constants'
+          Set-Content -Path $dest -Value $content -Encoding utf8
+
+      - name: Compilar
+        run: dotnet build PasswordManager_.NET10.Tests/PasswordManager_.NET10.Tests.csproj --nologo
+
+      # dotnet test descubre 0 tests con este proyecto: usa el runner
+      # Microsoft.Testing.Platform de xunit.v3, que silenciosamente no se
+      # registra via CLI. Correr el testhost directo da 64/64 confiable.
+      - name: Ejecutar los tests
+        run: dotnet PasswordManager_.NET10.Tests/bin/Debug/net10.0/PasswordManager_.NET10.Tests.dll
