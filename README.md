@@ -30,7 +30,7 @@ Para entrar por primera vez necesitas una cuenta. El registro solo toma un corre
 
 #### Crear una cuenta
 
-<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+<p align="center">
   <img src="img/doc01.jpg" alt="Registro" width="250">
   <img src="img/doc02.jpg" alt="Registro" width="250">
 </p>
@@ -42,7 +42,7 @@ Para entrar por primera vez necesitas una cuenta. El registro solo toma un corre
 
 #### Iniciar sesión
 
-<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+<p align="center">
   <img src="img/doc03.jpg" alt="Inicio de sesión" width="250">
 </p>
 
@@ -66,7 +66,7 @@ Tu clave de encriptación es la que cifra y descifra tus secretos. **Sin ella no
 > [!IMPORTANT]
 > Este es el primer paso que DEBES hacer.
 
-<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+<p align="center">
   <img src="img/doc04.jpg" alt="Clave de encriptación" width="250">
   <img src="img/doc05.jpg" alt="Clave de encriptación" width="250">
   <img src="img/doc06.jpg" alt="Clave de encriptación" width="250">
@@ -98,7 +98,7 @@ Una vez creada, la clave no se puede volver a cambiar desde la aplicación.
 
 Un secreto es cada contraseña que guardas: un correo, una red social, un banco.
 
-<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+<p align="center">
   <img src="img/doc04.jpg" alt="Agregar secreto" width="250">
   <img src="img/doc07.jpg" alt="Agregar secreto" width="250">
   <img src="img/doc08.jpg" alt="Agregar secreto" width="250">
@@ -119,7 +119,7 @@ Un secreto es cada contraseña que guardas: un correo, una red social, un banco.
 
 ### 4. Ver y gestionar secretos
 
-<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+<p align="center">
   <img src="img/doc05.jpg" alt="Secretos" width="250">
   <img src="img/doc09.jpg" alt="Secretos" width="250">
   <img src="img/doc10.jpg" alt="Secretos" width="250">
@@ -149,7 +149,7 @@ Un secreto es cada contraseña que guardas: un correo, una red social, un banco.
 
 #### Habilitar biometría
 
-<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+<p align="center">
   <img src="img/doc15.jpg" alt="Biometría" width="250">
 </p>
 
@@ -174,7 +174,7 @@ La biometría solo recuerda tu nombre de usuario. La contraseña **no se guarda 
 
 ### 6. Configurar el tema
 
-<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+<p align="center">
   <img src="img/doc15.jpg" alt="Tema" width="250">
 </p>
 
@@ -189,7 +189,7 @@ En la misma pantalla, al final, aparece la versión de la aplicación con el for
 
 ### 7. Cerrar sesión
 
-<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+<p align="center">
   <img src="img/doc04.jpg" alt="Cerrar sesión" width="250">
 </p>
 

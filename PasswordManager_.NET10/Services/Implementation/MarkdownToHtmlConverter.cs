@@ -63,9 +63,10 @@ public partial class MarkdownToHtmlConverter : IMarkdownToHtmlConverter
 
     private static string BuildTemplate(string body, bool darkTheme)
     {
-        // El tema llega desde IThemeService, no desde el sistema: la app tiene
-        // Light/Dark/Auto propio y puede no coincidir con el del dispositivo.
-        // Por eso no se usa prefers-color-scheme como unica fuente.
+        // El tema llega desde IThemeService, no desde el sistema: la app maneja
+        // Light/Dark propios que pueden no coincidir con los del dispositivo, asi
+        // que prefers-color-scheme no es la fuente. ThemeService.ApplyTheme mapea
+        // "Light" y "Dark", y cualquier otro valor cae a Dark.
         var css = darkTheme ? DarkCss : LightCss;
 
         return $$"""
@@ -76,6 +77,7 @@ public partial class MarkdownToHtmlConverter : IMarkdownToHtmlConverter
                 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
                 <style>
             {{css}}
+            {{ImgRowCss}}
                 </style>
             </head>
             <body>
@@ -91,11 +93,6 @@ public partial class MarkdownToHtmlConverter : IMarkdownToHtmlConverter
                background: #ffffff; color: #1f1f1f; }
         h1 { font-size: 24px; } h2 { font-size: 20px; } h3 { font-size: 17px; }
         img { max-width: 100%; height: auto; }
-        .img-row { display: flex; flex-wrap: nowrap; gap: 10px; overflow-x: auto;
-                   padding: 10px; background: #d3d3d3; border-radius: 6px; }
-        .img-row img { height: auto; flex: 0 0 auto; border-radius: 4px; }
-        .img-row img:first-child { margin-left: auto; }
-        .img-row img:last-child { margin-right: auto; }
         /* Alertas de GitHub (> [!CAUTION], > [!IMPORTANT]). Markdig ya emite las
            clases markdown-alert-*; aca solo se les da color. Los mismos nombres
            los usa GitHub, asi que el .md se ve igual en el README. */
@@ -123,11 +120,6 @@ public partial class MarkdownToHtmlConverter : IMarkdownToHtmlConverter
                background: #1f1f1f; color: #f0f0f0; }
         h1 { font-size: 24px; } h2 { font-size: 20px; } h3 { font-size: 17px; }
         img { max-width: 100%; height: auto; }
-        .img-row { display: flex; flex-wrap: nowrap; gap: 10px; overflow-x: auto;
-                   padding: 10px; background: #d3d3d3; border-radius: 6px; }
-        .img-row img { height: auto; flex: 0 0 auto; border-radius: 4px; }
-        .img-row img:first-child { margin-left: auto; }
-        .img-row img:last-child { margin-right: auto; }
         /* Alertas de GitHub. En oscuro el fondo del recuadro tiene que ser oscuro
            o el texto claro del body queda ilegible. */
         .markdown-alert { padding: 10px 14px; border-left: 4px solid;
@@ -146,5 +138,18 @@ public partial class MarkdownToHtmlConverter : IMarkdownToHtmlConverter
         th, td { text-align: center; vertical-align: top; padding: 4px; }
         hr { border: none; border-top: 1px solid #3d3d3d; margin: 20px 0; }
         code { font-family: ui-monospace, Menlo, Consolas, monospace; }
+        """;
+
+    // Unico lugar donde se define el estilo de las filas de imagenes, igual para
+    // Light y Dark porque el color no depende del tema. Antes estaba repetido en
+    // ambos CSS, con un color que nunca aplicaba, y ademas el color real viajaba
+    // en el style inline de cada <p> del USER_GUIDE.md (8 repeticiones), que gana
+    // sobre la clase. El padding queda en 15px para conservar lo que se veia.
+    private const string ImgRowCss = """
+        .img-row { display: flex; flex-wrap: nowrap; gap: 10px; overflow-x: auto;
+                   padding: 15px; background: #f0f0f0; border-radius: 6px; }
+        .img-row img { height: auto; flex: 0 0 auto; border-radius: 4px; }
+        .img-row img:first-child { margin-left: auto; }
+        .img-row img:last-child { margin-right: auto; }
         """;
 }

@@ -151,9 +151,10 @@ public class MarkdownToHtmlConverterTests
 
         // El gris es fijo a propósito: es el fondo de una captura, no del documento,
         // así que no cambia con el tema. GitHub descarta el CSS, por eso lo define
-        // la app y no el .md.
-        Assert.Contains("background: #d3d3d3", light);
-        Assert.Contains("background: #d3d3d3", dark);
+        // la app y no el .md. Vive en un solo bloque (ImgRowCss) compartido por
+        // Light y Dark, no declarado dos veces.
+        Assert.Contains("background: #f0f0f0", light);
+        Assert.Contains("background: #f0f0f0", dark);
         Assert.DoesNotContain("background: #3a3a3a", dark);
     }
 
