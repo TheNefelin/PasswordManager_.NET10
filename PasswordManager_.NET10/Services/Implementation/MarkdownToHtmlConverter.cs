@@ -96,7 +96,6 @@ public partial class MarkdownToHtmlConverter : IMarkdownToHtmlConverter
         .img-row img { height: auto; flex: 0 0 auto; border-radius: 4px; }
         .img-row img:first-child { margin-left: auto; }
         .img-row img:last-child { margin-right: auto; }
-        .alerta { color: #c62828; font-weight: 700; }
         /* Alertas de GitHub (> [!CAUTION], > [!IMPORTANT]). Markdig ya emite las
            clases markdown-alert-*; aca solo se les da color. Los mismos nombres
            los usa GitHub, asi que el .md se ve igual en el README. */
@@ -129,7 +128,6 @@ public partial class MarkdownToHtmlConverter : IMarkdownToHtmlConverter
         .img-row img { height: auto; flex: 0 0 auto; border-radius: 4px; }
         .img-row img:first-child { margin-left: auto; }
         .img-row img:last-child { margin-right: auto; }
-        .alerta { color: #ef9a9a; font-weight: 700; }
         /* Alertas de GitHub. En oscuro el fondo del recuadro tiene que ser oscuro
            o el texto claro del body queda ilegible. */
         .markdown-alert { padding: 10px 14px; border-left: 4px solid;

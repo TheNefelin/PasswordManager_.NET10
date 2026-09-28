@@ -15,6 +15,7 @@
                    Text="📖 Manual de Usuario"
                    FontSize="20"
                    FontAttributes="Bold"
+                   TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}"
                    VerticalOptions="Center"/>
             <Button Grid.Column="1"
                     Text="✕"

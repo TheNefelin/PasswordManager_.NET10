@@ -124,17 +124,6 @@ public class MarkdownToHtmlConverterTests
     }
 
     [Fact]
-    public void ConvertToHtml_WithAlertSpan_PreservesClassForAppStyling()
-    {
-        // El .md marca la alerta con una clase; el rojo lo aplica la app, no el .md.
-        var html = _converter.ConvertToHtml(
-            "<span class=\"alerta\">IMPORTANTE</span>");
-
-        Assert.Contains("<span class=\"alerta\">", html);
-        Assert.Contains(".alerta { color: #c62828", html);
-    }
-
-    [Fact]
     public void ConvertToHtml_WithRawHtmlImageRow_WrapsItAndKeepsAttributes()
     {
         // El .md escribe las filas como HTML crudo porque width es lo único que
