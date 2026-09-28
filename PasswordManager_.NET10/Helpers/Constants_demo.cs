@@ -2,6 +2,15 @@
 
 public static class Constants_demo
 {
+    // AES-256 exige EXACTAMENTE 32 bytes y el IV EXACTAMENTE 16, asi que deben quedar
+    // 32 y 16 caracteres ASCII: cualquier otro largo revienta en runtime, no al compilar.
+    // EncryptionService.Encrypt/Decrypt hacen Encoding.UTF8.GetBytes() sobre estas cadenas
+    // y se las pasan a aes.Key / aes.IV.
+    //
+    // Solo cifra el cache local de la contraseña de login (AuthService.SavePasswordAsync);
+    // las contraseñas de la nube se cifran con GetAesKey(contraseña maestra) y el IV de
+    // la API, asi que nada de esto viaja entre dispositivos.
+    //
     // La versión de la app NO va acá: vive solo en el .csproj
     // (ApplicationDisplayVersion / ApplicationVersion) y la lee IAppInfoService.
 

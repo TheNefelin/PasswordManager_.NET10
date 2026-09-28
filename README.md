@@ -247,6 +247,30 @@ R: No. La contraseña de la cuenta solo protege el inicio de sesión; la clave d
 
 # Password Manager .NET 10
 
+## ⚙️ Configuración antes de compilar
+
+`PasswordManager_.NET10/Helpers/Constants.cs` guarda las claves local y de API. Está en `.gitignore` **a propósito**: son secretos y no deben llegar al repositorio.
+
+Por eso **el proyecto no compila hasta que ese archivo exista**. La plantilla versionada es `PasswordManager_.NET10/Helpers/Constants_demo.cs`.
+
+### Cómo crearlo
+
+1. Copiá `Constants_demo.cs` en la misma carpeta y nombrá la copia `Constants.cs`.
+2. Abrí la copia y renombrá la clase de `Constants_demo` a `Constants`.
+
+Renombrar el archivo **no alcanza**: la clase también se llama `Constants_demo`, y el código usa `Constants`. Si te olvidas de ese paso, el compilador da `The name 'Constants' does not exist`.
+
+La copia se llama distinto a propósito: así los dos archivos pueden convivir en la misma carpeta sin dar una clase duplicada. `Constants.cs` sigue ignorado por git, así que tus claves no se suben nunca.
+
+### Qué poner en cada valor
+
+| Constante | Qué va | Largo |
+|---|---|---|
+| `BIOMETRIC_KEY` | Clave propia y aleatoria. Cifra la contraseña de login cacheada en SecureStorage. **Solo local**: no tiene relación con los datos de la nube | 32 caracteres |
+| `BIOMETRIC_IV` | Vector de inicialización de ese cifrado local | 16 caracteres |
+| `API_KEY` | La key de la API | — |
+| `API_BASE_URL` | URL base de la API, con el prefijo `/api` incluido | — |
+
 ## 🐳 Docker
 
 > Sección en construcción: los comandos de despliegue y configuración de contenedores (SQL Server, API WebApiCore, etc.) se documentarán aquí.
