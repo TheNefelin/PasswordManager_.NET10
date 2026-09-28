@@ -97,6 +97,21 @@ public partial class MarkdownToHtmlConverter : IMarkdownToHtmlConverter
         .img-row img:first-child { margin-left: auto; }
         .img-row img:last-child { margin-right: auto; }
         .alerta { color: #c62828; font-weight: 700; }
+        /* Alertas de GitHub (> [!CAUTION], > [!IMPORTANT]). Markdig ya emite las
+           clases markdown-alert-*; aca solo se les da color. Los mismos nombres
+           los usa GitHub, asi que el .md se ve igual en el README. */
+        .markdown-alert { padding: 10px 14px; border-left: 4px solid;
+                          border-radius: 6px; margin: 14px 0; }
+        .markdown-alert > :first-child { margin-top: 0; }
+        .markdown-alert > :last-child { margin-bottom: 0; }
+        .markdown-alert-title { font-weight: 700; margin: 0 0 6px !important;
+                                display: flex; align-items: center; gap: 6px; }
+        .markdown-alert-title svg { width: 16px; height: 16px; fill: currentColor;
+                                    flex: 0 0 auto; }
+        .markdown-alert-caution { border-color: #d1242f; background: #fff8f8; }
+        .markdown-alert-caution .markdown-alert-title { color: #d1242f; }
+        .markdown-alert-important { border-color: #0969da; background: #f6faff; }
+        .markdown-alert-important .markdown-alert-title { color: #0969da; }
         table { width: 100%; border-collapse: collapse; display: table; }
         th, td { text-align: center; vertical-align: top; padding: 4px; }
         hr { border: none; border-top: 1px solid #d0d0d0; margin: 20px 0; }
@@ -115,6 +130,20 @@ public partial class MarkdownToHtmlConverter : IMarkdownToHtmlConverter
         .img-row img:first-child { margin-left: auto; }
         .img-row img:last-child { margin-right: auto; }
         .alerta { color: #ef9a9a; font-weight: 700; }
+        /* Alertas de GitHub. En oscuro el fondo del recuadro tiene que ser oscuro
+           o el texto claro del body queda ilegible. */
+        .markdown-alert { padding: 10px 14px; border-left: 4px solid;
+                          border-radius: 6px; margin: 14px 0; }
+        .markdown-alert > :first-child { margin-top: 0; }
+        .markdown-alert > :last-child { margin-bottom: 0; }
+        .markdown-alert-title { font-weight: 700; margin: 0 0 6px !important;
+                                display: flex; align-items: center; gap: 6px; }
+        .markdown-alert-title svg { width: 16px; height: 16px; fill: currentColor;
+                                    flex: 0 0 auto; }
+        .markdown-alert-caution { border-color: #f85149; background: #2a1618; }
+        .markdown-alert-caution .markdown-alert-title { color: #f85149; }
+        .markdown-alert-important { border-color: #58a6ff; background: #121d2f; }
+        .markdown-alert-important .markdown-alert-title { color: #58a6ff; }
         table { width: 100%; border-collapse: collapse; display: table; }
         th, td { text-align: center; vertical-align: top; padding: 4px; }
         hr { border: none; border-top: 1px solid #3d3d3d; margin: 20px 0; }

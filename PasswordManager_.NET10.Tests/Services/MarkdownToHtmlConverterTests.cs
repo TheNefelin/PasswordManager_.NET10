@@ -8,6 +8,15 @@ public class MarkdownToHtmlConverterTests
 
     private readonly MarkdownToHtmlConverter _converter = new();
 
+    // Los avisos secuspan en el body, no en el <style>. Separate permite afirmar
+    // sobre el contenido sin que un comentario del CSS rompa la comparacion.
+    private static string BodyOf(string html)
+    {
+        var start = html.IndexOf("<body>", StringComparison.Ordinal);
+
+        return start < 0 ? html : html[start..];
+    }
+
     [Fact]
     public void ConvertToHtml_WithMarkdown_ProducesHtmlStructure()
     {
@@ -167,5 +176,50 @@ public class MarkdownToHtmlConverterTests
         // Si la app vuelve a impose un max-width, deja de verse igual en los dos.
         Assert.DoesNotContain("max-width: 72vw", html);
         Assert.DoesNotContain("max-height: 200px", html);
+    }
+
+    [Fact]
+    public void ConvertToHtml_WithCautionAlert_EmitsGitHubAlertMarkup()
+    {
+        // > [!CAUTION] es la unica forma de tener un bloque rojo en GitHub sin
+        // escribir CSS, porque su sanitizador descarta el atributo style. Markdig lo
+        // parsea dentro de UseAdvancedExtensions, que es una caja negra: si un
+        // upgrade lo saca de ahi, la alerta deja de interpretarse y en la app
+        // aparece el texto literal "[!CAUTION]".
+        var html = _converter.ConvertToHtml("> [!CAUTION]\n> No se puede reemplazar.");
+        var body = BodyOf(html);
+
+        Assert.Contains("class=\"markdown-alert markdown-alert-caution\"", body);
+        Assert.Contains("markdown-alert-title", body);
+        // Si el texto sobrevive sin convertir, la alerta no se esta interpretando.
+        Assert.DoesNotContain("[!CAUTION]", body);
+    }
+
+    [Fact]
+    public void ConvertToHtml_WithImportantAlert_EmitsImportantMarkup()
+    {
+        var html = _converter.ConvertToHtml("> [!IMPORTANT]\n> Primer paso.");
+        var body = BodyOf(html);
+
+        Assert.Contains("class=\"markdown-alert markdown-alert-important\"", body);
+        Assert.DoesNotContain("[!IMPORTANT]", body);
+    }
+
+    [Fact]
+    public void ConvertToHtml_UsesAlertColorsInBothThemes()
+    {
+        var light = _converter.ConvertToHtml("texto", darkTheme: false);
+        var dark = _converter.ConvertToHtml("texto", darkTheme: true);
+
+        // GitHub colorea el recuadro con su propia CSS; la app necesita la suya para
+        // que la alerta se vea igual. En oscuro el fondo del recuadro tiene que ser
+        // oscuro o el texto claro del cuerpo queda ilegible.
+        Assert.Contains(".markdown-alert-caution { border-color: #d1242f", light);
+        Assert.Contains(".markdown-alert-caution { border-color: #f85149", dark);
+        Assert.Contains(".markdown-alert-important { border-color: #0969da", light);
+        Assert.Contains(".markdown-alert-important { border-color: #58a6ff", dark);
+        // Sin esto el SVG del icono se dibuja en negro y no toma el color del titulo.
+        Assert.Contains("fill: currentColor", light);
+        Assert.Contains("fill: currentColor", dark);
     }
 }

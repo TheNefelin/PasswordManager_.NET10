@@ -63,7 +63,8 @@ Para entrar por primera vez necesitas una cuenta. El registro solo toma un corre
 
 Tu clave de encriptación es la que cifra y descifra tus secretos. **Sin ella no puedes recuperar nada.**
 
-<span class="alerta" style="color: #f00;">⚠️ IMPORTANTE: este es el primer paso que DEBES hacer.</span>
+> [!IMPORTANT]
+> Este es el primer paso que DEBES hacer.
 
 <p align="center" style="background-color: #f0f0f0; padding: 15px;">
   <img src="img/doc04.jpg" alt="Clave de encriptación" width="250">
@@ -80,14 +81,10 @@ Tu clave de encriptación es la que cifra y descifra tus secretos. **Sin ella no
 Una vez creada, la clave no se puede volver a cambiar desde la aplicación.
 
 
-<p style="color: #f00;">
-  <strong>Importante:</strong>
-  si ya creaste tu clave y vuelves a entrar a 
-  <strong>Clave encriptación</strong> 
-  , la aplicación responde con el error
-  <strong>"Ya tienes una clave de encriptación creada"</strong>
-  y no hay forma de reemplazarla desde la app. Trátala como la única que vas a tener.
-</p>
+> [!CAUTION]
+> si ya creaste tu clave y vuelves a entrar a **Clave encriptación**, la aplicación
+> responde con el error **"Ya tienes una clave de encriptación creada"** y no hay
+> forma de reemplazarla desde la app. Trátala como la única que vas a tener.
 
 #### Consejos
 
