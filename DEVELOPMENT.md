@@ -139,7 +139,7 @@ MAUI multi-target (net10.0-android/ios/maccatalyst/windows). Objetivo en curso: 
 ### 8.3 Verificación
 
 - `dotnet build` del cliente MAUI: **0 advertencias, 0 errores** (verificado tras cada ítem A/B/C y tras agregar el proyecto de tests).
-- **Tests del cliente MAUI**: `dotnet test --project PasswordManager_.NET10.Tests\PasswordManager_.NET10.Tests.csproj` → **25/25 correctos** (sin BD, sin UI). Suben desde 23 con `SettingsViewModelTests.AppVersion_UsesAppInfoVersionAndBuild` y `ApiServiceTests.Constructor_AppendsTrailingSlashToBaseAddress_WithoutIt`.
+- **Tests del cliente MAUI**: `dotnet test --project PasswordManager_.NET10.Tests\PasswordManager_.NET10.Tests.csproj` → **48/48 correctos** (sin BD, sin UI). El desglose por área está en la sección 8.6 y en 8.7. Ojo: el `.slnx` **no incluye** el proyecto de tests, así que compilar el `.slnx` no basta para revalidar la suite; hay que compilar el csproj de tests o dejar que `dotnet test` los compile.
 - ⚠️ **La suite de la API no se puede ejecutar en esta máquina**: `dotnet test --project WebApiCore.Tests\WebApiCore.Tests.csproj` falla al cargar `WebApiCore.Tests.dll` con `System.IO.FileLoadException` / "Una directiva de Control de aplicaciones bloqueó este archivo" (`0x800711C7`, WDAC). Falla **antes** de ejecutar cualquier test, así que no es un fallo de aserciones ni del código. Los 73/73 de la sección 7 son de la última corrida que pudo completarse, **anterior** al rename `ApiKey` → `X-ApiKey`; desde ese rename la cobertura del header nuevo se apoya en (a) verificación estática de los binarios (`X-ApiKey` presente en `WebApiCore.dll` y `PasswordManager_.NET10.dll`) y (b) el runtime confirmado por el usuario. Para cerrarlo hay que permitir la ruta de compilación en la política de Control de aplicaciones; el agente no modifica políticas de seguridad del equipo.
 - Sin tests funcionales ejecutados por el agente (política de seguridad de datos); **el usuario confirma que la API y la app MAUI conectan y operan sin problemas**, ya con el header `X-ApiKey` y el prefijo `/api`. Queda sin verificar por el agente: logout, navegación a Register/Help y biometría real.
 
@@ -176,8 +176,28 @@ Cobertura de la lógica de VMs y servicios sin tocar UI, sin BD y sin dependenci
 - `SettingsViewModel`: flujos con timer real de 1 s y `MainThread.BeginInvokeOnMainThread` no son deterministas en unit tests (el guard de `IsAuthenticatedAsync` tras logout queda pendiente de verificación funcional).
 - UI tests, biometría real, SecureStorage real e integración con la API (ya cubierto por `WebApiCore.Tests`).
 
+### 8.7 Manual de usuario: Markdown → WebView
+
+**Fuente única**: `PasswordManager_.NET10/Resources/Raw/guide/USER_GUIDE.md`. La app **y** el `README.md` derivan de ese mismo archivo; ninguno se edita a mano salvo la región generada del README.
+
+**Por qué Markdown y no XAML**: el manual tiene 19 capturas y 8 filas con scroll. En XAML eso era `HelpPage.xaml` hardcodeado, que divergía del README en silencio. Ese archivo, su `HelpViewModel` y sus registros de DI ya fueron **eliminados**; `SettingsViewModel.GoToHelpAsync` ahora abre `GuidePreviewPage`.
+
+**Pipeline** (`MarkdownToHtmlConverter`):
+1. `Markdown.ToHtml` con `UseAdvancedExtensions()`.
+2. Los `src="docXX.jpg"` se sustituyen por **data URIs**: dentro de un `WebView` una ruta suelta no resuelve, porque el HTML se genera en memoria.
+3. Los párrafos que solo contienen imágenes se envuelven en `<div class="img-row">`, conservando los atributos del `<p>` original (`align="center"` y el `style` con el fondo gris). Ahí viven el scroll horizontal y la banda gris.
+4. Se arma el HTML con el CSS del tema, que **llega desde `IThemeService`** y no de `prefers-color-scheme`: la app tiene su propio Light/Dark y puede no coincidir con el del dispositivo.
+
+**Alertas**: el manual usa la sintaxis nativa de GitHub (`> [!CAUTION]`, `> [!IMPORTANT]`). Es la única forma de que el mismo texto salga rojo y azul en el README **y** en la app. Markdig ya emite las clases `markdown-alert-*`; el CSS de la app solo les da color. El fondo gris de las filas se pierde en el README porque GitHub descarta el atributo `style`; en la app sí se ve. Los títulos se muestran como `Caution`/`Important` en inglés porque no se sobrescriben los generados por Markdig.
+
+**Sincronización del README**: `.github/scripts/sync-manual.py` sustituye la región entre `<!-- MANUAL:INICIO -->` y `<!-- MANUAL:FIN -->`, reescribe `docXX.jpg` → `img/docXX.jpg` y baja un nivel los encabezados. Lo ejecuta `.github/workflows/sync-manual.yml` en cada push a `master` que toque el `.md`, el script o el workflow, y hace commit solo si el README cambió. Es idempotente: correrlo dos veces da `UNCHANGED`.
+
+**Tests**: 3 tests de punta a punta sobre el `.md` real (no fixtures) validan 8 filas, 19 imágenes, 15 rutas únicas, que toda imagen caiga dentro de una fila, que las dos alertas se interpreten y que no quede sintaxis Markdown sin renderizar. Localizan el `.md` subiendo desde la carpeta de salida del test, así que no hay copia que se desincronice.
+
 ## 9. Referencias
 
-- `README.md` — manual de usuario del cliente MAUI.
+- `PasswordManager_.NET10/Resources/Raw/guide/USER_GUIDE.md` — fuente del manual de usuario (app y README).
+- `.github/scripts/sync-manual.py` + `.github/workflows/sync-manual.yml` — sincronización del manual al README.
+- `README.md` — sección del manual generada; el resto es manual.
 - `D:\Repo\.NET\Projects_.NET9` — repo fuente de la API v9 (`WebApiCore`); referencia de comparación y paridad.
 - `ANALISIS_V1.md` fue **eliminado** del repo (decisión del usuario); si se retoma la auditoría del MAUI v1, recrear el documento con los hallazgos de la conversación.

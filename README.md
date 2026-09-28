@@ -396,7 +396,7 @@ PasswordManager_.NET10/
 │
 ├── 📁 ViewModels/
 │   ├── BaseViewModel.cs
-│   ├── HelpViewModel.cs
+│   ├── GuidePreviewViewModel.cs
 │   ├── LoginViewModel.cs
 │   ├── PasswordDetailsViewModel.cs
 │   ├── PasswordFormViewModel.cs
@@ -415,7 +415,7 @@ PasswordManager_.NET10/
 │   │   └── TestingPage.xaml(.cs)
 │   │
 │   └── Main/
-│       ├── HelpPage.xaml(.cs)
+│       ├── GuidePreviewPage.xaml(.cs)
 │       ├── PasswordDetailsPage.xaml(.cs)
 │       ├── PasswordFormPage.xaml(.cs)
 │       ├── PasswordPromptCreatePage.xaml(.cs)

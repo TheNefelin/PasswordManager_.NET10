@@ -17,10 +17,6 @@
                     <Label Text="GENERAL" FontAttributes="Bold" FontSize="16"/>
                     <Button Text="❓ Manual de Usuario" 
                         Command="{Binding GoToHelpCommand}"/>
-
-                    <!-- TEMPORAL: guía en Markdown, se elimina cuando reemplace al manual hardcodeado -->
-                    <Button Text="❓ Manual de Usuario"
-                            Command="{Binding OpenGuidePreviewCommand}"/>
                 </VerticalStackLayout>
 
                 <!-- BIOMETRÍA -->

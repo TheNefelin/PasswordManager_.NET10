@@ -61,7 +61,7 @@ public class ThemeService : IThemeService
                 {
                     "Light" => AppTheme.Light,
                     "Dark" => AppTheme.Dark,
-                    _ => AppTheme.Dark // Auto: tratar como Dark
+                    _ => AppTheme.Dark // La UI solo envia Light o Dark; fallback defensivo
                 };
             });
 

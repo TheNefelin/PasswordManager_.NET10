@@ -1,3 +1,5 @@
+using System.Text;
+using System.Text.RegularExpressions;
 using PasswordManager_.NET10.Services.Implementation;
 
 namespace PasswordManager_.NET10.Tests.Services;
@@ -8,8 +10,8 @@ public class MarkdownToHtmlConverterTests
 
     private readonly MarkdownToHtmlConverter _converter = new();
 
-    // Los avisos secuspan en el body, no en el <style>. Separate permite afirmar
-    // sobre el contenido sin que un comentario del CSS rompa la comparacion.
+    // Los avisos se escapan en el body, no en el <style>. Separar permite
+    // afirmar sobre el contenido sin que un comentario del CSS rompa la comparación.
     private static string BodyOf(string html)
     {
         var start = html.IndexOf("<body>", StringComparison.Ordinal);
@@ -210,5 +212,81 @@ public class MarkdownToHtmlConverterTests
         // Sin esto el SVG del icono se dibuja en negro y no toma el color del titulo.
         Assert.Contains("fill: currentColor", light);
         Assert.Contains("fill: currentColor", dark);
+    }
+
+    // Localiza el manual real subiendo desde la carpeta de salida del test, en vez de
+    // usar una copia: si el .md cambia, el test ve el cambio sin resincronizar nada.
+    private static string RealUserGuidePath()
+    {
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        {
+            var candidate = Path.Combine(
+                dir.FullName, "PasswordManager_.NET10", "Resources", "Raw", "guide", "USER_GUIDE.md");
+
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        throw new DirectoryNotFoundException(
+            "No se encontro USER_GUIDE.md subiendo desde " + AppContext.BaseDirectory);
+    }
+
+    private string RenderRealUserGuide()
+    {
+        return _converter.ConvertToHtml(File.ReadAllText(RealUserGuidePath(), Encoding.UTF8));
+    }
+
+    [Fact]
+    public void ConvertToHtml_WithRealUserGuide_KeepsEveryImageInsideARow()
+    {
+        // El manual real y no un fixture: el objetivo es que una edicion del .md que
+        // rompa el agrupado de las capturas falle aca y no en el emulador.
+        // El div arrastra los atributos del <p> del .md, asi que la busqueda no puede
+        // cerrar el tag: es <div class="img-row" align="center" style="...">.
+        var body = BodyOf(RenderRealUserGuide());
+
+        Assert.Equal(8, Regex.Matches(body, "<div class=\"img-row\"").Count);
+        Assert.Equal(19, Regex.Matches(body, "<img\\b").Count);
+        Assert.Equal(15, Regex.Matches(body, "doc\\d\\d\\.jpg")
+            .Cast<Match>()
+            .Select(m => m.Value)
+            .Distinct()
+            .Count());
+
+        // Ninguna imagen puede quedar fuera de una fila: es lo que da el fondo gris
+        // y el scrolleo horizontal.
+        var imagesInRows = Regex
+            .Matches(body, "<div class=\"img-row\"[^>]*>(?<row>.*?)</div>", RegexOptions.Singleline)
+            .Cast<Match>()
+            .Sum(m => Regex.Matches(m.Groups["row"].Value, "<img\\b").Count);
+
+        Assert.Equal(19, imagesInRows);
+    }
+
+    [Fact]
+    public void ConvertToHtml_WithRealUserGuide_RendersBothAlerts()
+    {
+        var body = BodyOf(RenderRealUserGuide());
+
+        Assert.Contains("markdown-alert-caution", body);
+        Assert.Contains("markdown-alert-important", body);
+
+        // Si Markdig dejara de interpretar las alertas, el README y la app
+        // mostrarian el marcador crudo.
+        Assert.DoesNotContain("[!CAUTION]", body);
+        Assert.DoesNotContain("[!IMPORTANT]", body);
+    }
+
+    [Fact]
+    public void ConvertToHtml_WithRealUserGuide_LeavesNoMarkdownSyntaxBehind()
+    {
+        var body = BodyOf(RenderRealUserGuide());
+
+        // Sintaxis de imagen sin renderizar delata una linea del manual que Markdig
+        // no consumio. Ningun src puede quedar vacio: en el WebView seria un hueco.
+        Assert.DoesNotContain("![", body);
+        Assert.DoesNotMatch(@"<img\b[^>]*\ssrc=""\s*""", body);
     }
 }

@@ -321,22 +321,13 @@ public partial class SettingsViewModel : BaseViewModel
     [RelayCommand]
     public async Task GoToHelpAsync()
     {
-        await _navigationService.PushModalAsync<HelpPage>();
-    }
-
-    // Temporal: abre la prueba de humo del manual en Markdown crudo
-    // (Resources/Raw/guide/USER_GUIDE.md). Se elimina cuando la guía definitiva
-    // reemplace al manual hardcodeado de HelpPage.
-    [RelayCommand]
-    public async Task OpenGuidePreviewAsync()
-    {
         try
         {
             await _navigationService.PushModalAsync<GuidePreviewPage>();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[SettingsViewModel-OpenGuidePreviewAsync] Error: {Message}", ex.Message);
+            _logger.LogError(ex, "[SettingsViewModel-GoToHelpAsync] Error: {Message}", ex.Message);
         }
     }
 
