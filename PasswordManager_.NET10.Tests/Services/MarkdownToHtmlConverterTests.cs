@@ -89,6 +89,12 @@ public class MarkdownToHtmlConverterTests
         Assert.Contains("overflow-x: auto", html);
         // Ninguna imagen debe quedar suelta en un <p>.
         Assert.DoesNotContain("<p><img", html);
+        // Las TRES deben sobrevivir al envoltado. Esto cubria un bug real: con el
+        // cuantificador fuera del grupo, .NET devolvia solo la ultima iteracion y
+        // el reemplazo descartaba las imagenes anteriores.
+        Assert.Contains("a.jpg", html);
+        Assert.Contains("b.jpg", html);
+        Assert.Contains("c.jpg", html);
     }
 
     [Fact]
@@ -120,13 +126,46 @@ public class MarkdownToHtmlConverterTests
     }
 
     [Fact]
-    public void ConvertToHtml_UsesThemeAwareBackdropForImageRow()
+    public void ConvertToHtml_WithRawHtmlImageRow_WrapsItAndKeepsAttributes()
+    {
+        // El .md escribe las filas como HTML crudo porque width es lo único que
+        // GitHub respeta. El conversor debe envolver igual la fila, sin perder
+        // ninguna imagen y conservando los atributos del <p>.
+        var html = _converter.ConvertToHtml(
+            "<p align=\"center\">\n"
+            + "  <img src=\"a.jpg\" alt=\"A\" width=\"200\">\n"
+            + "  <img src=\"b.jpg\" alt=\"B\" width=\"200\">\n"
+            + "</p>");
+
+        Assert.Contains("<div class=\"img-row\" align=\"center\">", html);
+        Assert.Contains("overflow-x: auto", html);
+        Assert.Contains("a.jpg", html);
+        Assert.Contains("b.jpg", html);
+    }
+
+    [Fact]
+    public void ConvertToHtml_UsesFixedBackdropForImageRowInBothThemes()
     {
         var light = _converter.ConvertToHtml("![A](a.jpg)", darkTheme: false);
         var dark = _converter.ConvertToHtml("![A](a.jpg)", darkTheme: true);
 
-        // El gris del original es LightGray en claro y uno oscuro en tema dark.
+        // El gris es fijo a propósito: es el fondo de una captura, no del documento,
+        // así que no cambia con el tema. GitHub descarta el CSS, por eso lo define
+        // la app y no el .md.
         Assert.Contains("background: #d3d3d3", light);
-        Assert.Contains("background: #3a3a3a", dark);
+        Assert.Contains("background: #d3d3d3", dark);
+        Assert.DoesNotContain("background: #3a3a3a", dark);
+    }
+
+    [Fact]
+    public void ConvertToHtml_DoesNotOverrideImageSizeDeclaredInMarkdown()
+    {
+        var html = _converter.ConvertToHtml(
+            "<p align=\"center\">\n  <img src=\"a.jpg\" width=\"200\">\n</p>");
+
+        // El tamaño lo declara el .md para que se vea igual en la app y en GitHub.
+        // Si la app vuelve a impose un max-width, deja de verse igual en los dos.
+        Assert.DoesNotContain("max-width: 72vw", html);
+        Assert.DoesNotContain("max-height: 200px", html);
     }
 }

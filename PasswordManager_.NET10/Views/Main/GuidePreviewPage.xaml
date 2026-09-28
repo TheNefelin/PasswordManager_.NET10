@@ -2,7 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="PasswordManager_.NET10.Views.Main.GuidePreviewPage"
-             Title="GuidePage">
+             Title="Manual de Usuario">
 
     <Grid RowDefinitions="Auto,*" Padding="0">
 
@@ -12,7 +12,7 @@
               ColumnDefinitions="*,Auto"
               BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#2F2F2F}">
             <Label Grid.Column="0"
-                   Text="📖 Guía"
+                   Text="📖 Manual de Usuario"
                    FontSize="20"
                    FontAttributes="Bold"
                    VerticalOptions="Center"/>
@@ -43,7 +43,7 @@
                 <ActivityIndicator IsRunning="{Binding IsBusy}"
                                   IsVisible="{Binding IsBusy}"
                                   Scale="1.5"/>
-                <Label Text="Cargando guía..."
+                <Label Text="Cargando manual..."
                        HorizontalOptions="Center"
                        FontSize="14"/>
             </VerticalStackLayout>

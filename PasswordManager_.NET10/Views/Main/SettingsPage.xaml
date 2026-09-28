@@ -17,6 +17,10 @@
                     <Label Text="GENERAL" FontAttributes="Bold" FontSize="16"/>
                     <Button Text="❓ Manual de Usuario" 
                         Command="{Binding GoToHelpCommand}"/>
+
+                    <!-- TEMPORAL: guía en Markdown, se elimina cuando reemplace al manual hardcodeado -->
+                    <Button Text="❓ Manual de Usuario"
+                            Command="{Binding OpenGuidePreviewCommand}"/>
                 </VerticalStackLayout>
 
                 <!-- BIOMETRÍA -->
@@ -195,11 +199,6 @@
                         <Label Text="Versión:" FontSize="12" Opacity="0.7"/>
                         <Label Text="{Binding AppVersion}" FontSize="12"/>
                     </VerticalStackLayout>
-
-                    <!-- TEMPORAL: guía en Markdown, se elimina cuando reemplace al manual hardcodeado -->
-                    <Button Text="📖 Guía (Markdown)"
-                            Command="{Binding OpenGuidePreviewCommand}"/>
-
                 </VerticalStackLayout>
 
             </VerticalStackLayout>

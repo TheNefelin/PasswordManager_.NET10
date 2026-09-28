@@ -20,8 +20,13 @@ public partial class MarkdownToHtmlConverter : IMarkdownToHtmlConverter
 
     // Un parrafo que solo contiene imagenes es una fila de capturas: se envuelve en
     // un div con scroll horizontal, que es como las muestra el manual original
-    // (ScrollView Orientation="Horizontal" + Border gris).
-    [GeneratedRegex("<p>(\\s*<img[^>]*/?>\\s*)+</p>")]
+    // (ScrollView Orientation="Horizontal" + Border gris). El .md escribe las filas
+    // como HTML crudo con width por imagen, porque es lo unico que GitHub respeta,
+    // asi que el parrafo de entrada puede traer atributos como align="center".
+    //
+    // El + va DENTRO del grupo: en .NET un grupo con cuantificador devuelve solo la
+    // ultima iteracion, y con el + afuera se perdia toda imagen menos la ultima.
+    [GeneratedRegex("<p([^>]*)>((?:\\s*<img[^>]*/?>\\s*)+)</p>")]
     private static partial Regex ImageOnlyParagraphRegex();
 
     public string ConvertToHtml(
@@ -44,9 +49,14 @@ public partial class MarkdownToHtmlConverter : IMarkdownToHtmlConverter
         }
 
         // Se envuelve despues de sustituir los src: el div no debe alterar el contenido.
-        html = ImageOnlyParagraphRegex().Replace(
-            html,
-            match => $"<div class=\"img-row\">{match.Value[3..^4].Trim()}</div>");
+        // Se conservan los atributos del <p> para que align="center" llegue al div.
+        html = ImageOnlyParagraphRegex().Replace(html, match =>
+        {
+            var attributes = match.Groups[1].Value;
+            var images = match.Groups[2].Value.Trim();
+
+            return $"<div class=\"img-row\"{attributes}>{images}</div>";
+        });
 
         return BuildTemplate(html, darkTheme);
     }
@@ -83,8 +93,7 @@ public partial class MarkdownToHtmlConverter : IMarkdownToHtmlConverter
         img { max-width: 100%; height: auto; }
         .img-row { display: flex; flex-wrap: nowrap; gap: 10px; overflow-x: auto;
                    padding: 10px; background: #d3d3d3; border-radius: 6px; }
-        .img-row img { max-height: 200px; max-width: 72vw; width: auto; height: auto;
-                       flex: 0 0 auto; border-radius: 4px; }
+        .img-row img { height: auto; flex: 0 0 auto; border-radius: 4px; }
         .img-row img:first-child { margin-left: auto; }
         .img-row img:last-child { margin-right: auto; }
         .alerta { color: #c62828; font-weight: 700; }
@@ -101,9 +110,8 @@ public partial class MarkdownToHtmlConverter : IMarkdownToHtmlConverter
         h1 { font-size: 24px; } h2 { font-size: 20px; } h3 { font-size: 17px; }
         img { max-width: 100%; height: auto; }
         .img-row { display: flex; flex-wrap: nowrap; gap: 10px; overflow-x: auto;
-                   padding: 10px; background: #3a3a3a; border-radius: 6px; }
-        .img-row img { max-height: 200px; max-width: 72vw; width: auto; height: auto;
-                       flex: 0 0 auto; border-radius: 4px; }
+                   padding: 10px; background: #d3d3d3; border-radius: 6px; }
+        .img-row img { height: auto; flex: 0 0 auto; border-radius: 4px; }
         .img-row img:first-child { margin-left: auto; }
         .img-row img:last-child { margin-right: auto; }
         .alerta { color: #ef9a9a; font-weight: 700; }

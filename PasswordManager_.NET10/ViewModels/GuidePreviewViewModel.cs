@@ -14,9 +14,14 @@ public partial class GuidePreviewViewModel : BaseViewModel
 {
     private const string DarkTheme = "Dark";
 
-    // Detecta ![alt](archivo.jpg) en el Markdown original para saber que imagenes cargar.
+    // El .md declara las filas de capturas como HTML crudo, porque width es lo unico
+    // que GitHub respeta y Markdown no permite fijar el tamano. Se aceptan las dos
+    // sintaxis: con una sola, las imagenes quedan sin data URI y no se ven en la app.
     [GeneratedRegex(@"!\[[^\]]*\]\(([^)]+)\)")]
     private static partial Regex MarkdownImageRegex();
+
+    [GeneratedRegex("<img[^>]*\\bsrc\\s*=\\s*\"([^\"]+)\"", RegexOptions.IgnoreCase)]
+    private static partial Regex HtmlImageRegex();
 
     private readonly ILogger<GuidePreviewViewModel> _logger;
     private readonly IGuideService _guideService;
@@ -46,7 +51,7 @@ public partial class GuidePreviewViewModel : BaseViewModel
         _themeService = themeService;
         _navigationService = navigationService;
 
-        Title = "Guía";
+        Title = "Manual de Usuario";
     }
 
     [RelayCommand]
@@ -78,7 +83,7 @@ public partial class GuidePreviewViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"No se pudo cargar la guía: {ex.GetType().Name}: {ex.Message}";
+            ErrorMessage = $"No se pudo cargar el manual: {ex.GetType().Name}: {ex.Message}";
 
             _logger.LogError(ex, "[GuidePreviewViewModel-LoadGuideAsync] Error: {Message}", ex.Message);
         }
@@ -92,6 +97,8 @@ public partial class GuidePreviewViewModel : BaseViewModel
     {
         var fileNames = MarkdownImageRegex().Matches(markdown)
             .Select(match => match.Groups[1].Value)
+            .Concat(HtmlImageRegex().Matches(markdown)
+                .Select(match => match.Groups[1].Value))
             .Where(name => !name.Contains('/') && !name.Contains('\\'))
             .Distinct(StringComparer.OrdinalIgnoreCase);
 

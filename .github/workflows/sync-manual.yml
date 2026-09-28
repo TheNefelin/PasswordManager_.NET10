@@ -1,0 +1,50 @@
+name: Sincronizar manual
+
+# El README no debe llevar una copia del manual: la region entre los marcadores
+# MANUAL:INICIO / MANUAL:FIN se regenera desde USER_GUIDE.md, que es la misma
+# fuente que carga la app. Asi el manual nunca puede quedar desactualizado en el
+# README sin que alguien lo note en un pull request.
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'PasswordManager_.NET10/Resources/Raw/guide/USER_GUIDE.md'
+      - '.github/scripts/sync-manual.py'
+      - '.github/workflows/sync-manual.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-manual
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    name: Inyectar el manual en el README
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Obtener el codigo
+        uses: actions/checkout@v4
+
+      - name: Regenerar la region del manual
+        run: python3 .github/scripts/sync-manual.py
+
+      - name: Publicar el README si cambio
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git add README.md
+
+          # El script ya es idempotente, asi que esto casi nunca hace falta.
+          # Queda como red de seguridad para no crear un commit vacio.
+          if git diff --cached --quiet; then
+            echo 'El README ya estaba sincronizado.'
+            exit 0
+          fi
+
+          git commit -m 'docs(readme): sincroniza el manual de usuario desde USER_GUIDE.md'
+          git push

@@ -1,193 +1,251 @@
-﻿# Password Manager .NET 10
+# Password Manager .NET 10
 
-# 📖 Manual de Usuario - Password Manager
+<!-- MANUAL:INICIO - generado por .github/scripts/sync-manual.py, no editar a mano -->
 
-## Introducción
+## Manual de Usuario <br> Password Manager
 
-Bienvenido a **Password Manager**, tu aplicación segura para guardar y gestionar contraseñas con encriptación avanzada y autenticación biométrica.
+Bienvenido a **Password Manager**. Este manual te explica, paso a paso, cómo usar la aplicación para guardar y gestionar tus contraseñas.
 
----
-
-## 1️⃣ Registro e Inicio de Sesión
-
-### Crear una Cuenta
-
-1. Abre la aplicación y haz clic en "Registrarse"
-2. Completa: Email, Contraseña, Confirmar Contraseña
-3. Haz clic en "Registrarse"
-4. Tu email se cargará automáticamente en LoginPage
-
-<div align="center">
-  <img src="img/doc01.jpg" alt="doc01" width="250"/>
-    &nbsp;
-  <img src="img/doc02.jpg" alt="doc02" width="250"/>
-</div>
-
-### Iniciar Sesión
-
-1. Ingresa tu email registrado
-2. Ingresa tu contraseña
-3. Haz clic en "Inicia Sesión"
-4. Si tienes biometría, puedes usar la huella
-
-<div align="center">
-  <img src="img/doc03.jpg" alt="doc03" width="250"/>
-</div>
+> Esta guía es un documento vivo: se actualiza a medida que la aplicación suma funciones.
 
 ---
 
-## 2️⃣ Configurar Contraseña de Encriptación (VITAL)
+### Contenido
 
-⚠️ **IMPORTANTE: Este es el primer paso que DEBES hacer**
-
-1. Ve a Password Details
-2. Abre el menú (icono hamburguesa)
-3. Selecciona "Nueva clave encriptación"
-4. Ingresa y confirma tu contraseña (mínimo 6 caracteres)
-5. Haz clic en "Aceptar"
-
-**❌ Sin esta contraseña, NO podrás acceder a tus secretos**
-**❌ No la olvides, es tu clave maestra**
-
-<div align="center">
-  <img src="img/doc04.jpg" alt="doc04" width="250"/>
-    &nbsp;
-  <img src="img/doc05.jpg" alt="doc05" width="250"/>
-    &nbsp;
-  <img src="img/doc06.jpg" alt="doc06" width="250"/>
-</div>
+1. Registro e inicio de sesión
+2. Configurar la clave de encriptación
+3. Agregar un secreto
+4. Ver y gestionar secretos
+5. Usar biometría
+6. Configurar el tema
+7. Cerrar sesión
+8. Consejos de seguridad
+9. Preguntas frecuentes
 
 ---
 
-## 3️⃣ Agregar una Nueva Contraseña (Secreto)
+### 1. Registro e inicio de sesión
 
-1. En Password Details, haz clic en el botón azul (+)
-2. Completa:
-   - Nombre/Título (ej: Google, Gmail)
-   - Usuario/Email
-   - Contraseña
-   - Contraseña de Encriptación
-3. Puedes usar "Generar" para crear una segura
-4. Haz clic en "Guardar"
+Para entrar por primera vez necesitas una cuenta. El registro solo toma un correo y una contraseña.
 
-<div align="center">
-  <img src="img/doc04.jpg" alt="doc04" width="250"/>
-    &nbsp;
-  <img src="img/doc07.jpg" alt="doc07" width="250"/>
-    &nbsp;
-  <img src="img/doc08.jpg" alt="doc08" width="250"/>
-</div>
+#### Crear una cuenta
 
----
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="img/doc01.jpg" alt="Registro" width="250">
+  <img src="img/doc02.jpg" alt="Registro" width="250">
+</p>
 
-## 4️⃣ Ver y Gestionar Secretos
+- Abre la aplicación y haz clic en **Registrarse**.
+- Completa tu correo, tu contraseña y la confirmación.
+- La contraseña debe tener **mínimo 6 caracteres**. No hay reglas obligatorias de mayúsculas, números o símbolos.
+- Al terminar, tu correo se carga solo en la pantalla de inicio de sesión.
 
-1. **Descargar secretos** - Desde el menú, selecciona "Descargar contraseñas"
-2. **Desencriptar secretos** - Selecciona "Desencriptar todas"
-3. **Buscar secretos** - Usa la barra de búsqueda, los resultados se filtran en tiempo real
-4. **Ver detalles** - Haz clic en cualquier secreto
-5. **Ver contraseña** - Haz clic en el ojo (Ver) e ingresa tu clave
-6. **Editar** - Abre el secreto y haz clic en "Editar"
-7. **Eliminar** - Abre el secreto y haz clic en "Eliminar"
+#### Iniciar sesión
 
-**[Ver imágenes: doc05.jpg, doc09.jpg, doc10.jpg, doc11.jpg, doc12.jpg, doc13.jpg, doc14.jpg]**
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="img/doc03.jpg" alt="Inicio de sesión" width="250">
+</p>
 
-<div align="center">
-  <img src="img/doc05.jpg" alt="doc05" width="250"/>
-    &nbsp;
-  <img src="img/doc09.jpg" alt="doc09" width="250"/>
-    &nbsp;
-  <img src="img/doc10.jpg" alt="doc10" width="250"/>
-    &nbsp;
-  <img src="img/doc11.jpg" alt="doc11" width="250"/>
-    &nbsp;
-  <img src="img/doc12.jpg" alt="doc12" width="250"/>
-    &nbsp;
-  <img src="img/doc13.jpg" alt="doc13" width="250"/>
-    &nbsp;
-  <img src="img/doc14.jpg" alt="doc14" width="250"/>
-</div>
+- Ingresa tu correo registrado.
+- Ingresa tu contraseña.
+- Haz clic en **Inicia Sesión**.
+- Si activaste biometría, también puedes entrar con la huella.
+
+#### Consejos
+
+- El correo no distingue mayúsculas de minúsculas.
+- Si tu cuenta quedó bloqueada por intentos fallidos, espera a que expire el bloqueo antes de reintentar.
+- Registrarte no te da acceso a los secretos: primero tienes que crear tu clave de encriptación.
 
 ---
 
-## 5️⃣ Usar Biometría (Huella Dactilar)
+### 2. Configurar la clave de encriptación (vital)
 
-### Habilitar Biometría
+Tu clave de encriptación es la que cifra y descifra tus secretos. **Sin ella no puedes recuperar nada.**
 
-1. Ve a Settings
-2. Busca "BIOMETRÍA"
-3. Activa el toggle "Huella dactilar"
-4. La biometría solo recuerda tu nombre de usuario. La contraseña no se guarda de forma automática: mientras "Guardar contraseña" esté desactivado, deberás ingresarla manualmente.
+<span class="alerta" style="color: #f00;">⚠️ IMPORTANTE: este es el primer paso que DEBES hacer.</span>
 
-> La opción **Guardar contraseña** de Settings es independiente y viene desactivada. Si la activas, la contraseña se almacena cifrada en el almacenamiento seguro del dispositivo. Al desactivar la biometría, esa opción se apaga automáticamente y se elimina la contraseña guardada.
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="img/doc04.jpg" alt="Clave de encriptación" width="250">
+  <img src="img/doc05.jpg" alt="Clave de encriptación" width="250">
+  <img src="img/doc06.jpg" alt="Clave de encriptación" width="250">
+</p>
 
-<div align="center">
-  <img src="img/doc15.jpg" alt="doc15" width="250"/>
-</div>
+- Ve a **Password Details**.
+- Abre el menú (icono de hamburguesa).
+- Selecciona **Clave encriptación**.
+- Ingresa y confirma tu clave, con **mínimo 6 caracteres**.
+- Haz clic en **Aceptar**.
 
----
+Una vez creada, la clave no se puede volver a cambiar desde la aplicación.
 
-## 6️⃣ Configurar Tema
 
-En Settings, busca "TEMA" y selecciona:
+<p style="color: #f00;">
+  <strong>Importante:</strong>
+  si ya creaste tu clave y vuelves a entrar a 
+  <strong>Clave encriptación</strong> 
+  , la aplicación responde con el error
+  <strong>"Ya tienes una clave de encriptación creada"</strong>
+  y no hay forma de reemplazarla desde la app. Trátala como la única que vas a tener.
+</p>
 
-1. 🔄 **Auto:** Se ajusta al tema del dispositivo
-2. ☀️ **Light:** Modo claro
-3. 🌙 **Dark:** Modo oscuro
+#### Consejos
 
-<div align="center">
-  <img src="img/doc15.jpg" alt="doc15" width="250"/>
-</div>
-
----
-
-## 7️⃣ Cerrar Sesión
-
-1. Haz clic en "Logout" (arriba a la derecha)
-2. Confirma que deseas cerrar sesión
-3. Volverás a LoginPage
-
-<div align="center">
-  <img src="img/doc04.jpg" alt="doc04" width="250"/>
-</div>
+- No la confundas con la contraseña de tu cuenta: son dos cosas distintas.
+- No existe forma de recuperarla. Si la olvidas, tus secretos quedan ilegibles para siempre.
+- No la compartas con nadie y no la guardes junto a tus secretos.
 
 ---
 
-## 🔒 Consejos de Seguridad
+### 3. Agregar un secreto
 
-### ✅ HACER:
-- Usar contraseña fuerte (la app exige 6 caracteres, pero conviene más larga)
-- Agregar números, mayúsculas y símbolos si te ayuda a recordarla
-- Activar biometría
-- Cambiar contraseña regularmente
-- Usar diferentes contraseñas por cuenta
+Un secreto es cada contraseña que guardas: un correo, una red social, un banco.
 
-### ❌ NO HACER:
-- Compartir tu contraseña de encriptación
-- Usar la misma contraseña en múltiples cuentas
-- Guardar contraseña en lugar visible
-- Olvidar tu contraseña de encriptación
-- Usar passwords débiles
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="img/doc04.jpg" alt="Agregar secreto" width="250">
+  <img src="img/doc07.jpg" alt="Agregar secreto" width="250">
+  <img src="img/doc08.jpg" alt="Agregar secreto" width="250">
+</p>
+
+- En **Password Details**, haz clic en el botón azul (+).
+- Completa el nombre o título, el usuario o correo, la contraseña y tu clave de encriptación.
+- Puedes usar **Generar** para crear una contraseña segura en lugar de escribirla.
+- Haz clic en **Guardar**.
+
+#### Consejos
+
+- Ponle un nombre reconocible: si no, después no vas a saber qué secreto es cuál.
+- Usa **Generar** para las cuentas donde puedas cambiar la contraseña después.
+- La clave de encriptación que escribes aquí es la del paso 2, no la de tu cuenta.
 
 ---
 
-## ❓ Preguntas Frecuentes
+### 4. Ver y gestionar secretos
 
-**P: ¿Qué pasa si olvido mi contraseña de encriptación?**
-R: Pierdes la capacidad de descifrar tus secretos. Se recomienda eliminarlos todos. No podemos descifrar la información, ya que desconocemos la contraseña. En el futuro: (Tendrás que crear una nueva desde el menú)
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="img/doc05.jpg" alt="Secretos" width="250">
+  <img src="img/doc09.jpg" alt="Secretos" width="250">
+  <img src="img/doc10.jpg" alt="Secretos" width="250">
+  <img src="img/doc11.jpg" alt="Secretos" width="250">
+  <img src="img/doc12.jpg" alt="Secretos" width="250">
+  <img src="img/doc13.jpg" alt="Secretos" width="250">
+  <img src="img/doc14.jpg" alt="Secretos" width="250">
+</p>
+
+- **Descargar secretos**: desde el menú, baja todos tus secretos en un archivo.
+- **Desencriptar secretos**: descifra todo de una vez para leerlo sin escribir la clave cada vez.
+- **Buscar**: usa la barra de búsqueda; los resultados se filtran mientras escribes.
+- **Ver detalles**: haz clic en cualquier secreto de la lista.
+- **Ver contraseña**: haz clic en el ojo e ingresa tu clave de encriptación.
+- **Editar**: abre el secreto y haz clic en **Editar**.
+- **Eliminar**: abre el secreto y haz clic en **Eliminar**.
+
+#### Consejos
+
+- Necesitas tu clave de encriptación para leer cada secreto, aunque tengas biometría activada.
+- Descarga tus secretos de vez en cuando: así los tienes aunque pierdas el dispositivo.
+- Si eliminas un secreto no hay forma de recuperarlo.
+
+---
+
+### 5. Usar biometría
+
+#### Habilitar biometría
+
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="img/doc15.jpg" alt="Biometría" width="250">
+</p>
+
+- Ve a **Settings**.
+- Busca la sección **BIOMETRÍA**.
+- Activa el toggle **Huella dactilar**.
+
+La biometría solo recuerda tu nombre de usuario. La contraseña **no se guarda de forma automática**: mientras la opción **Guardar contraseña** esté desactivada, tienes que escribirla a mano.
+
+#### Guardar contraseña
+
+- **Guardar contraseña** es una opción aparte, en Settings, y viene desactivada.
+- Si la activas, tu contraseña queda almacenada cifrada en el almacenamiento seguro del dispositivo.
+- Al desactivar la biometría, esta opción se apaga sola y la contraseña guardada se elimina.
+
+#### Consejos
+
+- La biometría no evita que ingreses la clave de encriptación para leer un secreto.
+- Guarda la contraseña solo si aceptas que quede en el dispositivo.
+
+---
+
+### 6. Configurar el tema
+
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="img/doc15.jpg" alt="Tema" width="250">
+</p>
+
+En **Settings**, busca la sección **TEMA** y selecciona una opción:
+
+- 🔄 **Auto**: sigue el tema del dispositivo.
+- ☀️ **Light**: modo claro.
+- 🌙 **Dark**: modo oscuro.
+
+En la misma pantalla, al final, aparece la versión de la aplicación con el formato `v1.0.0 (build 1)`. Si la que ves no coincide, puede que la aplicación no esté actualizada.
+
+---
+
+### 7. Cerrar sesión
+
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="img/doc04.jpg" alt="Cerrar sesión" width="250">
+</p>
+
+- Haz clic en **Logout**, arriba a la derecha.
+- Confirma que quieres cerrar sesión.
+- Vuelves a la pantalla de inicio de sesión.
+
+---
+
+### 8. Consejos de seguridad
+
+#### ✅ HACER
+
+- Usar una contraseña fuerte (la app exige 6 caracteres, pero conviene más larga).
+- Agregar números, mayúsculas y símbolos si te ayuda a recordarla.
+- Activar la biometría.
+- Usar contraseñas diferentes para cada cuenta.
+- Cambiar tus contraseñas regularmente.
+- Descargar tus secretos de vez en cuando.
+
+#### ❌ NO HACER
+
+- Compartir tu clave de encriptación.
+- Usar la misma contraseña en varias cuentas.
+- Guardar contraseñas en lugares visibles.
+- Olvidar tu clave de encriptación.
+- Usar contraseñas débiles.
+
+---
+
+### 9. Preguntas frecuentes
+
+**P: ¿Qué pasa si olvido mi clave de encriptación?**
+R: Pierdes la capacidad de descifrar tus secretos, y no hay forma de recuperarlos porque la aplicación no conoce tu clave. Tendrías que crear una nueva desde el menú, pero los secretos que tenías guardados quedarían ilegibles.
 
 **P: ¿Dónde se guardan mis secretos?**
-R: Encriptados en servidores seguros.
+R: Cifrados con tu clave de encriptación antes de enviarse al servidor. El servidor los guarda sin poder descifrarlos.
 
-**P: ¿Puedo usar sin biometría?**
-R: Sí, ingresa tu contraseña normalmente.
+**P: ¿Puedo usar la app sin biometría?**
+R: Sí. Ingresa tu contraseña normalmente.
 
-**P: ¿Qué si pierdo mi dispositivo?**
-R: Inicia sesión desde otro dispositivo y descarga tus secretos.
+**P: ¿Qué si pierdo el dispositivo?**
+R: Inicia sesión desde otro dispositivo y descarga tus secretos. Necesitas tu clave de encriptación para descifrarlos.
+
+**P: ¿La contraseña de mi cuenta es la misma que mi clave de encriptación?**
+R: No. La contraseña de la cuenta solo protege el inicio de sesión; la clave de encriptación es la que cifra tus secretos.
 
 ---
 
-## ¡Gracias por usar Password Manager! 🔐
+¡Gracias por usar Password Manager! 🔐
+
+<!-- MANUAL:FIN -->
 
 ---
 

@@ -1,4 +1,4 @@
-# 📖 Manual de Usuario - Password Manager
+# Manual de Usuario <br> Password Manager
 
 Bienvenido a **Password Manager**. Este manual te explica, paso a paso, cómo usar la aplicación para guardar y gestionar tus contraseñas.
 
@@ -26,7 +26,10 @@ Para entrar por primera vez necesitas una cuenta. El registro solo toma un corre
 
 ### Crear una cuenta
 
-![Registro](doc01.jpg) ![Registro](doc02.jpg)
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="doc01.jpg" alt="Registro" width="250">
+  <img src="doc02.jpg" alt="Registro" width="250">
+</p>
 
 - Abre la aplicación y haz clic en **Registrarse**.
 - Completa tu correo, tu contraseña y la confirmación.
@@ -35,7 +38,9 @@ Para entrar por primera vez necesitas una cuenta. El registro solo toma un corre
 
 ### Iniciar sesión
 
-![Inicio de sesión](doc03.jpg)
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="doc03.jpg" alt="Inicio de sesión" width="250">
+</p>
 
 - Ingresa tu correo registrado.
 - Ingresa tu contraseña.
@@ -54,9 +59,13 @@ Para entrar por primera vez necesitas una cuenta. El registro solo toma un corre
 
 Tu clave de encriptación es la que cifra y descifra tus secretos. **Sin ella no puedes recuperar nada.**
 
-<span class="alerta">⚠️ IMPORTANTE: este es el primer paso que DEBES hacer.</span>
+<span class="alerta" style="color: #f00;">⚠️ IMPORTANTE: este es el primer paso que DEBES hacer.</span>
 
-![Clave de encriptación](doc04.jpg) ![Clave de encriptación](doc05.jpg) ![Clave de encriptación](doc06.jpg)
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="doc04.jpg" alt="Clave de encriptación" width="250">
+  <img src="doc05.jpg" alt="Clave de encriptación" width="250">
+  <img src="doc06.jpg" alt="Clave de encriptación" width="250">
+</p>
 
 - Ve a **Password Details**.
 - Abre el menú (icono de hamburguesa).
@@ -66,7 +75,15 @@ Tu clave de encriptación es la que cifra y descifra tus secretos. **Sin ella no
 
 Una vez creada, la clave no se puede volver a cambiar desde la aplicación.
 
-**Importante:** si ya creaste tu clave y vuelves a entrar a **Clave encriptación**, la aplicación responde con el error *"Ya tienes una clave de encriptación creada"* y no hay forma de reemplazarla desde la app. Trátala como la única que vas a tener.
+
+<p style="color: #f00;">
+  <strong>Importante:</strong>
+  si ya creaste tu clave y vuelves a entrar a 
+  <strong>Clave encriptación</strong> 
+  , la aplicación responde con el error
+  <strong>"Ya tienes una clave de encriptación creada"</strong>
+  y no hay forma de reemplazarla desde la app. Trátala como la única que vas a tener.
+</p>
 
 ### Consejos
 
@@ -80,7 +97,11 @@ Una vez creada, la clave no se puede volver a cambiar desde la aplicación.
 
 Un secreto es cada contraseña que guardas: un correo, una red social, un banco.
 
-![Agregar secreto](doc04.jpg) ![Agregar secreto](doc07.jpg) ![Agregar secreto](doc08.jpg)
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="doc04.jpg" alt="Agregar secreto" width="250">
+  <img src="doc07.jpg" alt="Agregar secreto" width="250">
+  <img src="doc08.jpg" alt="Agregar secreto" width="250">
+</p>
 
 - En **Password Details**, haz clic en el botón azul (+).
 - Completa el nombre o título, el usuario o correo, la contraseña y tu clave de encriptación.
@@ -97,7 +118,15 @@ Un secreto es cada contraseña que guardas: un correo, una red social, un banco.
 
 ## 4. Ver y gestionar secretos
 
-![Secretos](doc05.jpg) ![Secretos](doc09.jpg) ![Secretos](doc10.jpg) ![Secretos](doc11.jpg) ![Secretos](doc12.jpg) ![Secretos](doc13.jpg) ![Secretos](doc14.jpg)
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="doc05.jpg" alt="Secretos" width="250">
+  <img src="doc09.jpg" alt="Secretos" width="250">
+  <img src="doc10.jpg" alt="Secretos" width="250">
+  <img src="doc11.jpg" alt="Secretos" width="250">
+  <img src="doc12.jpg" alt="Secretos" width="250">
+  <img src="doc13.jpg" alt="Secretos" width="250">
+  <img src="doc14.jpg" alt="Secretos" width="250">
+</p>
 
 - **Descargar secretos**: desde el menú, baja todos tus secretos en un archivo.
 - **Desencriptar secretos**: descifra todo de una vez para leerlo sin escribir la clave cada vez.
@@ -119,7 +148,9 @@ Un secreto es cada contraseña que guardas: un correo, una red social, un banco.
 
 ### Habilitar biometría
 
-![Biometría](doc15.jpg)
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="doc15.jpg" alt="Biometría" width="250">
+</p>
 
 - Ve a **Settings**.
 - Busca la sección **BIOMETRÍA**.
@@ -142,7 +173,9 @@ La biometría solo recuerda tu nombre de usuario. La contraseña **no se guarda 
 
 ## 6. Configurar el tema
 
-![Tema](doc15.jpg)
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="doc15.jpg" alt="Tema" width="250">
+</p>
 
 En **Settings**, busca la sección **TEMA** y selecciona una opción:
 
@@ -156,7 +189,9 @@ En la misma pantalla, al final, aparece la versión de la aplicación con el for
 
 ## 7. Cerrar sesión
 
-![Cerrar sesión](doc04.jpg)
+<p align="center" style="background-color: #f0f0f0; padding: 15px;">
+  <img src="doc04.jpg" alt="Cerrar sesión" width="250">
+</p>
 
 - Haz clic en **Logout**, arriba a la derecha.
 - Confirma que quieres cerrar sesión.
