@@ -4,6 +4,7 @@
              x:Class="PasswordManager_.NET10.Views.Authentication.RegisterPage"
              Title="RegisterPage">
 
+    <ScrollView>
     <VerticalStackLayout Spacing="20" Padding="30" VerticalOptions="Start">
 
         <!-- Header -->
@@ -63,5 +64,6 @@
             IsVisible="{Binding IsLoading}"
             HorizontalOptions="Center"/>
     </VerticalStackLayout>
+    </ScrollView>
 
 </ContentPage>

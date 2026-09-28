@@ -5,7 +5,8 @@
              Title="Login"
              Padding="20">
 
-    <Grid RowDefinitions="*,*,auto" Padding="10,20">
+    <ScrollView>
+    <Grid RowDefinitions="Auto,Auto,Auto" Padding="10,20">
         <VerticalStackLayout
             Grid.Row="0"
             Spacing="15"
@@ -93,4 +94,5 @@
             </Label.GestureRecognizers>
         </Label>
     </Grid>
+    </ScrollView>
 </ContentPage>
