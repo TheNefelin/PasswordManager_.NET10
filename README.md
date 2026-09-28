@@ -245,8 +245,6 @@ R: No. La contraseña de la cuenta solo protege el inicio de sesión; la clave d
 
 ---
 
-# Password Manager .NET 10
-
 ## ⚙️ Configuración antes de compilar
 
 `PasswordManager_.NET10/Helpers/Constants.cs` guarda las claves local y de API. Está en `.gitignore` **a propósito**: son secretos y no deben llegar al repositorio.
@@ -454,7 +452,7 @@ PasswordManager_.NET10/
 └── PasswordManager_.NET10.csproj
 ```
 
-## Compatility
+## Compatibility
 - Dispositivos nuevos (64-bit) → Usan arm64-v8a (más eficiente)
 - Dispositivos viejos (32-bit) → Usan armeabi-v7a (compatible)
 
