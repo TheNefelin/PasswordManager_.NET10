@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using PasswordManager_.NET10.Models;
 using PasswordManager_.NET10.Services.Interfaces;
+using System.Security.Cryptography;
 
 namespace PasswordManager_.NET10.ViewModels;
 
@@ -188,10 +189,7 @@ public partial class PasswordFormViewModel : BaseViewModel
     {
         // Generar contraseña aleatoria de 16 caracteres
         const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
-        var random = new Random();
-        Data03 = new string(Enumerable.Range(0, 16)
-            .Select(_ => chars[random.Next(chars.Length)])
-            .ToArray());
+        Data03 = RandomNumberGenerator.GetString(chars, 16);
     }
 
     [RelayCommand]
