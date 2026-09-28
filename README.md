@@ -180,7 +180,6 @@ La biometría solo recuerda tu nombre de usuario. La contraseña **no se guarda 
 
 En **Settings**, busca la sección **TEMA** y selecciona una opción:
 
-- 🔄 **Auto**: sigue el tema del dispositivo.
 - ☀️ **Light**: modo claro.
 - 🌙 **Dark**: modo oscuro.
 

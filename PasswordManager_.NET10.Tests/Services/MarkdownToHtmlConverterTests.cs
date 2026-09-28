@@ -214,23 +214,12 @@ public class MarkdownToHtmlConverterTests
         Assert.Contains("fill: currentColor", dark);
     }
 
-    // Localiza el manual real subiendo desde la carpeta de salida del test, en vez de
-    // usar una copia: si el .md cambia, el test ve el cambio sin resincronizar nada.
+    // Apunta al manual real del proyecto, no a una copia: si el .md cambia, el test
+    // ve el cambio sin resincronizar nada.
     private static string RealUserGuidePath()
     {
-        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
-        {
-            var candidate = Path.Combine(
-                dir.FullName, "PasswordManager_.NET10", "Resources", "Raw", "guide", "USER_GUIDE.md");
-
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        throw new DirectoryNotFoundException(
-            "No se encontro USER_GUIDE.md subiendo desde " + AppContext.BaseDirectory);
+        return Path.Combine(
+            TestPaths.RepoRoot, "PasswordManager_.NET10", "Resources", "Raw", "guide", "USER_GUIDE.md");
     }
 
     private string RenderRealUserGuide()
