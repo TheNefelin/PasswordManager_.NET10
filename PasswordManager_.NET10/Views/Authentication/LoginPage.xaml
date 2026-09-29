@@ -5,86 +5,96 @@
              Title="Login"
              Padding="20">
 
-    <ScrollView>
-    <Grid RowDefinitions="Auto,Auto,Auto" Padding="10,20">
-        <VerticalStackLayout
-            Grid.Row="0"
-            Spacing="15"
-            VerticalOptions="Center">
+    <!-- Grid llena la pantalla: sola la seccion del formulario recorre dentro del
+         ScrollView, y el copyright queda fijo al pie como estaba originalmente.
+         Un ScrollView envolviendo toda la pagina le daria al contenido solo la
+         altura del contenido y romperia la distribucion. -->
+    <Grid RowDefinitions="*,auto" VerticalOptions="Fill" Padding="10,20">
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Spacing="15">
 
-            <!-- Header -->
-            <Label Text="🔐 Inicia Sesión" 
-               FontSize="28" 
-               FontAttributes="Bold" 
-               HorizontalOptions="Center"/>
+                <!-- Header -->
+                <HorizontalStackLayout
+                    HorizontalOptions="Center"
+                    Spacing="8">
+                    <Image
+                        Source="icon_padlock_512.png"
+                        HeightRequest="28"
+                        WidthRequest="28"
+                        VerticalOptions="Center"/>
+                    <Label 
+                        Text="Inicia Sesión"
+                        FontSize="28"
+                        FontAttributes="Bold"
+                        VerticalOptions="Center"/>
+                </HorizontalStackLayout>
 
-            <!-- Email -->
-            <Entry Placeholder="Email" 
-               Text="{Binding Email}" 
-               Keyboard="Email"
-               ClearButtonVisibility="WhileEditing"/>
+                <!-- Email -->
+                <Entry Placeholder="Email" 
+                   Text="{Binding Email}" 
+                   Keyboard="Email"
+                   ClearButtonVisibility="WhileEditing"/>
 
-            <!-- Password -->
-            <Grid ColumnDefinitions="*,auto" ColumnSpacing="10">
-                <Entry
-                    Grid.Column="0"
-                    Placeholder="Contraseña" 
-                    Text="{Binding Password}" 
-                    IsPassword="{Binding IsPassword}"/>
+                <!-- Password -->
+                <Grid ColumnDefinitions="*,auto" ColumnSpacing="10">
+                    <Entry
+                        Grid.Column="0"
+                        Placeholder="Contraseña" 
+                        Text="{Binding Password}" 
+                        IsPassword="{Binding IsPassword}"/>
 
-                <ImageButton 
-                    Grid.Column="1"
-                    Source="icon_eye_lock_open_512.png"
-                    HeightRequest="50"
-                    WidthRequest="50"
-                    CornerRadius="8"
-                    Padding="8"
-                    BackgroundColor="{AppThemeBinding Light=DarkGray}"
-                    Command="{Binding ToggleIsPasswordCommand}"/>
-            </Grid>
+                    <ImageButton 
+                        Grid.Column="1"
+                        Source="icon_eye_lock_open_512.png"
+                        HeightRequest="50"
+                        WidthRequest="50"
+                        CornerRadius="8"
+                        Padding="8"
+                        BackgroundColor="{AppThemeBinding Light=DarkGray}"
+                        Command="{Binding ToggleIsPasswordCommand}"/>
+                </Grid>
 
-            <!-- Error/Message -->
-            <Label 
-                Text="{Binding Message}" 
-                HorizontalOptions="Center"
-                IsVisible="{Binding Message, Converter={StaticResource StringNotEmptyToBoolConverter}}"/>
+                <!-- Error/Message -->
+                <Label 
+                    Text="{Binding Message}" 
+                    HorizontalOptions="Center"
+                    IsVisible="{Binding Message, Converter={StaticResource StringNotEmptyToBoolConverter}}"/>
 
-            <!-- Login Button -->
-            <Button Text="Inicia Sesión" 
-                Command="{Binding LoginCommand}"
-                IsEnabled="{Binding IsFormValid}"/>
+                <!-- Login Button -->
+                <Button Text="Inicia Sesión" 
+                    Command="{Binding LoginCommand}"
+                    IsEnabled="{Binding IsFormValid}"/>
 
-            <Button 
-                Command="{Binding GoToRegisterCommand}"
-                Text="Registrarse"
-                BackgroundColor="Gray"/>
+                <Button 
+                    Command="{Binding GoToRegisterCommand}"
+                    Text="Registrarse"
+                    BackgroundColor="Gray"/>
 
-            <!-- Loading Indicator -->
-            <ActivityIndicator
-                IsRunning="{Binding IsLoading}"
-                IsVisible="{Binding IsLoading}"
-                HorizontalOptions="Center"/>
-        </VerticalStackLayout>
+                <!-- Loading Indicator -->
+                <ActivityIndicator
+                    IsRunning="{Binding IsLoading}"
+                    IsVisible="{Binding IsLoading}"
+                    HorizontalOptions="Center"/>
 
-        <VerticalStackLayout
-            Grid.Row="1"
-            HorizontalOptions="Center"
-            VerticalOptions="Center">
+                <!-- Biometric button -->
+                <VerticalStackLayout
+                    HorizontalOptions="Center">
 
-            <!-- Biometric button -->
-            <ImageButton
-                IsVisible="{Binding IsBiometricEnabled}"
-                Command="{Binding LoginByBiometricCommand}"
-                WidthRequest="80"
-                HeightRequest="80"
-                CornerRadius="50"
-                Padding="6"
-                BackgroundColor="{AppThemeBinding Light=Gray, Dark=Transparent}"
-                Source="icon_finger_print.png"/>
-        </VerticalStackLayout>
+                    <ImageButton
+                        IsVisible="{Binding IsBiometricEnabled}"
+                        Command="{Binding LoginByBiometricCommand}"
+                        WidthRequest="80"
+                        HeightRequest="80"
+                        CornerRadius="50"
+                        Padding="6"
+                        BackgroundColor="{AppThemeBinding Light=Gray, Dark=Transparent}"
+                        Source="icon_finger_print.png"/>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
 
         <Label 
-            Grid.Row="2"
+            Grid.Row="1"
             Text="© 2025 | francisco-dev.cl" 
             HorizontalOptions="Center" Padding="10">
             <Label.GestureRecognizers>
@@ -94,5 +104,4 @@
             </Label.GestureRecognizers>
         </Label>
     </Grid>
-    </ScrollView>
 </ContentPage>

@@ -1,14 +1,23 @@
 name: CI
 
-# Compila y corre los tests del cliente en cada push a master (y a mano).
-# La app necesita Constants.cs, que está en .gitignore por contener secretos;
-# para que el runner compile se genera desde Constants_demo.cs con los MISMOS
-# dos pasos que documenta el README: copiar y renombrar la clase. La clave del
-# demo es válida (32 y 16 caracteres), así que el build y los round-trip de
-# cifrado pasan igual: el cifrado es simétrico y no depende de la clave real.
+# Compila el cliente y la API y corre ambos suites de tests en cada push a
+# master (y a mano).
 #
-# WebApiCore.Tests NO se corren en CI: requieren un SQL Server real
-# (TEST_CONNECTION_STRING) que el runner no tiene.
+# Cliente: la app necesita Constants.cs, que está en .gitignore por contener
+# secretos. Se genera desde Constants_demo.cs con los MISMOS dos pasos que
+# documenta el README: copiar y renombrar la clase. La clave del demo es
+# válida (32 y 16 caracteres), así que el build y los round-trip de cifrado
+# pasan igual: el cifrado es simétrico y no depende de la clave real.
+#
+# API: corre los 73 tests contra un SQL Server EFÍMERO (services: mssql) y el
+# appsettings.json de TESTING versionado en el repo (JWT de prueba, sin
+# secretos). El esquema y el seed (ApiKey 'Testing-777') salen de
+# SqlServer.sql; el script es DROP+CREATE, pero en la BD desechable del runner
+# no hay datos que proteger: la regla de no tocar datos ajenos no aplica,
+# porque no hay datos ajenos.
+#
+# Se usa el testhost directo (dotnet <dll>) porque dotnet test descubre 0
+# tests con xunit.v3 + Microsoft.Testing.Platform vía CLI.
 on:
   push:
     branches: [master]
@@ -28,7 +37,7 @@ concurrency:
 
 jobs:
   build-and-test:
-    name: Compilar y probar el cliente
+    name: Cliente (MAUI)
     runs-on: windows-latest
 
     steps:
@@ -52,8 +61,68 @@ jobs:
       - name: Compilar
         run: dotnet build PasswordManager_.NET10.Tests/PasswordManager_.NET10.Tests.csproj --nologo
 
-      # dotnet test descubre 0 tests con este proyecto: usa el runner
-      # Microsoft.Testing.Platform de xunit.v3, que silenciosamente no se
-      # registra via CLI. Correr el testhost directo da 64/64 confiable.
       - name: Ejecutar los tests
         run: dotnet PasswordManager_.NET10.Tests/bin/Debug/net10.0/PasswordManager_.NET10.Tests.dll
+
+  api:
+    name: API (73 tests con SQL Server efimero)
+    runs-on: ubuntu-latest
+
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: Pwd12345!
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'Pwd12345!' -C -Q 'SELECT 1' -b -o /dev/null"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+          --health-start-period 15s
+
+    env:
+      TEST_CONNECTION_STRING: 'Server=localhost,1433; Database=db_testing; User ID=testing; Password=testing; TrustServerCertificate=True;'
+      ConnectionStrings__SqlServer: 'Server=localhost,1433; Database=db_testing; User ID=testing; Password=testing; TrustServerCertificate=True;'
+      ConnectionStrings__SqlServerWeb: 'Server=localhost,1433; Database=db_testing; User ID=testing; Password=testing; TrustServerCertificate=True;'
+
+    steps:
+      - name: Obtener el codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar el SDK de .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Crear login y base de prueba
+        run: |
+          cat > /tmp/bootstrap.sql <<'EOF'
+          CREATE LOGIN testing WITH PASSWORD = 'testing', CHECK_POLICY = OFF;
+          GO
+          CREATE DATABASE db_testing;
+          GO
+          USE db_testing;
+          GO
+          CREATE USER testing FOR LOGIN testing;
+          GO
+          EXEC sp_addrolemember 'db_owner', 'testing';
+          GO
+          EOF
+          container=$(docker ps --filter "ancestor=mcr.microsoft.com/mssql/server:2022-latest" --format '{{.ID}}' | head -n 1)
+          docker cp /tmp/bootstrap.sql "$container":/bootstrap.sql
+          docker exec "$container" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Pwd12345!" -C -b -i /bootstrap.sql
+
+      - name: Aplicar el esquema (SqlServer.sql)
+        run: |
+          container=$(docker ps --filter "ancestor=mcr.microsoft.com/mssql/server:2022-latest" --format '{{.ID}}' | head -n 1)
+          docker cp SqlServer.sql "$container":/SqlServer.sql
+          docker exec "$container" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Pwd12345!" -C -b -d db_testing -i /SqlServer.sql
+
+      - name: Compilar
+        run: dotnet build WebApiCore.Tests/WebApiCore.Tests.csproj --nologo
+
+      - name: Ejecutar los tests
+        run: dotnet WebApiCore.Tests/bin/Debug/net10.0/WebApiCore.Tests.dll

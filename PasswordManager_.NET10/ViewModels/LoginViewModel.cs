@@ -2,6 +2,7 @@
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
+using PasswordManager_.NET10.Exceptions;
 using PasswordManager_.NET10.Messages;
 using PasswordManager_.NET10.Services.Interfaces;
 using PasswordManager_.NET10.Views.Authentication;
@@ -172,7 +173,7 @@ public partial class LoginViewModel : BaseViewModel
         }
         catch (Exception ex)
         {
-            Message = ex.Message ?? "Error en el login. Intenta de nuevo.";
+            Message = GetLoginFriendlyMessage(ex);
             _logger.LogError(ex, "[LoginViewModel-LoginAsync] Login error: {ExceptionType} - {Message}", ex.GetType().Name, ex.Message);
         }
         finally
@@ -181,36 +182,54 @@ public partial class LoginViewModel : BaseViewModel
         }
     }
 
+    private static string GetLoginFriendlyMessage(Exception ex)
+    {
+        // ApiException trae el detalle de la API (400/401/500...), que ya es texto de la API.
+        if (ex is ApiException)
+            return ex.Message;
+
+        // Errores de red o imprevistos: no exponer el detalle técnico (inglés) al usuario.
+        return "No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.";
+    }
+
     [RelayCommand]
     public async Task LoginByBiometric()
     {
-        IsLoading = true;
-        Message = string.Empty;
-
-        // 1. Autenticar con biometría
-        string? email = await _biometricService.AuthenticateWithBiometricAsync();
-        _logger.LogInformation("[LoginViewModel-LoginByBiometric] Biometric authentication successful, email: {Email}", email);
-
-        // 2. Obtener contraseña guardada (encriptada)
-        string? password = await _authService.GetSavedPasswordAsync();
-        if (!string.IsNullOrEmpty(password) && !string.IsNullOrEmpty(email))
+        try
         {
-            var user = await _authService.LoginAsync(email, password);
+            IsLoading = true;
+            Message = string.Empty;
 
-            await _navigationService.GoToAppShellAsync();
-            _logger.LogInformation("[LoginViewModel-LoginByBiometric] Navigated to AppShell");
+            // 1. Autenticar con biometría
+            string? email = await _biometricService.AuthenticateWithBiometricAsync();
+            _logger.LogInformation("[LoginViewModel-LoginByBiometric] Biometric authentication successful, email: {Email}", email);
 
+            // 2. Obtener contraseña guardada (encriptada)
+            string? password = await _authService.GetSavedPasswordAsync();
+            if (!string.IsNullOrEmpty(password) && !string.IsNullOrEmpty(email))
+            {
+                var user = await _authService.LoginAsync(email, password);
+
+                await _navigationService.GoToAppShellAsync();
+                _logger.LogInformation("[LoginViewModel-LoginByBiometric] Navigated to AppShell");
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(email))
+            {
+                Email = email;
+                Password = string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            Message = GetLoginFriendlyMessage(ex);
+            _logger.LogError(ex, "[LoginViewModel-LoginByBiometric] Login error: {ExceptionType} - {Message}", ex.GetType().Name, ex.Message);
+        }
+        finally
+        {
             IsLoading = false;
-            return;
         }
-
-        if (!string.IsNullOrEmpty(email))
-        {
-            Email = email;
-            Password = string.Empty;
-        }
-
-        IsLoading = false;
     }
 
     /// <summary>
