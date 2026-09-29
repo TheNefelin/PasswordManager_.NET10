@@ -33,6 +33,11 @@ public class PasswordHasher : IPasswordHasher
     {
         byte[] saltBytes = Convert.FromBase64String(salt);
 
+        // Costo aceptado del fallback: un hash legacy (100k) duplica la derivación
+        // por intento (600k + 100k) y el tiempo de respuesta delata si la cuenta
+        // usa iteraciones legacy. Leak menor asumido por diseño (los legacy se
+        // re-derivan al re-registrar o cambiar la clave maestra) y mitigado por
+        // el lockout y el rate limit a nivel de IP.
         if (NewHash(password, saltBytes, CurrentIterationCount) == hashedPassword)
             return true;
 

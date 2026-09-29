@@ -1142,7 +1142,7 @@ System.IO.FileLoadException: Una directiva de Control de aplicaciones bloqueó e
 - [x] Contraseñas con PBKDF2 + salt, con iteraciones definidas como constantes tipadas (`CurrentIterationCount` + `LegacyIterationCounts` para la verificación heredada); no configuración por `appsettings`.
 - [ ] JWT con `ClockSkew=0`, issuer/audience validados, key desde config.
 - [ ] ApiKey en header (nunca en query string) validada contra BD.
-- [ ] Rate limiting particionado por IP con `X-Forwarded-For`.
+- [x] Rate limiting particionado por IP: el `X-Forwarded-For` lo procesa `ForwardedHeaders` solo cuando el emisor es un proxy conocido (`KnownProxies`/`ForwardLimit`); un cliente directo no puede forjarlo.
 - [ ] CORS con allow-list explícita; sin `AllowAnyOrigin` en producción.
 - [ ] Fail-fast de configuración al arrancar.
 - [ ] No secretos hardcodeados ni en el repo.

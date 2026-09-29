@@ -6,6 +6,7 @@ using WebApiCore.Application.Common;
 using WebApiCore.Application.DTOs;
 using WebApiCore.Application.Interfaces;
 using WebApiCore.Filters;
+using WebApiCore.Helpers;
 
 namespace WebApiCore.Controllers;
 
@@ -20,11 +21,19 @@ public class CoreController : ControllerBase
 
     private readonly ICoreDataService _coreService;
     private readonly ICoreUserService _coreUserService;
+    private readonly IIpLockoutService _corePasswordLockout;
+    private readonly ILogger<CoreController> _logger;
 
-    public CoreController(ICoreDataService coreService, ICoreUserService coreUserService)
+    public CoreController(
+        ICoreDataService coreService,
+        ICoreUserService coreUserService,
+        IIpLockoutService corePasswordLockout,
+        ILogger<CoreController> logger)
     {
         _coreService = coreService;
         _coreUserService = coreUserService;
+        _corePasswordLockout = corePasswordLockout;
+        _logger = logger;
     }
 
     [HttpPost("register-password")]
@@ -43,8 +52,26 @@ public class CoreController : ControllerBase
         if (TryGetUserId(out var userId) is ActionResult unauthorized)
             return unauthorized;
 
-        var response = await _coreUserService.ChangeCorePasswordAsync(userId, coreUserRequest, cancellationToken);
-        return Ok(response);
+        var clientIp = ClientIpResolver.Resolve(HttpContext);
+
+        if (_corePasswordLockout.IsBlocked(clientIp))
+            throw new TooManyLoginAttemptsException();
+
+        try
+        {
+            var response = await _coreUserService.ChangeCorePasswordAsync(userId, coreUserRequest, cancellationToken);
+            _corePasswordLockout.Reset(clientIp);
+            return Ok(response);
+        }
+        catch (InvalidCredentialsException)
+        {
+            _corePasswordLockout.RegisterFailure(clientIp);
+
+            if (_corePasswordLockout.IsBlocked(clientIp))
+                _logger.LogWarning("IP {Ip} bloqueada por exceso de intentos fallidos de clave maestra.", clientIp);
+
+            throw;
+        }
     }
 
     [HttpPost("get-iv")]
@@ -53,8 +80,26 @@ public class CoreController : ControllerBase
         if (TryGetUserId(out var userId) is ActionResult unauthorized)
             return unauthorized;
 
-        var response = await _coreUserService.GetCoreUserIVAsync(userId, coreUserRequest, cancellationToken);
-        return Ok(response);
+        var clientIp = ClientIpResolver.Resolve(HttpContext);
+
+        if (_corePasswordLockout.IsBlocked(clientIp))
+            throw new TooManyLoginAttemptsException();
+
+        try
+        {
+            var response = await _coreUserService.GetCoreUserIVAsync(userId, coreUserRequest, cancellationToken);
+            _corePasswordLockout.Reset(clientIp);
+            return Ok(response);
+        }
+        catch (InvalidCredentialsException)
+        {
+            _corePasswordLockout.RegisterFailure(clientIp);
+
+            if (_corePasswordLockout.IsBlocked(clientIp))
+                _logger.LogWarning("IP {Ip} bloqueada por exceso de intentos fallidos de clave maestra.", clientIp);
+
+            throw;
+        }
     }
 
     [HttpGet]

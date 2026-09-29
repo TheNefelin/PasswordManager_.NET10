@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -69,6 +70,21 @@ builder.Services.AddKeyedSingleton<IIpLockoutService>("api-key", (_, _) =>
     }));
 
 builder.Services.AddScoped<ApiKeyFilter>();
+
+// ======================================================================
+// Forwarded headers (IP real del cliente tras proxies de confianza)
+// Los proxies autorizados a inyectar X-Forwarded-For/Proto se declaran en
+// configuración (ForwardedHeaders:KnownProxies + ForwardLimit). El runtime,
+// no la aplicación, reemplaza RemoteIpAddress desde ese header SOLO cuando el
+// emisor es un proxy conocido: un cliente que llame directo no puede forjar
+// la IP que alimenta rate limit, lockout y Retry-After.
+// ======================================================================
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    builder.Configuration.GetSection("ForwardedHeaders").Bind(options);
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+});
 
 // ======================================================================
 // Health checks (liveness + BD)
@@ -367,6 +383,7 @@ var app = builder.Build();
 // Pipeline HTTP
 // ======================================================================
 app.UseExceptionHandler();
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 
 // ======================================================================

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
 
 namespace WebApiCore.Tests.Http;
 
@@ -445,5 +446,51 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         Assert.Contains("nosniff", response.Headers.GetValues("X-Content-Type-Options"));
         Assert.Contains("DENY", response.Headers.GetValues("X-Frame-Options"));
+    }
+
+    [Fact]
+    public async Task CorePassword_TooManyWrongAttempts_BlocksIp_Returns429()
+    {
+        var client = CreateClient();
+        var email = NewEmail();
+        await ParseUserIdAsync(await RegisterAsync(client, email));
+        var (userId, sqlToken, jwt) = await ParseLoginAsync(await LoginAsync(client, email, "Password123"));
+        TrackCreatedUser(userId);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+
+        await client.PostAsJsonAsync("/api/core/register-password",
+            new { password = "InitialPass", coreUser = new { user_Id = userId, sqlToken } },
+            TestContext.Current.CancellationToken);
+
+        for (var i = 0; i < 5; i++)
+        {
+            var failed = await client.PostAsJsonAsync("/api/core/get-iv",
+                new { password = "WrongPass", coreUser = new { user_Id = userId, sqlToken } },
+                TestContext.Current.CancellationToken);
+            Assert.Equal(HttpStatusCode.Unauthorized, failed.StatusCode);
+        }
+
+        var blocked = await client.PostAsJsonAsync("/api/core/get-iv",
+            new { password = "InitialPass", coreUser = new { user_Id = userId, sqlToken } },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, blocked.StatusCode);
+    }
+
+    [Fact]
+    public async Task OpenApiAndSwagger_NotExposedInProduction_Returns404()
+    {
+        await using var factory = new ApiFactory()
+            .WithWebHostBuilder(builder => builder.UseEnvironment("Production"));
+        using var client = factory.CreateClient();
+
+        var openApi = await client.GetAsync(
+            "/openapi/v1.json", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.NotFound, openApi.StatusCode);
+        Assert.Equal("application/problem+json", openApi.Content.Headers.ContentType?.MediaType);
+
+        var swaggerRoot = await client.GetAsync(
+            "/", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.NotFound, swaggerRoot.StatusCode);
     }
 }
