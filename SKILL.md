@@ -19,7 +19,7 @@ Porque resuelve los problemas que matan a las APIs .NET cuando crecen, con decis
 | **Connection string por entorno** (`Development` → `SqlServer`, resto → `SqlServerWeb`) | El mismo código corre en local y en producción sin tocar el repositorio; la config correcta la decide el entorno |
 | **JWT identifica + `ApiKey` global** | Separa "quién puede llamar a la API" (ApiKey del origen, validada contra BD) de "quién es el usuario" (JWT) |
 | **Rate limiting por cliente (`X-Forwarded-For` → IP)** | Protección de fuerza bruta que no bloquea a todos los usuarios por igual |
-| **Contraseñas con PBKDF2 (KDF)** | Hash seguro con salt e iteraciones configurables; nunca almacenar texto plano ni MD5/SHA simples |
+| **Contraseñas con PBKDF2 (KDF)** | Hash seguro con salt; iteraciones definidas en código como constantes tipadas (nunca configuración por `appsettings`, para no admitir valores débiles); nunca almacenar texto plano ni MD5/SHA simples |
 | **Dapper + SQL parametrizado (sin SP)** | La lógica de negocio vive en Application y el repositorio solo ejecuta SQL parametrizado: auditable, testeable y sin el acoplamiento de un contrato de SP |
 | **Tests de integración con BD real** | Validan el flujo completo (DTO → SQL → respuesta) contra la base real, no contra mocks que mienten |
 | **Sin secretos en el código** | Connection strings, claves JWT y ApiKeys van en configuración/secrets del entorno, nunca hardcodeadas ni en el repo |
@@ -1139,7 +1139,7 @@ System.IO.FileLoadException: Una directiva de Control de aplicaciones bloqueó e
 - [ ] Contrato v2 I/O: **2xx → DTO plano** (sin envelope) y **errores → `ProblemDetails`** RFC 9457 (`application/problem+json`) con `traceId` en `extensions`.
 - [ ] `GlobalExceptionHandler` central: log + 500 genérico, sin fuga de internos.
 - [ ] 400 uniforme vía `InvalidModelStateResponseFactory`.
-- [ ] Contraseñas con PBKDF2 + salt + iteraciones configurables.
+- [x] Contraseñas con PBKDF2 + salt, con iteraciones definidas como constantes tipadas (`CurrentIterationCount` + `LegacyIterationCounts` para la verificación heredada); no configuración por `appsettings`.
 - [ ] JWT con `ClockSkew=0`, issuer/audience validados, key desde config.
 - [ ] ApiKey en header (nunca en query string) validada contra BD.
 - [ ] Rate limiting particionado por IP con `X-Forwarded-For`.
