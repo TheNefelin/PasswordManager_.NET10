@@ -212,20 +212,21 @@ public class CoreUserServiceTests : IntegrationTestBase
             CancellationToken.None);
 
         var newRecord = new CoreDataReplacement { Data_Id = Guid.NewGuid(), Data01 = "x", Data02 = "y", Data03 = "z" };
+        var newSalt = NewSalt();
         var changeResult = await service.ChangeCorePasswordAsync(
             userId,
             new ChangeCorePasswordRequest
             {
                 OldPassword = "OldMasterPass",
                 NewPassword = "NewMasterPass",
-                Salt = NewSalt(),
+                Salt = newSalt,
                 CoreUser = coreUser,
                 Records = new List<CoreDataReplacement> { newRecord }
             },
             CancellationToken.None);
 
         // El IV devuelto es exactamente la sal provista por el cliente.
-        Assert.Equal(NewSalt(), changeResult.IV);
+        Assert.Equal(newSalt, changeResult.IV);
         Assert.False(string.IsNullOrEmpty(changeResult.IV));
         Assert.NotEqual(Guid.Empty, changeResult.SqlToken);
         Assert.NotEqual(sqlToken, changeResult.SqlToken);
