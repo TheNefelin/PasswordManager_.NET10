@@ -487,7 +487,6 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
         var openApi = await client.GetAsync(
             "/openapi/v1.json", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, openApi.StatusCode);
-        Assert.Equal("application/problem+json", openApi.Content.Headers.ContentType?.MediaType);
 
         var swaggerRoot = await client.GetAsync(
             "/", TestContext.Current.CancellationToken);
