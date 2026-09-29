@@ -105,6 +105,15 @@ public partial class PasswordFormViewModel : BaseViewModel
                 return;
             }
 
+            if (EncryptingPassword.Length < 6)
+            {
+                await _dialogService.ShowInfoAsync(
+                    "La clave debe tener al menos 6 caracteres.",
+                    "Validación"
+                );
+                return;
+            }
+
             IsLoading = true;
 
             if (IsEditing && _currentItem != null)

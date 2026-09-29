@@ -228,6 +228,55 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
     }
 
     [Fact]
+    public async Task GetCoreUserIV_WithTooShortPassword_Returns400()
+    {
+        var client = CreateClient();
+        var email = NewEmail();
+        await ParseUserIdAsync(await RegisterAsync(client, email));
+        var (userId, sqlToken, jwt) = await ParseLoginAsync(await LoginAsync(client, email, "Password123"));
+        TrackCreatedUser(userId);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+
+        await client.PostAsJsonAsync("/api/core/register-password",
+            new { password = "InitialPass", coreUser = new { user_Id = userId, sqlToken } },
+            TestContext.Current.CancellationToken);
+
+        var response = await client.PostAsJsonAsync("/api/core/get-iv",
+            new { password = "short", coreUser = new { user_Id = userId, sqlToken } },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ChangeCorePassword_WithTooShortOldPassword_Returns400()
+    {
+        var client = CreateClient();
+        var email = NewEmail();
+        await ParseUserIdAsync(await RegisterAsync(client, email));
+        var (userId, sqlToken, jwt) = await ParseLoginAsync(await LoginAsync(client, email, "Password123"));
+        TrackCreatedUser(userId);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+
+        await client.PostAsJsonAsync("/api/core/register-password",
+            new { password = "InitialPass", coreUser = new { user_Id = userId, sqlToken } },
+            TestContext.Current.CancellationToken);
+
+        var response = await client.PostAsJsonAsync("/api/core/change-password",
+            new
+            {
+                oldPassword = "short",
+                newPassword = "NewPasswordLong",
+                salt = "AAAAAAAAAAAAAAAAAAAAAA==",
+                coreUser = new { user_Id = userId, sqlToken },
+                records = Array.Empty<object>()
+            },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task ChangeCorePassword_WithWrongOldPassword_Returns401()
     {
         var client = CreateClient();

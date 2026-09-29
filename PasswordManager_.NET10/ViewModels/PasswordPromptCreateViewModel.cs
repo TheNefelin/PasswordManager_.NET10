@@ -51,6 +51,12 @@ public partial class PasswordPromptCreateViewModel : BaseViewModel
             return;
         }
 
+        if (NewPassword.Length < 8)
+        {
+            Message = "La contraseña debe tener al menos 8 caracteres.";
+            return;
+        }
+
         try
         {
             var coreUserIV = await _coreDataService.RegisterCorePasswordAsync(NewPassword);

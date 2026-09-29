@@ -9,7 +9,7 @@ name: CI
 # válida (32 y 16 caracteres), así que el build y los round-trip de cifrado
 # pasan igual: el cifrado es simétrico y no depende de la clave real.
 #
-# API: corre los 73 tests contra un SQL Server EFÍMERO (services: mssql) y el
+# API: corre los 93 tests contra un SQL Server EFÍMERO (services: mssql) y el
 # appsettings.json de TESTING versionado en el repo (JWT de prueba, sin
 # secretos). El esquema y el seed (ApiKey 'Testing-777') salen de
 # SqlServer.sql; el script es DROP+CREATE, pero en la BD desechable del runner
@@ -65,7 +65,7 @@ jobs:
         run: dotnet PasswordManager_.NET10.Tests/bin/Debug/net10.0/PasswordManager_.NET10.Tests.dll
 
   api:
-    name: API (73 tests con SQL Server efimero)
+    name: API (93 tests con SQL Server efimero)
     runs-on: ubuntu-latest
 
     services:

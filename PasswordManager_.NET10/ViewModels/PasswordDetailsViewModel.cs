@@ -189,7 +189,23 @@ public partial class PasswordDetailsViewModel : BaseViewModel
             {
                 // Pedir contraseña
                 var password = await PromptPasswordAsync();
-                if (string.IsNullOrEmpty(password)) return;
+                if (string.IsNullOrEmpty(password))
+                {
+                    await _dialogService.ShowInfoAsync(
+                        "Debes ingresar tu clave.",
+                        "Validación"
+                    );
+                    return;
+                }
+
+                if (password.Length < 6)
+                {
+                    await _dialogService.ShowInfoAsync(
+                        "La clave debe tener al menos 6 caracteres.",
+                        "Validación"
+                    );
+                    return;
+                }
 
                 IsLoading = true;
                 DisplayedPasswordItems.Clear();

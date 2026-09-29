@@ -1117,7 +1117,7 @@ System.IO.FileLoadException: Una directiva de Control de aplicaciones bloqueó e
 
 **Reporte de verificación honesto:**
 
-- Un conteo es **histórico**: pertenece a un commit concreto. "73/73" dejó de ser cierto en cuanto el código cambió; se reporta como "última corrida completa antes de *&lt;cambio&gt;*".
+- Un conteo es **histórico**: pertenece a un commit concreto. "93/93" dejó de ser cierto en cuanto el código cambió; se reporta como "última corrida completa antes de *&lt;cambio&gt;*".
 - **Nunca sumar suites no ejecutadas.** El total se reporta por suite, con la causa de cada bloqueo.
 - **Compilar no es probar**: `dotnet build` con 0 errores dice nada sobre aserciones. Son dos verificaciones distintas y se reportan por separado.
 - **La verificación en runtime es evidencia aparte**: la hace el usuario en dispositivo o app real, y no reemplaza ni se suma a la cobertura automática.

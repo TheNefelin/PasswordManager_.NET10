@@ -68,6 +68,13 @@ public partial class ChangeMasterPasswordViewModel : BaseViewModel
             return;
         }
 
+        if (OldPassword.Length < 6)
+        {
+            Message = "La contraseña actual debe tener al menos 6 caracteres.";
+            _logger.LogWarning("[ChangeMasterPasswordViewModel-AcceptClickedAsync] Old password too short");
+            return;
+        }
+
         if (NewPassword.Length < 8)
         {
             Message = "La contraseña nueva debe tener al menos 8 caracteres.";

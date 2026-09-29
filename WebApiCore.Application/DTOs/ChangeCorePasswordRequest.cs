@@ -4,9 +4,12 @@ namespace WebApiCore.Application.DTOs;
 
 public class ChangeCorePasswordRequest
 {
-    // Sin MinLength a propósito: las claves maestras existentes pueden tener
-    // menos de 8 caracteres (se validó de más en el pasado), y la verificación
-    // de la vieja debe aceptarlas igual. El Mínimo de 8 rige solo para la nueva.
+    // Mínimo 6 en la verificación de la clave actual, igual que en get-iv.
+    // Nota: hay claves legacy creadas sin validación de longitud; si una clave
+    // existente tuviera menos de 6 caracteres, este control la bloquearía y el
+    // cambio de clave maestra no serviría como salida (fuente de fallo conocida,
+    // documentada en DEVELOPMENT.md). Destino futuro: subir a 8.
+    [MinLength(6)]
     [MaxLength(50)]
     public required string OldPassword { get; set; }
 
