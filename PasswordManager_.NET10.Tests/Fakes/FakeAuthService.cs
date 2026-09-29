@@ -54,6 +54,14 @@ public class FakeAuthService : IAuthService
 
     public Task<bool> IsAuthenticatedAsync() => Task.FromResult(CurrentUser != null);
 
+    public Task UpdateSqlTokenAsync(string sqlToken)
+    {
+        if (CurrentUser != null)
+            CurrentUser.SqlToken = sqlToken;
+
+        return Task.CompletedTask;
+    }
+
     public Task SetSavePasswordOnNextLoginAsync(bool value)
     {
         SetSavePasswordOnNextLoginCalled = true;

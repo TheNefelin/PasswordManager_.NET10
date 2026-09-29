@@ -14,6 +14,12 @@ public class ChangeCorePasswordRequest
     [MaxLength(50)]
     public required string NewPassword { get; set; }
 
+    // Nueva sal/IV (base64 de 16 bytes) generada por el cliente. Es material
+    // público del cifrado client-side, y su largo se valida en el servicio para
+    // descartar valores inválidos o malformados.
+    [Required]
+    public required string Salt { get; set; }
+
     public required CoreUserRequest CoreUser { get; set; }
 
     public required List<CoreDataReplacement> Records { get; set; }

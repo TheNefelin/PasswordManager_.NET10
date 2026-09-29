@@ -143,6 +143,23 @@ public class SecureStorageService : ISecureStorageService
     }
 
     /// <summary>
+    /// Actualiza el SQL token persistido tras la rotación del cambio de clave maestra
+    /// </summary>
+    public async Task SetSqlTokenAsync(string sqlToken)
+    {
+        try
+        {
+            await SecureStorage.SetAsync(KEY_SQL_TOKEN, sqlToken);
+            _logger.LogInformation("[SecureStorageService-SetSqlTokenAsync] SQL token updated successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[SecureStorageService-SetSqlTokenAsync] Error updating SQL token: {ExceptionType} - {Message}", ex.GetType().Name, ex.Message);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Gets the stored user role
     /// </summary>
     public async Task<string?> GetRoleAsync()

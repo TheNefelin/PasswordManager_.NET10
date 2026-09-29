@@ -332,6 +332,19 @@ public partial class SettingsViewModel : BaseViewModel
     }
 
     [RelayCommand]
+    public async Task ChangeMasterPasswordAsync()
+    {
+        try
+        {
+            await _navigationService.PushModalAsync<ChangeMasterPasswordPage>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[SettingsViewModel-ChangeMasterPasswordAsync] Error: {Message}", ex.Message);
+        }
+    }
+
+    [RelayCommand]
     public async Task ToggleSavePasswordAsync()
     {
         try

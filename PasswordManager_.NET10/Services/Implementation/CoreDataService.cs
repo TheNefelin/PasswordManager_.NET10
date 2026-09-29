@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using PasswordManager_.NET10.DTOs.Request;
+using PasswordManager_.NET10.DTOs.Response;
 using PasswordManager_.NET10.Models;
 using PasswordManager_.NET10.Services.Interfaces;
 
@@ -10,6 +11,7 @@ public class CoreDataService : ICoreDataService
     // Rutas relativas a Constants.API_BASE_URL, que ya termina en /api.
     private const string CORE_REGISTER_PASSWORD_ENDPOINT = "core/register-password";
     private const string CORE_GET_IV_ENDPOINT = "core/get-iv";
+    private const string CORE_CHANGE_PASSWORD_ENDPOINT = "core/change-password";
     private const string CORE_ENDPOINT = "core";
     private const string SQL_TOKEN_HEADER = "SqlToken";
 
@@ -77,6 +79,42 @@ public class CoreDataService : ICoreDataService
         catch (Exception ex)
         {
             _logger.LogError(ex, "[CoreDataService-GetCoreUserIVAsync] Error retrieving core user IV.");
+            throw;
+        }
+    }
+
+    public async Task<CoreUserChangeResponse> ChangeCorePasswordAsync(
+        string oldPassword,
+        string newPassword,
+        string newIv,
+        IEnumerable<CoreSecretData> reEncryptedRecords)
+    {
+        try
+        {
+            _logger.LogInformation("[CoreDataService-ChangeCorePasswordAsync] Changing core password.");
+
+            var coreUserRequest = await GetCoreUserData();
+            var changeCorePasswordRequest = new ChangeCorePasswordRequest
+            {
+                OldPassword = oldPassword,
+                NewPassword = newPassword,
+                Salt = newIv,
+                CoreUser = coreUserRequest,
+                Records = reEncryptedRecords
+                    .Select(r => new CoreDataReplacement
+                    {
+                        Data_Id = r.Data_Id,
+                        Data01 = r.Data01,
+                        Data02 = r.Data02,
+                        Data03 = r.Data03
+                    })
+                    .ToList()
+            };
+            return await _apiService.PostAsync<CoreUserChangeResponse>(CORE_CHANGE_PASSWORD_ENDPOINT, changeCorePasswordRequest);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[CoreDataService-ChangeCorePasswordAsync] Error changing core password.");
             throw;
         }
     }

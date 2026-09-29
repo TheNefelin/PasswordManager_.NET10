@@ -119,6 +119,19 @@ public class AuthService : IAuthService
     }
 
     /// <summary>
+    /// Adopta el SqlToken rotado tras cambiar la clave maestra: actualiza la sesión
+    /// en memoria y el almacenamiento seguro para que la app siga operando.
+    /// </summary>
+    public async Task UpdateSqlTokenAsync(string sqlToken)
+    {
+        if (_currentUser != null)
+            _currentUser.SqlToken = sqlToken;
+
+        await _secureStorageService.SetSqlTokenAsync(sqlToken);
+        _logger.LogInformation("[AuthService-UpdateSqlTokenAsync] SQL token rotated and persisted for user: {UserId}", _currentUser?.UserId);
+    }
+
+    /// <summary>
     /// Logout del usuario
     /// </summary>
     public async Task LogoutAsync()

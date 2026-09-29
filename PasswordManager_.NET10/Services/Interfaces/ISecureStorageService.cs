@@ -9,6 +9,7 @@ public interface ISecureStorageService
     Task<string?> GetUserIdAsync();
     Task<string?> GetEmailAsync();
     Task<string?> GetSqlTokenAsync();
+    Task SetSqlTokenAsync(string sqlToken);
     Task<string?> GetRoleAsync();
     Task<string?> GetApiTokenAsync();
     Task<int> GetExpireMinAsync();

@@ -17,6 +17,8 @@
                     <Label Text="GENERAL" FontAttributes="Bold" FontSize="16"/>
                     <Button Text="❓ Manual de Usuario" 
                         Command="{Binding GoToHelpCommand}"/>
+                    <Button Text="🔑 Cambiar contraseña maestra" 
+                        Command="{Binding ChangeMasterPasswordCommand}"/>
                 </VerticalStackLayout>
 
                 <!-- BIOMETRÍA -->

@@ -245,6 +245,7 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
             {
                 oldPassword = "WrongOldPass",
                 newPassword = "NewPasswordLong",
+                salt = "AAAAAAAAAAAAAAAAAAAAAA==",
                 coreUser = new { user_Id = userId, sqlToken },
                 records = Array.Empty<object>()
             },
@@ -303,11 +304,13 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
         Assert.Equal(HttpStatusCode.Created, insertCoreResponse.StatusCode);
 
         var replacementId = Guid.NewGuid();
+        var newSalt = "AAAAAAAAAAAAAAAAAAAAAA=="; // 16 bytes en cero, base64 válido.
         var changeResponse = await client.PostAsJsonAsync("/api/core/change-password",
             new
             {
                 oldPassword = "InitialPass",
                 newPassword = "NewPasswordLong",
+                salt = newSalt,
                 coreUser = new { user_Id = userId, sqlToken },
                 records = new[] { new { data_Id = replacementId, data01 = "x", data02 = "y", data03 = "z" } }
             },
@@ -317,7 +320,7 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
         using var changeJson = JsonDocument.Parse(await changeResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         var newIV = changeJson.RootElement.GetProperty("iv").GetString();
         var newSqlToken = Guid.Parse(changeJson.RootElement.GetProperty("sqlToken").GetString()!);
-        Assert.False(string.IsNullOrEmpty(newIV));
+        Assert.Equal(newSalt, newIV);
         Assert.NotEqual(sqlToken, newSqlToken);
 
         // La vieja contraseña con el token ya rotado no abre sesión.

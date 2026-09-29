@@ -5,6 +5,7 @@ using WebApiCore.Domain.Entities;
 using WebApiCore.Infrastructure.Repositories;
 using WebApiCore.Infrastructure.Security;
 using WebApiCore.Tests.Helpers;
+using System.Security.Cryptography;
 
 namespace WebApiCore.Tests.Core;
 
@@ -17,6 +18,9 @@ public class CoreUserServiceTests : IntegrationTestBase
 
     private static CoreUserPasswordCreate CreatePassword(string password, CoreUserRequest coreUser)
         => new() { Password = password, CoreUser = coreUser };
+
+    private static string NewSalt()
+        => Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
 
     [Fact]
     public async Task RegisterCoreUserPasswordAsync_ThenGetCoreUserIV_ReturnsSameIV()
@@ -106,6 +110,7 @@ public class CoreUserServiceTests : IntegrationTestBase
             {
                 OldPassword = "WrongOldPass",
                 NewPassword = "NewMasterPass",
+                Salt = NewSalt(),
                 CoreUser = coreUser,
                 Records = new List<CoreDataReplacement>()
             },
@@ -123,6 +128,7 @@ public class CoreUserServiceTests : IntegrationTestBase
             {
                 OldPassword = "OldMasterPass",
                 NewPassword = "NewMasterPass",
+                Salt = NewSalt(),
                 CoreUser = new CoreUserRequest { User_Id = Guid.NewGuid(), SqlToken = Guid.NewGuid() },
                 Records = new List<CoreDataReplacement>()
             },
@@ -142,6 +148,46 @@ public class CoreUserServiceTests : IntegrationTestBase
             {
                 OldPassword = "OldMasterPass",
                 NewPassword = "NewMasterPass",
+                Salt = NewSalt(),
+                CoreUser = coreUser,
+                Records = new List<CoreDataReplacement>()
+            },
+            CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ChangeCorePasswordAsync_WithInvalidSalt_ThrowsRequestValidationException()
+    {
+        var (userId, sqlToken) = await CreateUserDirectAsync(NewEmail());
+        var service = CreateService();
+        var coreUser = new CoreUserRequest { User_Id = userId, SqlToken = sqlToken };
+
+        await service.RegisterCoreUserPasswordAsync(
+            userId,
+            CreatePassword("OldMasterPass", coreUser),
+            CancellationToken.None);
+
+        // Base64 inválido: se rechaza antes de usar la sal en el hash.
+        await Assert.ThrowsAsync<RequestValidationException>(() => service.ChangeCorePasswordAsync(
+            userId,
+            new ChangeCorePasswordRequest
+            {
+                OldPassword = "OldMasterPass",
+                NewPassword = "NewMasterPass",
+                Salt = "not-base64!",
+                CoreUser = coreUser,
+                Records = new List<CoreDataReplacement>()
+            },
+            CancellationToken.None));
+
+        // Base64 válido pero de largo incorrecto: también se rechaza.
+        await Assert.ThrowsAsync<RequestValidationException>(() => service.ChangeCorePasswordAsync(
+            userId,
+            new ChangeCorePasswordRequest
+            {
+                OldPassword = "OldMasterPass",
+                NewPassword = "NewMasterPass",
+                Salt = Convert.ToBase64String(new byte[8]),
                 CoreUser = coreUser,
                 Records = new List<CoreDataReplacement>()
             },
@@ -172,11 +218,14 @@ public class CoreUserServiceTests : IntegrationTestBase
             {
                 OldPassword = "OldMasterPass",
                 NewPassword = "NewMasterPass",
+                Salt = NewSalt(),
                 CoreUser = coreUser,
                 Records = new List<CoreDataReplacement> { newRecord }
             },
             CancellationToken.None);
 
+        // El IV devuelto es exactamente la sal provista por el cliente.
+        Assert.Equal(NewSalt(), changeResult.IV);
         Assert.False(string.IsNullOrEmpty(changeResult.IV));
         Assert.NotEqual(Guid.Empty, changeResult.SqlToken);
         Assert.NotEqual(sqlToken, changeResult.SqlToken);

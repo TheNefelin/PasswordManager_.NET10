@@ -83,7 +83,11 @@ public class CoreUserService : ICoreUserService
         if (!_passwordHasher.VerifyPassword(request.OldPassword, coreUser.HashPM, coreUser.SaltPM))
             throw new InvalidCredentialsException();
 
-        var (newHash, newSalt) = _passwordHasher.HashPassword(request.NewPassword);
+        // La sal/IV de 16 bytes la genera el cliente (dueño del cifrado) para poder
+        // re-cifrar antes del cambio; acá solo se valida que sea material válido
+        // antes de usarla en el hash PBKDF2.
+        ValidNewSalt(request.Salt);
+        var newHash = _passwordHasher.HashPassword(request.NewPassword, request.Salt);
         var newSqlToken = Guid.NewGuid();
 
         // La atomicidad (swap de clave + reemplazo de datos, todo o nada) vive
@@ -92,13 +96,32 @@ public class CoreUserService : ICoreUserService
         await _coreUserRepository.ChangeCorePasswordAsync(
             userId,
             newHash,
-            newSalt,
+            request.Salt,
             newSqlToken,
             request.Records.Select(ToEntity),
             cancellationToken);
 
-        return new CoreUserChangeResponse { IV = newSalt, SqlToken = newSqlToken };
+        return new CoreUserChangeResponse { IV = request.Salt, SqlToken = newSqlToken };
     }
+
+    private static void ValidNewSalt(string salt)
+    {
+        if (string.IsNullOrEmpty(salt))
+            throw new RequestValidationException("La nueva sal es obligatoria.");
+
+        try
+        {
+            byte[] bytes = Convert.FromBase64String(salt);
+            if (bytes.Length != SaltSize)
+                throw new RequestValidationException("La nueva sal debe ser de 16 bytes.");
+        }
+        catch (FormatException)
+        {
+            throw new RequestValidationException("La nueva sal no es base64 válido.");
+        }
+    }
+
+    private const int SaltSize = 16;
 
     private static CoreData ToEntity(CoreDataReplacement replacement)
     {

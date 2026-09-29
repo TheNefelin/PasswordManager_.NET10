@@ -63,6 +63,7 @@ public static class MauiProgram
             .AddTransient<PasswordDetailsViewModel>()
             .AddTransient<PasswordFormViewModel>()
             .AddTransient<PasswordPromptCreateViewModel>()
+            .AddTransient<ChangeMasterPasswordViewModel>()
             .AddTransient<GuidePreviewViewModel>();
 
         // Views/Pages
@@ -74,6 +75,7 @@ public static class MauiProgram
             .AddTransient<PasswordDetailsPage>()
             .AddTransient<PasswordFormPage>()
             .AddTransient<PasswordPromptCreatePage>()
+            .AddTransient<ChangeMasterPasswordPage>()
             .AddTransient<GuidePreviewPage>();
 
         // Test

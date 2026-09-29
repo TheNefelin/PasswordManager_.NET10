@@ -40,4 +40,15 @@ public class PasswordHasherTests
         Assert.True(_hasher.VerifyPassword("SecretPassword", hash, salt));
         Assert.True(_hasher.VerifyPassword("SecretPassword", hash, salt));
     }
+
+    [Fact]
+    public void HashPassword_WithProvidedSalt_MatchesGeneratedSaltHash()
+    {
+        var (hash, salt) = _hasher.HashPassword("SecretPassword");
+        string hashWithSalt = _hasher.HashPassword("SecretPassword", salt);
+
+        Assert.Equal(hash, hashWithSalt);
+        Assert.True(_hasher.VerifyPassword("SecretPassword", hashWithSalt, salt));
+        Assert.False(_hasher.VerifyPassword("WrongPassword", hashWithSalt, salt));
+    }
 }
