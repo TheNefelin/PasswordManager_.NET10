@@ -210,6 +210,141 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
     }
 
     [Fact]
+    public async Task Register_WithMasterPasswordShorterThan8_Returns400()
+    {
+        var client = CreateClient();
+        var email = NewEmail();
+        await ParseUserIdAsync(await RegisterAsync(client, email));
+        var (userId, sqlToken, jwt) = await ParseLoginAsync(await LoginAsync(client, email, "Password123"));
+        TrackCreatedUser(userId);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+
+        var response = await client.PostAsJsonAsync("/api/core/register-password",
+            new { password = "short", coreUser = new { user_Id = userId, sqlToken } },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ChangeCorePassword_WithWrongOldPassword_Returns401()
+    {
+        var client = CreateClient();
+        var email = NewEmail();
+        await ParseUserIdAsync(await RegisterAsync(client, email));
+        var (userId, sqlToken, jwt) = await ParseLoginAsync(await LoginAsync(client, email, "Password123"));
+        TrackCreatedUser(userId);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+
+        await client.PostAsJsonAsync("/api/core/register-password",
+            new { password = "InitialPass", coreUser = new { user_Id = userId, sqlToken } },
+            TestContext.Current.CancellationToken);
+
+        var response = await client.PostAsJsonAsync("/api/core/change-password",
+            new
+            {
+                oldPassword = "WrongOldPass",
+                newPassword = "NewPasswordLong",
+                coreUser = new { user_Id = userId, sqlToken },
+                records = Array.Empty<object>()
+            },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ChangeCorePassword_WithShortNewPassword_Returns400()
+    {
+        var client = CreateClient();
+        var email = NewEmail();
+        await ParseUserIdAsync(await RegisterAsync(client, email));
+        var (userId, sqlToken, jwt) = await ParseLoginAsync(await LoginAsync(client, email, "Password123"));
+        TrackCreatedUser(userId);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+
+        await client.PostAsJsonAsync("/api/core/register-password",
+            new { password = "InitialPass", coreUser = new { user_Id = userId, sqlToken } },
+            TestContext.Current.CancellationToken);
+
+        var response = await client.PostAsJsonAsync("/api/core/change-password",
+            new
+            {
+                oldPassword = "InitialPass",
+                newPassword = "short",
+                coreUser = new { user_Id = userId, sqlToken },
+                records = Array.Empty<object>()
+            },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ChangeCorePassword_FullFlow_RotatesKeyAndToken()
+    {
+        var client = CreateClient();
+        var email = NewEmail();
+        await ParseUserIdAsync(await RegisterAsync(client, email));
+        var (userId, sqlToken, jwt) = await ParseLoginAsync(await LoginAsync(client, email, "Password123"));
+        TrackCreatedUser(userId);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+
+        var registerPasswordResponse = await client.PostAsJsonAsync("/api/core/register-password",
+            new { password = "InitialPass", coreUser = new { user_Id = userId, sqlToken } },
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, registerPasswordResponse.StatusCode);
+
+        client.DefaultRequestHeaders.Add("SqlToken", sqlToken.ToString());
+        var originalId = Guid.NewGuid();
+        var insertCoreResponse = await client.PostAsJsonAsync("/api/core",
+            new { data_Id = originalId, data01 = "a", data02 = "b", data03 = "c", coreUser = new { user_Id = userId, sqlToken } },
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, insertCoreResponse.StatusCode);
+
+        var replacementId = Guid.NewGuid();
+        var changeResponse = await client.PostAsJsonAsync("/api/core/change-password",
+            new
+            {
+                oldPassword = "InitialPass",
+                newPassword = "NewPasswordLong",
+                coreUser = new { user_Id = userId, sqlToken },
+                records = new[] { new { data_Id = replacementId, data01 = "x", data02 = "y", data03 = "z" } }
+            },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, changeResponse.StatusCode);
+        using var changeJson = JsonDocument.Parse(await changeResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        var newIV = changeJson.RootElement.GetProperty("iv").GetString();
+        var newSqlToken = Guid.Parse(changeJson.RootElement.GetProperty("sqlToken").GetString()!);
+        Assert.False(string.IsNullOrEmpty(newIV));
+        Assert.NotEqual(sqlToken, newSqlToken);
+
+        // La vieja contraseña con el token ya rotado no abre sesión.
+        client.DefaultRequestHeaders.Remove("SqlToken");
+        var oldPasswordResponse = await client.PostAsJsonAsync("/api/core/get-iv",
+            new { password = "InitialPass", coreUser = new { user_Id = userId, sqlToken } },
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Unauthorized, oldPasswordResponse.StatusCode);
+
+        // La nueva contraseña con el token rotado funciona y devuelve el nuevo IV.
+        client.DefaultRequestHeaders.Add("SqlToken", newSqlToken.ToString());
+        var getIvNewResponse = await client.PostAsJsonAsync("/api/core/get-iv",
+            new { password = "NewPasswordLong", coreUser = new { user_Id = userId, sqlToken = newSqlToken } },
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, getIvNewResponse.StatusCode);
+        using var ivJson = JsonDocument.Parse(await getIvNewResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(newIV, ivJson.RootElement.GetProperty("iv").GetString());
+
+        // Los datos fueron reemplazados: solo queda el registro del cambio.
+        var getAllResponse = await client.GetAsync("/api/core", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, getAllResponse.StatusCode);
+        using var coreJson = JsonDocument.Parse(await getAllResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Contains(coreJson.RootElement.EnumerateArray(), x => x.GetProperty("data_Id").GetString() == replacementId.ToString());
+        Assert.DoesNotContain(coreJson.RootElement.EnumerateArray(), x => x.GetProperty("data_Id").GetString() == originalId.ToString());
+    }
+
+    [Fact]
     public async Task Login_FiveFailures_BlocksIp_Returns429()
     {
         var client = CreateClient();

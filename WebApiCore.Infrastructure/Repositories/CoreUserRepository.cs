@@ -45,4 +45,56 @@ public class CoreUserRepository : ICoreUserRepository
         using var connection = _dapper.CreateConnection();
         await connection.ExecuteAsync(commandDefinition);
     }
+
+    public async Task ChangeCorePasswordAsync(Guid userId, string hash, string salt, Guid newSqlToken, IEnumerable<CoreData> replacementRecords, CancellationToken cancellationToken)
+    {
+        // Cambio de clave maestra: rotación de hash/sal/token + reemplazo de
+        // los datos re-cifrados, todo en UNA transacción con UNA conexión.
+        // Una conexión por transacción evita la promoción a transacción
+        // distribuida (TransactionScope multi-conexión exige MSDTC, no
+        // disponible en el runner de CI de Linux).
+        using var connection = _dapper.CreateConnection();
+        connection.Open();
+
+        using var transaction = connection.BeginTransaction();
+
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                cancellationToken: cancellationToken,
+                transaction: transaction,
+                commandText: "UPDATE Auth_Users SET HashPM = @HashPM, SaltPM = @SaltPM, SqlTokenHash = @SqlTokenHash WHERE User_Id = @User_Id",
+                parameters: new
+                {
+                    User_Id = userId,
+                    HashPM = hash,
+                    SaltPM = salt,
+                    SqlTokenHash = SqlTokenHasher.Hash(newSqlToken)
+                }));
+
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                cancellationToken: cancellationToken,
+                transaction: transaction,
+                commandText: "DELETE FROM PM_CoreData WHERE User_Id = @User_Id",
+                parameters: new { User_Id = userId }));
+
+        foreach (var record in replacementRecords)
+        {
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    cancellationToken: cancellationToken,
+                    transaction: transaction,
+                    commandText: "INSERT INTO PM_CoreData (Data_Id, Data01, Data02, Data03, User_Id) VALUES (@Data_Id, @Data01, @Data02, @Data03, @User_Id)",
+                    parameters: new
+                    {
+                        record.Data_Id,
+                        record.Data01,
+                        record.Data02,
+                        record.Data03,
+                        User_Id = userId
+                    }));
+        }
+
+        transaction.Commit();
+    }
 }

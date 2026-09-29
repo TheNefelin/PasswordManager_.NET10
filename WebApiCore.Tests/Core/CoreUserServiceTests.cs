@@ -1,6 +1,7 @@
 ﻿using WebApiCore.Application.Common;
 using WebApiCore.Application.DTOs;
 using WebApiCore.Application.Services;
+using WebApiCore.Domain.Entities;
 using WebApiCore.Infrastructure.Repositories;
 using WebApiCore.Infrastructure.Security;
 using WebApiCore.Tests.Helpers;
@@ -14,6 +15,9 @@ public class CoreUserServiceTests : IntegrationTestBase
         new CoreUserRepository(TestDb.CreateContext()),
         new PasswordHasher());
 
+    private static CoreUserPasswordCreate CreatePassword(string password, CoreUserRequest coreUser)
+        => new() { Password = password, CoreUser = coreUser };
+
     [Fact]
     public async Task RegisterCoreUserPasswordAsync_ThenGetCoreUserIV_ReturnsSameIV()
     {
@@ -23,7 +27,7 @@ public class CoreUserServiceTests : IntegrationTestBase
 
         var registerResult = await service.RegisterCoreUserPasswordAsync(
             userId,
-            new CoreUserPassword { Password = "SecretPM", CoreUser = coreUser },
+            CreatePassword("SecretPM", coreUser),
             CancellationToken.None);
 
         Assert.False(string.IsNullOrEmpty(registerResult.IV));
@@ -57,12 +61,12 @@ public class CoreUserServiceTests : IntegrationTestBase
 
         await service.RegisterCoreUserPasswordAsync(
             userId,
-            new CoreUserPassword { Password = "SecretPM", CoreUser = coreUser },
+            CreatePassword("SecretPM", coreUser),
             CancellationToken.None);
 
         await Assert.ThrowsAsync<CorePasswordAlreadyExistsException>(() => service.RegisterCoreUserPasswordAsync(
             userId,
-            new CoreUserPassword { Password = "SecretPM", CoreUser = coreUser },
+            CreatePassword("SecretPM", coreUser),
             CancellationToken.None));
     }
 
@@ -75,12 +79,133 @@ public class CoreUserServiceTests : IntegrationTestBase
 
         await service.RegisterCoreUserPasswordAsync(
             userId,
-            new CoreUserPassword { Password = "CorrectPassword", CoreUser = coreUser },
+            CreatePassword("CorrectPassword", coreUser),
             CancellationToken.None);
 
         await Assert.ThrowsAsync<InvalidCredentialsException>(() => service.GetCoreUserIVAsync(
             userId,
             new CoreUserPassword { Password = "WrongPassword", CoreUser = coreUser },
             CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ChangeCorePasswordAsync_WithWrongOldPassword_ThrowsInvalidCredentialsException()
+    {
+        var (userId, sqlToken) = await CreateUserDirectAsync(NewEmail());
+        var service = CreateService();
+        var coreUser = new CoreUserRequest { User_Id = userId, SqlToken = sqlToken };
+
+        await service.RegisterCoreUserPasswordAsync(
+            userId,
+            CreatePassword("OldMasterPass", coreUser),
+            CancellationToken.None);
+
+        await Assert.ThrowsAsync<InvalidCredentialsException>(() => service.ChangeCorePasswordAsync(
+            userId,
+            new ChangeCorePasswordRequest
+            {
+                OldPassword = "WrongOldPass",
+                NewPassword = "NewMasterPass",
+                CoreUser = coreUser,
+                Records = new List<CoreDataReplacement>()
+            },
+            CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ChangeCorePasswordAsync_WithInvalidSession_ThrowsUserSessionInvalidException()
+    {
+        var service = CreateService();
+
+        await Assert.ThrowsAsync<UserSessionInvalidException>(() => service.ChangeCorePasswordAsync(
+            Guid.NewGuid(),
+            new ChangeCorePasswordRequest
+            {
+                OldPassword = "OldMasterPass",
+                NewPassword = "NewMasterPass",
+                CoreUser = new CoreUserRequest { User_Id = Guid.NewGuid(), SqlToken = Guid.NewGuid() },
+                Records = new List<CoreDataReplacement>()
+            },
+            CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ChangeCorePasswordAsync_WhenNotConfigured_ThrowsCorePasswordNotConfiguredException()
+    {
+        var (userId, sqlToken) = await CreateUserDirectAsync(NewEmail());
+        var service = CreateService();
+        var coreUser = new CoreUserRequest { User_Id = userId, SqlToken = sqlToken };
+
+        await Assert.ThrowsAsync<CorePasswordNotConfiguredException>(() => service.ChangeCorePasswordAsync(
+            userId,
+            new ChangeCorePasswordRequest
+            {
+                OldPassword = "OldMasterPass",
+                NewPassword = "NewMasterPass",
+                CoreUser = coreUser,
+                Records = new List<CoreDataReplacement>()
+            },
+            CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task ChangeCorePasswordAsync_Success_ReplacesRecordsAndRotatesToken()
+    {
+        var (userId, sqlToken) = await CreateUserDirectAsync(NewEmail());
+        var service = CreateService();
+        var coreUser = new CoreUserRequest { User_Id = userId, SqlToken = sqlToken };
+
+        await service.RegisterCoreUserPasswordAsync(
+            userId,
+            CreatePassword("OldMasterPass", coreUser),
+            CancellationToken.None);
+
+        var dataRepository = new CoreDataRepository(Context);
+        var inserted = await dataRepository.InsertAsync(
+            new CoreData { Data01 = "a", Data02 = "b", Data03 = "c", User_Id = userId },
+            CancellationToken.None);
+
+        var newRecord = new CoreDataReplacement { Data_Id = Guid.NewGuid(), Data01 = "x", Data02 = "y", Data03 = "z" };
+        var changeResult = await service.ChangeCorePasswordAsync(
+            userId,
+            new ChangeCorePasswordRequest
+            {
+                OldPassword = "OldMasterPass",
+                NewPassword = "NewMasterPass",
+                CoreUser = coreUser,
+                Records = new List<CoreDataReplacement> { newRecord }
+            },
+            CancellationToken.None);
+
+        Assert.False(string.IsNullOrEmpty(changeResult.IV));
+        Assert.NotEqual(Guid.Empty, changeResult.SqlToken);
+        Assert.NotEqual(sqlToken, changeResult.SqlToken);
+
+        // El token viejo quedó invalidado: la sesión de la rotación pasada ya no abre.
+        await Assert.ThrowsAsync<UserSessionInvalidException>(() => service.GetCoreUserIVAsync(
+            userId,
+            new CoreUserPassword { Password = "NewMasterPass", CoreUser = coreUser },
+            CancellationToken.None));
+
+        // La nueva contraseña con el token rotado funciona y devuelve el nuevo IV.
+        var newCoreUser = new CoreUserRequest { User_Id = userId, SqlToken = changeResult.SqlToken };
+        var ivResult = await service.GetCoreUserIVAsync(
+            userId,
+            new CoreUserPassword { Password = "NewMasterPass", CoreUser = newCoreUser },
+            CancellationToken.None);
+
+        Assert.Equal(changeResult.IV, ivResult.IV);
+
+        // La vieja contraseña ya no es válida ni con el token nuevo.
+        await Assert.ThrowsAsync<InvalidCredentialsException>(() => service.GetCoreUserIVAsync(
+            userId,
+            new CoreUserPassword { Password = "OldMasterPass", CoreUser = newCoreUser },
+            CancellationToken.None));
+
+        // Los datos fueron reemplazados: queda solo el registro nuevo.
+        var all = (await dataRepository.GetAllAsync(new CoreData { User_Id = userId }, CancellationToken.None)).ToList();
+        Assert.Single(all);
+        Assert.Equal(newRecord.Data_Id, all[0].Data_Id);
+        Assert.DoesNotContain(all, x => x.Data_Id == inserted.Data_Id);
     }
 }

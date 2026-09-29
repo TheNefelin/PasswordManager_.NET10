@@ -28,12 +28,22 @@ public class CoreController : ControllerBase
     }
 
     [HttpPost("register-password")]
-    public async Task<ActionResult<CoreUserIV>> RegisterCoreUserPassword(CoreUserPassword coreUserRequest, CancellationToken cancellationToken)
+    public async Task<ActionResult<CoreUserIV>> RegisterCoreUserPassword(CoreUserPasswordCreate coreUserRequest, CancellationToken cancellationToken)
     {
         if (TryGetUserId(out var userId) is ActionResult unauthorized)
             return unauthorized;
 
         var response = await _coreUserService.RegisterCoreUserPasswordAsync(userId, coreUserRequest, cancellationToken);
+        return Ok(response);
+    }
+
+    [HttpPost("change-password")]
+    public async Task<ActionResult<CoreUserChangeResponse>> ChangeCoreUserPassword(ChangeCorePasswordRequest coreUserRequest, CancellationToken cancellationToken)
+    {
+        if (TryGetUserId(out var userId) is ActionResult unauthorized)
+            return unauthorized;
+
+        var response = await _coreUserService.ChangeCorePasswordAsync(userId, coreUserRequest, cancellationToken);
         return Ok(response);
     }
 

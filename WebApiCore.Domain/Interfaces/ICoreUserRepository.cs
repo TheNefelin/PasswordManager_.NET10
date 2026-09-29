@@ -6,4 +6,5 @@ public interface ICoreUserRepository
 {
     Task<CoreUser?> GetCoreUserAsync(CoreUser coreUser, CancellationToken cancellationToken);
     Task RegisterCoreUserPasswordAsync(CoreUser coreUser, CancellationToken cancellationToken);
+    Task ChangeCorePasswordAsync(Guid userId, string hash, string salt, Guid newSqlToken, IEnumerable<CoreData> replacementRecords, CancellationToken cancellationToken);
 }
