@@ -74,6 +74,8 @@ Reglas de dependencia (una sola dirección):
 
 ## 4. Capa de datos (Dapper + SPs)
 
+> ⚠️ **Variante de este proyecto**: `PasswordManager_.NET10` **no usa stored procedures**; usa Dapper con **SQL parametrizado** directamente en el repositorio (el login se resuelve en C# y el registro usa un `INSERT` parametrizado que devuelve un enum de estado). Motivo: la lógica de negocio queda en código testeable, sin un round-trip extra a la BD. Ver `DEVELOPMENT.md` §3. **No reintroducir SPs ni el envelope de §5 en este proyecto**: ambas decisiones están documentadas y el cliente MAUI depende del contrato plano (`ProblemDetails`).
+
 ### Contexto (IDapperContext)
 
 ```csharp
@@ -157,6 +159,8 @@ public async Task<LoginResult?> GetUserAsync(string email, string passwordHash)
 ---
 
 ## 5. Contrato uniforme de respuesta (Envelope)
+
+> ⚠️ **Variante de este proyecto**: `PasswordManager_.NET10` usa el **contrato v2**: **sin envelope**. Los servicios devuelven el DTO directamente y los errores salen como **`application/problem+json`** (RFC 9457) con `status`/`title`/`detail`/`traceId`, generados por `GlobalExceptionHandler`, `InvalidModelStateResponseFactory`, `JwtBearerEvents.OnChallenge`, `OnRejected` del rate limiter y `MapFallback`. Motivo: `ApiResponse<T>` duplicaba información que el status HTTP ya transporta y obligaba al cliente a desenvolver cada respuesta. El envelope de esta sección sigue siendo válido como **patrón genérico para otros proyectos**, pero **no aplicarlo en este repo**: el cliente MAUI deserializa DTOs planos y `ProblemDetails`. Ver `DEVELOPMENT.md` §3.
 
 Toda respuesta HTTP pasa por el mismo envelope. Esto estabiliza el contrato con el frontend:
 
@@ -925,6 +929,12 @@ public static int GetBatteryLevel(Android.Content.Context ctx) =>
 
 ### 11.16 Android edge-to-edge (API 35+): barras del sistema
 
+> ⚠️ **Actualizado a .NET 10 (esto desplazó a lo que sigue)**. En **.NET 10 el mecanismo cambió**: (a) el opt-out por atributo de tema `android:windowOptOutEdgeToEdgeEnforcement` **dejó de ser soportado en Android 16** (el opt-out fue eliminado y el edge-to-edge es obligatorio), y (b) la forma soportada de manejar los insets es la propiedad **`SafeAreaEdges`**. Además, **desde .NET 10 `ContentPage` usa `SafeAreaEdges="None"` por defecto** (en .NET 9 se comportaba como `Container`, es decir, el contenido esquivaba las barras del sistema): por eso una app migrada a .NET 10 puede quedarse con contenido debajo de la barra de estado o de navegación sin ningún error de compilación. Referencia: <https://learn.microsoft.com/en-us/dotnet/maui/user-interface/safe-area?view=net-maui-10.0>.
+>
+> **Regla para .NET 10**: si la app no quiere edge-to-edge, declarar `SafeAreaEdges="Container"` (o `All`) explícitamente en las `ContentPage` o en un estilo global de `App.xaml`; **no** depender del opt-out por tema. MAUI 10.x ya trae `maui_edgetoedge_optout=true` en `Maui.MainTheme.Base` (verificable con `aapt2 dump resources` sobre el APK), pero eso solo desactiva la **imposición** del sistema, no el manejo de insets.
+>
+> Lo que sigue es el patrón **de la era .NET 9** (tema + color de barras sin llamadas en runtime) y **aplica al otro proyecto**; no replicarlo en .NET 10 sin revisar lo anterior. Los "gotchas" de compilación y de diálogos de fecha/hora sí son reutilizables.
+
 Con `targetSdk` 35+, Android 15+ fuerza edge-to-edge y el sistema **ignora** `Window.SetStatusBarColor`/`SetNavigationBarColor` (obsoletas desde API 35; el compilador lo advierte con CA1422). Decisión del proyecto: **optar por NO aplicar edge-to-edge**, manteniendo barras opacas `#243042` consistentes en todos los Android (incluidos 15/16). Reglas validadas:
 
 - En el tema MAUI (`Platforms/Android/Resources/values/styles.xml`), el tema `Maui.MainTheme` (parent `Maui.MainTheme.Base`). El color de ambas barras se define **en el tema, no en runtime**:
@@ -1008,7 +1018,7 @@ Google Play anunció (ago-2026) un requisito de calidad técnica: las apps deben
 ## 13. Checklist final
 
 - [ ] Estructura Clean Architecture con dependencias en una sola dirección.
-- [ ] Envelope `ApiResponse<T>` en **todas** las respuestas (éxito y error).
+- [ ] Contrato de respuesta **uniforme**: en este proyecto, `ProblemDetails` (RFC 9457) en todos los errores y DTO plano en el éxito (sin envelope `ApiResponse<T>`).
 - [ ] `GlobalExceptionHandler` central: log + 500 genérico, sin fuga de internos.
 - [ ] 400 uniforme vía `InvalidModelStateResponseFactory`.
 - [ ] Contraseñas con PBKDF2 + salt + iteraciones configurables.
@@ -1037,7 +1047,7 @@ Google Play anunció (ago-2026) un requisito de calidad técnica: las apps deben
 - [ ] MAUI: Colores y estilos con `AppThemeBinding` (claro/oscuro desde el origen).
 - [ ] MAUI: Permisos Android mínimos; usar APIs de plataforma sin permisos protegidos (batería con `BatteryManager`/`BatteryProperty`, no con `Battery.Default` + `BATTERY_STATS`); revisar el manifest fusionado.
 - [ ] MAUI: Empaquetado Android con `RuntimeIdentifiers` (`AndroidSupportedAbis` obsoleta en .NET 10); validar ABI en dispositivo real con `ro.product.cpu.abi` (cuidado con 32-bit).
-- [ ] MAUI: Barras del sistema en Android resueltas con opt-out de edge-to-edge (`windowOptOutEdgeToEdgeEnforcement` en `Maui.MainTheme`) + color de barras `#243042` definido en el tema (`statusBarColor`/`navigationBarColor`), sin llamadas runtime (evita el aviso de Play de APIs obsoletas); botones de diálogos de fecha/hora vía handler, sin tocar `colorAccent` (§11.16).
+- [ ] MAUI: Insets del sistema en .NET 10 con `SafeAreaEdges` explícito (`Container`/`All`) en las `ContentPage` o en un estilo global; **no** depender del opt-out por tema `windowOptOutEdgeToEdgeEnforcement` (eliminado en Android 16) ni de `Window.SetStatusBarColor`/`SetNavigationBarColor` en runtime (obsoletas en API 35, aviso de Play de APIs obsoletas). Patrón de la era .NET 9 (tema + color de barras) y botones de diálogos de fecha/hora vía handler: §11.16.
 - [ ] MAUI: Recordatorios programados con IDs scopeados por tipo de entidad en requestCode/id de notificación (`(kind << 24) | id`), cancelación al borrar y permiso `POST_NOTIFICATIONS` antes de agendar (§11.17).
 - [ ] Publicación: advertencia de ofuscación/DEX de Play **no corregible** en .NET MAUI (límite del toolchain); ignorar hasta feb-2027 y verificar el resto de métricas accionables (targetSdk, 64-bit, 16 KB pages) (§11.18).
 - [ ] Publicación: Play Protect exige `minSdkVersion ≥ 24`; se controla con `SupportedOSPlatformVersion` (solo android), no con targetSdk (§11.19).
@@ -1049,7 +1059,7 @@ Google Play anunció (ago-2026) un requisito de calidad técnica: las apps deben
 | Anti-patrón | Solución |
 |-------------|----------|
 | Todo en un solo proyecto API | Clean Architecture por capas |
-| Respuestas HTTP inconsistentes | Envelope único `ApiResponse<T>` |
+| Respuestas HTTP inconsistentes | Contrato único: envelope `ApiResponse<T>` (patrón genérico) o `ProblemDetails` RFC 9457 (el de este proyecto) |
 | `ex.Message` al cliente en 500 | Log + mensaje genérico |
 | Config inválida detectada en runtime | Fail-fast al arrancar |
 | Secretos en el código/repo | Config/secrets del entorno |
