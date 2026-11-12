@@ -87,7 +87,11 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 // ======================================================================
-// Health checks (liveness + BD)
+// Health checks (liveness separado de readiness)
+// ======================================================================
+// /health/live  -> solo el proceso (sin dependencias)
+// /health/ready -> proceso + BD (SqlHealthCheck)
+// /health       -> alias de readiness (compatibilidad)
 // ======================================================================
 builder.Services.AddHealthChecks()
     .AddCheck<SqlHealthCheck>("sql");
@@ -424,7 +428,24 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHealthChecks("/health");
+
+// ======================================================================
+// Health checks
+// ======================================================================
+// Liveness: solo proceso vivo (predicado vacío → no ejecuta checks).
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false
+}).AllowAnonymous();
+
+// Readiness: proceso + dependencias (SqlHealthCheck).
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => true
+}).AllowAnonymous();
+
+// Alias de readiness para no romper contratos previos.
+app.MapHealthChecks("/health").AllowAnonymous();
 
 // ======================================================================
 // 404 uniforme (ProblemDetails)
