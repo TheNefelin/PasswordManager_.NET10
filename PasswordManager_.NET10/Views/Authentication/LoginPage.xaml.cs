@@ -14,7 +14,7 @@ public partial class LoginPage : ContentPage
     {
         base.OnAppearing();
 
-        // Ejecutar validación de biometría cuando la página aparece
+        // Ejecutar validaciÃ³n de biometrÃ­a cuando la pÃ¡gina aparece
         if (BindingContext is LoginViewModel vm)
         {
             MainThread.BeginInvokeOnMainThread(async () =>

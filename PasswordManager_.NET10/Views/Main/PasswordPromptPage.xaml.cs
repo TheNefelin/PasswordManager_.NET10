@@ -27,17 +27,17 @@ public partial class PasswordPromptPage : ContentPage
 
     private void ToggleIsPassword_Clicked(object sender, EventArgs e)
     {
-        // Alternar entre mostrar/ocultar contraseña
+        // Alternar entre mostrar/ocultar contraseÃ±a
         _isPasswordVisible = !_isPasswordVisible;
         PasswordEntry.IsPassword = !_isPasswordVisible;
 
-        //// Cambiar el texto/icono del botón según el estado
+        //// Cambiar el texto/icono del botÃ³n segÃºn el estado
         //var button = (Button)sender;
 
         //if (_isPasswordVisible)
         //{
         //    button.Text = "Ocultar";
-        //    // Si tienes un icono diferente para cuando está visible
+        //    // Si tienes un icono diferente para cuando estÃ¡ visible
         //    // button.ImageSource = "icon_eye_lock_closed_512.png";
         //}
         //else
