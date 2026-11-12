@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 
 namespace WebApiCore.Tests.Http;
 
@@ -527,18 +528,48 @@ public class ApiIntegrationTests : ApiIntegrationTestBase
     }
 
     [Fact]
-    public async Task OpenApiAndSwagger_NotExposedInProduction_Returns404()
+    public async Task OpenApiAndSwagger_ExposedInProduction_Returns200()
     {
         await using var factory = new ApiFactory()
             .WithWebHostBuilder(builder => builder.UseEnvironment("Production"));
+        using var client = factory.CreateClient();
+
+        // Politica vigente: el mapa de la API esta expuesto por decision
+        // explicita (OpenApi:Enabled, por defecto true), tambien en produccion.
+        var openApi = await client.GetAsync(
+            "/openapi/v1.json", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, openApi.StatusCode);
+
+        var docContent = await openApi.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Contains("openapi", docContent, StringComparison.OrdinalIgnoreCase);
+
+        var swaggerRoot = await client.GetAsync("/", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, swaggerRoot.StatusCode);
+
+        var rootContent = await swaggerRoot.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Contains("swagger-ui", rootContent, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task OpenApiAndSwagger_CanBeDisabledInProduction_Returns404()
+    {
+        // Válvula de seguridad: con OpenApi:Enabled=false el documento y la UI
+        // no se exponen, sin tocar código.
+        await using var factory = new ApiFactory()
+            .WithWebHostBuilder(builder => builder
+                .UseEnvironment("Production")
+                .ConfigureAppConfiguration((_, configuration) =>
+                    configuration.AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["OpenApi:Enabled"] = "false"
+                    })));
         using var client = factory.CreateClient();
 
         var openApi = await client.GetAsync(
             "/openapi/v1.json", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, openApi.StatusCode);
 
-        var swaggerRoot = await client.GetAsync(
-            "/", TestContext.Current.CancellationToken);
+        var swaggerRoot = await client.GetAsync("/", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.NotFound, swaggerRoot.StatusCode);
     }
 }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="clr-namespace:CommunityToolkit.Maui.Behaviors;assembly=CommunityToolkit.Maui"
              x:Class="PasswordManager_.NET10.Views.Authentication.LoginPage"
              Title="Login"
              Padding="20">
@@ -20,8 +21,13 @@
                     <Image
                         Source="icon_padlock_512.png"
                         HeightRequest="28"
-                        WidthRequest="28"
-                        VerticalOptions="Center"/>
+                        WidthRequest="28"                        
+                        VerticalOptions="Center">
+                        <Image.Behaviors>
+                            <toolkit:IconTintColorBehavior
+                                TintColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                        </Image.Behaviors>
+                    </Image>
                     <Label 
                         Text="Inicia Sesión"
                         FontSize="28"

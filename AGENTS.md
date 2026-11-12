@@ -90,6 +90,7 @@ Comportamiento esperado: explicar el problema, mostrar el ejemplo, esperar un "s
 - No cambiar arquitectura, nombres, estructura de carpetas, dependencias, estilos o configuraciones que no sean necesarios para la tarea.
 - Una mejora importante fuera de alcance se informa como **recomendación separada**, nunca se implementa por iniciativa propia.
 - Si aparece una dependencia técnica no contemplada, detenerse y pedir autorización para ampliar el alcance.
+- **El alcance del agente es el desarrollo local**: la app se construye y se prueba contra la **base de testing local**. **Producción queda fuera del alcance**: el agente no tiene acceso a ningún entorno de producción, no consulta ni asume el estado de ninguna base o servicio de producción, y no genera scripts de migración, validación ni despliegue para producción. Si el usuario necesita hacer esos pasos, se le entrega la **información** (qué cambió, por qué, cómo verificar) para que los ejecute él.
 
 ---
 
@@ -152,6 +153,14 @@ Los tests están permitidos cuando son seguros. La prioridad es evitar que una p
 **Regla principal.** No ejecutar un test si existe riesgo no controlado de eliminar, modificar o destruir datos que no fueron creados por el propio test o por el entorno de pruebas. Si no se puede determinar que es seguro, detenerse y pedir autorización.
 
 **Operaciones de alto riesgo.** No ejecutar sin autorización explícita y sin explicar el impacto: `DROP TABLE`, eliminar tablas, recrear esquemas, truncar tablas, `DELETE` indiscriminado, limpiar una base de datos completa, eliminar datos de otros proyectos o pruebas, migraciones destructivas o resetear automáticamente una base compartida.
+
+### Modificaciones a la base de datos
+
+- **Cualquier escritura en una base de datos requiere autorización explícita previa**: DDL (`CREATE`, `ALTER`, `DROP`), DML (`INSERT`, `UPDATE`, `DELETE`), migraciones de esquema y **también la creación de tablas auxiliares para probar un script** (por ejemplo, replicar el esquema viejo en una tabla de prueba para validar una migración antes de aplicarla en producción).
+- El agente **sí** puede ejecutar consultas de **solo lectura** (`SELECT`) sin autorización: son el mecanismo para diagnosticar y para verificar el estado antes y después de un cambio.
+- Cuando una tarea exija tocar la base, el agente entrega: el **SQL exacto**, el **impacto** (qué esquema o datos se ven afectados, si es reversible y qué se pierde si no lo es) y la **verificación esperada** (consultas de solo lectura para confirmar el resultado). **El usuario lo ejecuta.**
+- Excepción: las pruebas automatizadas que el propio test crea y borra (fixtures aisladas con identificadores propios) sí pueden ejecutarse, siempre que la limpieza esté verificada y no toque datos ajenos.
+- **El repositorio no incluye scripts de migración, validación ni despliegue para producción**: el desarrollo y las pruebas corren contra la base de testing local.
 
 **Limpieza de datos.** Un test solo debe eliminar datos creados por la prueba y no puede asumir que puede borrar todos los registros de una tabla. Preferir aislamiento por transacciones, IDs únicos, fixtures aisladas, namespaces o schemas de prueba, bases de datos dedicadas o mecanismos equivalentes. Si el framework tiene un comportamiento automático destructivo, detectarlo antes de ejecutar.
 

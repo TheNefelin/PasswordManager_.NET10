@@ -399,15 +399,19 @@ app.UseRateLimiter();
 // ======================================================================
 // OpenAPI + Swagger UI
 // ======================================================================
-// Solo en Development: en producción el mapa completo de la API sería
-// público (no requiere ApiKey) y le sirve al atacante la lista de
-// endpoints, headers y esquemas.
+// El mapa completo de la API no requiere ApiKey: exponerlo en producción
+// sirve de reconocimiento (endpoints, headers y esquemas). Por eso el
+// interruptor es explícito en configuración (OpenApi:Enabled) y no una
+// condición sobre el entorno: un ASPNETCORE_ENVIRONMENT mal puesto no
+// decide por accidente si el documento queda público.
 //
 //   /openapi/v1.json
 //   /            (Swagger UI, RoutePrefix vacío)
 //
 // ======================================================================
-if (app.Environment.IsDevelopment())
+var openApiEnabled = builder.Configuration.GetValue("OpenApi:Enabled", true);
+
+if (openApiEnabled)
 {
     app.MapOpenApi();
 
